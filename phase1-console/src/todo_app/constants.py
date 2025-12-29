@@ -1,0 +1,20 @@
+"""Constants for the Todo Console App."""
+
+# Menu options
+MENU_ADD_TASK = 1
+MENU_VIEW_TASKS = 2
+MENU_UPDATE_TASK = 3
+MENU_DELETE_TASK = 4
+MENU_TOGGLE_COMPLETE = 5
+MENU_EXIT = 6
+MENU_MIN = 1
+MENU_MAX = 6
+
+# Display formatting
+MAX_DISPLAY_LENGTH = 30
+TRUNCATE_SUFFIX_LENGTH = 3  # Length of "..."
+TRUNCATE_AT = MAX_DISPLAY_LENGTH - TRUNCATE_SUFFIX_LENGTH  # 27
+
+# Status indicators
+STATUS_COMPLETE = "✓ Complete"
+STATUS_PENDING = "○ Pending"
