@@ -1,6 +1,7 @@
-"""Todo Console App - Phase I.
+"""Enhanced Phase I - Advanced Console Todo Application.
 
-A simple CLI todo application with basic CRUD operations and in-memory storage.
+A professional CLI todo application with priorities, tags, search, filter, and sort
+capabilities using the rich library for beautiful table output.
 """
 
 __version__ = "1.0.0"
