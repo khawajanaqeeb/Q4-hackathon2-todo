@@ -1,28 +1,32 @@
-"""Pytest configuration and fixtures for tests."""
+"""Pytest configuration and fixtures for Enhanced Phase I tests."""
 
 import pytest
-from todo_app.models import TaskList
-from todo_app import services
+from src.todo_app.models import Priority, Task
+from src.todo_app.services import TodoService
 
 
 @pytest.fixture
-def empty_task_list() -> TaskList:
-    """Provide an empty TaskList for tests.
+def service() -> TodoService:
+    """Provide an empty TodoService for tests.
 
     Returns:
-        Empty TaskList with next_id=1
+        Empty TodoService with next_id=1 and empty task list
     """
-    return TaskList()
+    return TodoService()
 
 
 @pytest.fixture
-def task_list_with_data() -> TaskList:
-    """Provide a TaskList with 2 pre-populated tasks.
+def service_with_tasks() -> TodoService:
+    """Provide a TodoService with pre-populated tasks.
 
     Returns:
-        TaskList containing 2 tasks (IDs 1 and 2)
+        TodoService containing 3 tasks with various priorities and tags:
+        - ID 1: "Buy groceries" (HIGH, tags: ["shopping", "urgent"])
+        - ID 2: "Write report" (MEDIUM, tags: ["work"])
+        - ID 3: "Read book" (LOW, tags: ["personal"])
     """
-    task_list = TaskList()
-    services.add_task(task_list, "Task 1", "Description 1")
-    services.add_task(task_list, "Task 2", "Description 2")
-    return task_list
+    service = TodoService()
+    service.add_task("Buy groceries", "Milk and bread", Priority.HIGH, ["shopping", "urgent"])
+    service.add_task("Write report", "Q4 summary", Priority.MEDIUM, ["work"])
+    service.add_task("Read book", "Fiction", Priority.LOW, ["personal"])
+    return service
