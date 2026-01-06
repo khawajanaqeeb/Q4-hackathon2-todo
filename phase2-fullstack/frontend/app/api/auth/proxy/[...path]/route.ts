@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { safeJsonParse, createErrorResponse } from '../../../../../lib/api-utils';
+import { safeJsonParse, createErrorResponse } from '@/lib/api-utils';
 
 /**
  * Proxy route for authentication and API requests - replaces deprecated middleware.ts

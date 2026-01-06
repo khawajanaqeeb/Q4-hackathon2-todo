@@ -154,7 +154,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       dispatch({ type: 'ERROR' });
-      throw error;
+      // Ensure we throw an Error object with a proper message
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error(String(error) || 'An unexpected error occurred');
+      }
     }
   };
 
@@ -233,7 +238,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       dispatch({ type: 'ERROR' });
-      throw error;
+      // Ensure we throw an Error object with a proper message
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error(String(error) || 'An unexpected error occurred');
+      }
     }
   };
 
