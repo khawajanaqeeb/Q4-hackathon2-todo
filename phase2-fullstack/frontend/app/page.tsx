@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { todoAPI } from '../lib/api';
 import { Todo } from '../types/todo';
 
 export default function HomePage() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(false);
@@ -122,24 +124,41 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Premium Dark Header */}
-      <header className="border-b border-slate-800 bg-gradient-to-r from-slate-950 to-slate-900">
+    <div className="min-h-screen transition-colors duration-300 dark:bg-black bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600">
+      {/* Premium Header with Theme Toggle */}
+      <header className="border-b transition-colors duration-300 dark:border-slate-800 dark:bg-gradient-to-r dark:from-slate-950 dark:to-slate-900 border-purple-200/50 bg-white/20 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-2xl">📋</span>
               </div>
-              <h1 className="text-2xl font-bold text-white">
+              <h1 className="text-2xl font-bold dark:text-white text-white">
                 Premium<span className="text-blue-500">Task</span>
               </h1>
             </div>
             <div className="flex items-center gap-4">
+              {/* Theme Toggle Button */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg transition-all duration-200 dark:bg-slate-800 dark:hover:bg-slate-700 bg-white/20 hover:bg-white/30 backdrop-blur-sm"
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? (
+                  <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                  </svg>
+                )}
+              </button>
+
               {user ? (
                 <>
-                  <span className="text-slate-400 text-sm">
-                    👤 <span className="text-white">{user.name}</span>
+                  <span className="dark:text-slate-400 text-white/90 text-sm">
+                    👤 <span className="dark:text-white text-white">{user.name}</span>
                   </span>
                   <button
                     onClick={handleLogout}
@@ -168,16 +187,16 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="stat-card">
-              <div className="text-slate-400 text-xs font-medium mb-1">TOTAL TASKS</div>
-              <div className="text-2xl font-bold text-white">{todos.length}</div>
+              <div className="dark:text-slate-400 text-gray-600 text-xs font-medium mb-1">TOTAL TASKS</div>
+              <div className="text-2xl font-bold dark:text-white text-gray-800">{todos.length}</div>
             </div>
             <div className="stat-card">
-              <div className="text-slate-400 text-xs font-medium mb-1">IN PROGRESS</div>
-              <div className="text-2xl font-bold text-orange-400">{todos.filter(t => !t.completed).length}</div>
+              <div className="dark:text-slate-400 text-gray-600 text-xs font-medium mb-1">IN PROGRESS</div>
+              <div className="text-2xl font-bold text-orange-500">{todos.filter(t => !t.completed).length}</div>
             </div>
             <div className="stat-card">
-              <div className="text-slate-400 text-xs font-medium mb-1">COMPLETED</div>
-              <div className="text-2xl font-bold text-green-400">{todos.filter(t => t.completed).length}</div>
+              <div className="dark:text-slate-400 text-gray-600 text-xs font-medium mb-1">COMPLETED</div>
+              <div className="text-2xl font-bold text-green-500">{todos.filter(t => t.completed).length}</div>
             </div>
           </div>
         </div>
@@ -192,7 +211,7 @@ export default function HomePage() {
               <br />
               <span className="text-blue-500">Flawless Execution.</span>
             </h2>
-            <p className="text-slate-400 text-lg mb-8 leading-relaxed">
+            <p className="dark:text-slate-400 text-gray-600 text-lg mb-8 leading-relaxed">
               The ultimate productivity powerhouse for elite performers. Military-grade security, blazing-fast sync, and laser-focused workflow automation.
             </p>
             <div className="flex justify-center gap-4">
@@ -260,7 +279,7 @@ export default function HomePage() {
             {/* Filter Controls */}
             <div className="premium-card">
               <div className="flex flex-wrap gap-3 items-center">
-                <span className="text-slate-400 text-xs font-medium">FILTERS:</span>
+                <span className="dark:text-slate-400 text-gray-600 text-xs font-medium">FILTERS:</span>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value as 'all' | 'pending' | 'completed')}
@@ -371,7 +390,7 @@ export default function HomePage() {
               <span>📊 DATA ENCRYPTED</span>
               <span>⚡ 24/7 SUPPORT</span>
             </div>
-            <div>
+            <div className="text-white">
               BITCRAFT INSTITUTE © 2026
             </div>
           </div>
