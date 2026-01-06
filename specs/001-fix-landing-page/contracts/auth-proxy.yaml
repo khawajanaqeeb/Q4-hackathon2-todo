@@ -1,0 +1,155 @@
+# API Contract: Auth Proxy Routes
+
+## Overview
+This document specifies the API contracts for the authentication proxy routes that enable secure communication between the frontend and backend services.
+
+## Base Path
+All proxy routes are prefixed with `/api/auth/proxy`
+
+## Authentication
+The proxy routes handle authentication by:
+1. Extracting the authentication token from cookies (`auth_token`) or Authorization header
+2. Forwarding the token to the backend API as a Bearer token
+3. Returning appropriate authentication errors if token is missing or invalid
+
+## Endpoints
+
+### GET /api/auth/proxy/[...path]
+**Description**: Generic proxy endpoint for GET requests to backend API endpoints
+
+#### Parameters
+- `path`: Path parameter (catch-all) - represents the backend endpoint to proxy
+
+#### Request Headers
+- `Authorization` (optional): Bearer token for authentication
+- Cookie: `auth_token` - Alternative authentication method
+
+#### Response
+- `200 OK`: Successful proxy of backend response
+- `401 Unauthorized`: Missing or invalid authentication token
+- `503 Service Unavailable`: Backend service unavailable
+
+#### Example Request
+```
+GET /api/auth/proxy/todos
+Authorization: Bearer <token>
+```
+
+#### Example Response
+```
+{
+  "id": "1",
+  "title": "Sample task",
+  "completed": false,
+  "priority": "medium"
+}
+```
+
+### POST /api/auth/proxy/[...path]
+**Description**: Generic proxy endpoint for POST requests to backend API endpoints
+
+#### Parameters
+- `path`: Path parameter (catch-all) - represents the backend endpoint to proxy
+
+#### Request Headers
+- `Authorization` (optional): Bearer token for authentication
+- Cookie: `auth_token` - Alternative authentication method
+
+#### Request Body
+- Forwarded to backend as-is with authentication token
+
+#### Response
+- `200 OK`: Successful proxy of backend response
+- `201 Created`: Successful creation on backend
+- `401 Unauthorized`: Missing or invalid authentication token
+- `503 Service Unavailable`: Backend service unavailable
+
+### PUT /api/auth/proxy/[...path]
+**Description**: Generic proxy endpoint for PUT requests to backend API endpoints
+
+#### Parameters
+- `path`: Path parameter (catch-all) - represents the backend endpoint to proxy
+
+#### Request Headers
+- `Authorization` (optional): Bearer token for authentication
+- Cookie: `auth_token` - Alternative authentication method
+
+#### Request Body
+- Forwarded to backend as-is with authentication token
+
+#### Response
+- `200 OK`: Successful proxy of backend response
+- `401 Unauthorized`: Missing or invalid authentication token
+- `503 Service Unavailable`: Backend service unavailable
+
+### DELETE /api/auth/proxy/[...path]
+**Description**: Generic proxy endpoint for DELETE requests to backend API endpoints
+
+#### Parameters
+- `path`: Path parameter (catch-all) - represents the backend endpoint to proxy
+
+#### Request Headers
+- `Authorization` (optional): Bearer token for authentication
+- Cookie: `auth_token` - Alternative authentication method
+
+#### Response
+- `200 OK`: Successful proxy of backend response
+- `204 No Content`: Successful deletion on backend
+- `401 Unauthorized`: Missing or invalid authentication token
+- `503 Service Unavailable`: Backend service unavailable
+
+### PATCH /api/auth/proxy/[...path]
+**Description**: Generic proxy endpoint for PATCH requests to backend API endpoints
+
+#### Parameters
+- `path`: Path parameter (catch-all) - represents the backend endpoint to proxy
+
+#### Request Headers
+- `Authorization` (optional): Bearer token for authentication
+- Cookie: `auth_token` - Alternative authentication method
+
+#### Request Body
+- Forwarded to backend as-is with authentication token
+
+#### Response
+- `200 OK`: Successful proxy of backend response
+- `401 Unauthorized`: Missing or invalid authentication token
+- `503 Service Unavailable`: Backend service unavailable
+
+### GET /api/auth/proxy (Root)
+**Description**: Authentication verification endpoint
+
+#### Request Headers
+- `Authorization` (optional): Bearer token for authentication
+- Cookie: `auth_token` - Alternative authentication method
+
+#### Response
+- `200 OK`: Valid authentication token
+````
+{
+  "id": 1,
+  "email": "user@example.com",
+  "name": "John Doe",
+  "is_active": true,
+  "created_at": "2026-01-03T10:00:00Z",
+  "updated_at": "2026-01-03T10:00:00Z"
+}
+```
+
+- `401 Unauthorized`: Missing or invalid authentication token
+```
+{
+  "error": "Invalid token"
+}
+```
+
+## Error Handling
+All proxy routes implement consistent error handling:
+- Authentication errors return 401 status with error message
+- Backend service unavailability returns 503 status
+- Backend errors are forwarded with appropriate status codes
+
+## Security Considerations
+- Authentication tokens are validated before forwarding requests
+- All requests are forwarded with proper authentication headers
+- No sensitive information is logged in proxy responses

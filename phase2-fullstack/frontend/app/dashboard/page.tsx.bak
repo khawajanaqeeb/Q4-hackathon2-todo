@@ -1,0 +1,261 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../context/AuthContext';
+import Navigation from '../../components/Navigation';
+import TodoTable from '../../components/todos/TodoTable';
+import TodoCard from '../../components/todos/TodoCard';
+import AddTaskForm from '../../components/todos/AddTaskForm';
+import EditTaskForm from '../../components/todos/EditTaskForm';
+import FilterBar from '../../components/todos/FilterBar';
+import DeleteConfirmation from '../../components/todos/DeleteConfirmation';
+import { todoAPI } from '../../lib/api';
+import { Todo } from '../../types/todo';
+import Spinner from '../../components/ui/Spinner';
+
+export default function DashboardPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [filteredTodos, setFilteredTodos] = useState<Todo[]>([]);
+  const [loadingTodos, setLoadingTodos] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [todoToDelete, setTodoToDelete] = useState<string | null>(null);
+  const [todoToEdit, setTodoToEdit] = useState<Todo | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
+  const [tagsFilter, setTagsFilter] = useState('');
+
+
+  useEffect(() => {
+    // Redirect to login if not authenticated
+    if (!loading && !user) {
+      router.push('/login');
+      return;
+    }
+
+    if (user) {
+      fetchTodos();
+    }
+  }, [user, loading, router]);
+
+  // Apply filters
+  useEffect(() => {
+    let result = [...todos];
+
+    // Apply search filter
+    if (search) {
+      const searchLower = search.toLowerCase();
+      result = result.filter(todo =>
+        todo.title.toLowerCase().includes(searchLower) ||
+        (todo.description && todo.description.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      result = result.filter(todo =>
+        statusFilter === 'completed' ? todo.completed : !todo.completed
+      );
+    }
+
+    // Apply priority filter
+    if (priorityFilter !== 'all') {
+      result = result.filter(todo => todo.priority === priorityFilter);
+    }
+
+    // Apply tags filter
+    if (tagsFilter) {
+      const tagsLower = tagsFilter.toLowerCase();
+      result = result.filter(todo =>
+        todo.tags && todo.tags.toLowerCase().includes(tagsLower)
+      );
+    }
+
+    setFilteredTodos(result);
+  }, [todos, search, statusFilter, priorityFilter, tagsFilter]);
+
+  const fetchTodos = async () => {
+    try {
+      setLoadingTodos(true);
+      const data = await todoAPI.getTodos();
+      setTodos(data);
+    } catch (error) {
+      console.error('Error fetching todos:', error);
+    } finally {
+      setLoadingTodos(false);
+    }
+  };
+
+  const handleAddTask = async (taskData: any) => {
+    try {
+      const newTodo = await todoAPI.createTodo(taskData);
+      setTodos([newTodo, ...todos]);
+      setShowAddForm(false);
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
+  };
+
+  const handleUpdateTask = async (id: string, taskData: any) => {
+    try {
+      const updatedTodo = await todoAPI.updateTodo(id, taskData);
+      setTodos(todos.map(todo => (todo.id === id ? updatedTodo : todo)));
+      setShowEditForm(false);
+      setTodoToEdit(null);
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  };
+
+  const handleToggleCompletion = async (id: string) => {
+    try {
+      const updatedTodo = await todoAPI.toggleTodoCompletion(id);
+      setTodos(todos.map(todo => (todo.id === id ? updatedTodo : todo)));
+    } catch (error) {
+      console.error('Error toggling task completion:', error);
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    if (!todoToDelete) return;
+
+    try {
+      await todoAPI.deleteTodo(todoToDelete);
+      setTodos(todos.filter(todo => todo.id !== todoToDelete));
+      setShowDeleteConfirm(false);
+      setTodoToDelete(null);
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  };
+
+  const openDeleteConfirm = (id: string, title: string) => {
+    setTodoToDelete(id);
+    setShowDeleteConfirm(true);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navigation />
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Todo Dashboard</h1>
+              <p className="mt-1 text-sm text-gray-500">Welcome back, {user.name}!</p>
+            </div>
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              Add Task
+            </button>
+          </div>
+        </div>
+      </header>
+      <main>
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-0">
+            <FilterBar
+              onSearchChange={setSearch}
+              onStatusChange={setStatusFilter}
+              onPriorityChange={setPriorityFilter}
+              onTagsChange={setTagsFilter}
+            />
+
+            {loadingTodos ? (
+              <div className="flex justify-center items-center h-64">
+                <Spinner />
+              </div>
+            ) : filteredTodos.length === 0 ? (
+              <div className="bg-white shadow rounded-lg p-8 text-center">
+                <p className="text-gray-500">No tasks found. Add a new task to get started.</p>
+              </div>
+            ) : (
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block">
+                  <TodoTable
+                    todos={filteredTodos}
+                    onToggle={handleToggleCompletion}
+                    onEdit={(todo) => {
+                      setTodoToEdit(todo);
+                      setShowEditForm(true);
+                    }}
+                    onDelete={openDeleteConfirm}
+                  />
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4">
+                  {filteredTodos.map(todo => (
+                    <TodoCard
+                      key={todo.id}
+                      todo={todo}
+                      onToggle={handleToggleCompletion}
+                      onEdit={(todo) => {
+                        setTodoToEdit(todo);
+                        setShowEditForm(true);
+                      }}
+                      onDelete={openDeleteConfirm}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </main>
+
+      {/* Add Task Form Modal */}
+      {showAddForm && (
+        <AddTaskForm
+          isOpen={showAddForm}
+          onClose={() => setShowAddForm(false)}
+          onSubmit={handleAddTask}
+        />
+      )}
+
+      {/* Edit Task Form Modal */}
+      {showEditForm && todoToEdit && (
+        <EditTaskForm
+          isOpen={showEditForm}
+          onClose={() => {
+            setShowEditForm(false);
+            setTodoToEdit(null);
+          }}
+          task={todoToEdit}
+          onSubmit={handleUpdateTask}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <DeleteConfirmation
+          isOpen={showDeleteConfirm}
+          onClose={() => {
+            setShowDeleteConfirm(false);
+            setTodoToDelete(null);
+          }}
+          onConfirm={handleDeleteTask}
+          taskTitle={todos.find(t => t.id === todoToDelete)?.title || ''}
+        />
+      )}
+    </div>
+  );
+}

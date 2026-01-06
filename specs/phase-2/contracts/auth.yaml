@@ -1,0 +1,160 @@
+openapi: 3.0.3
+info:
+  title: Todo Application Authentication API
+  description: API endpoints for user authentication in the Phase II Todo application
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://your-backend-domain.com
+    description: Production server
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      description: Creates a new user account with email, password, and name
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - name
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address (must be unique)
+                  example: "user@example.com"
+                password:
+                  type: string
+                  minLength: 8
+                  description: User's password (min 8 characters)
+                  example: "SecurePassword123"
+                name:
+                  type: string
+                  maxLength: 255
+                  description: User's display name
+                  example: "John Doe"
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: Unique identifier for the created user
+                    example: 1
+                  email:
+                    type: string
+                    format: email
+                    description: User's email address
+                    example: "user@example.com"
+                  name:
+                    type: string
+                    description: User's display name
+                    example: "John Doe"
+                  created_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp when user was created
+                    example: "2023-12-29T10:00:00Z"
+        '400':
+          description: Bad request - invalid input or duplicate email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message
+                    example: "A user with this email already exists"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /auth/login:
+    post:
+      summary: Login user
+      description: Authenticates user and returns JWT token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                  example: "user@example.com"
+                password:
+                  type: string
+                  description: User's password
+                  example: "SecurePassword123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: JWT access token
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  token_type:
+                    type: string
+                    description: Token type (usually "bearer")
+                    example: "bearer"
+        '401':
+          description: Unauthorized - invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message
+                    example: "Incorrect email or password"
+
+components:
+  schemas:
+    ValidationError:
+      type: object
+      properties:
+        loc:
+          type: array
+          items:
+            type: string
+          description: Location of the validation error
+          example: ["body", "email"]
+        msg:
+          type: string
+          description: Error message
+          example: "value is not a valid email address"
+        type:
+          type: string
+          description: Error type
+          example: "value_error.email"

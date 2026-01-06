@@ -1,23 +1,12 @@
-# Feature Specification: Phase II - Todo Full-Stack Web Application
-
-**Feature Branch**: `001-fullstack-web-app`
-**Created**: 2026-01-01
-**Status**: Draft
-**Phase**: Phase II of Hackathon II Evolution
-**GitHub Repository**: https://github.com/khawajanaqeeb/Q4-hackathon2-todo
-**Base**: Extends Phase I (console app with basic + enhanced features) to full-stack web application
-
-**Input**: Phase II – Full-Stack Web Application: Evolve the Todo app into a full-stack web application with persistent storage, multi-user support, authentication, and all Basic + Intermediate features. Technology Stack: Next.js (App Router), TypeScript, Tailwind CSS (frontend); FastAPI, SQLModel (backend); Neon Serverless PostgreSQL (database); Better Auth with JWT (authentication); Vercel (frontend deployment), Railway/Render (backend deployment).
-
----
+# Phase II Specification: Todo Full-Stack Web Application
 
 ## Overview
 
 ### Phase Goal
 Transform the Phase I console-based todo application into a production-ready full-stack web application with:
 - Multi-user support with authentication and user isolation
-- Persistent cloud storage (Neon PostgreSQL)
-- Modern responsive web interface (Next.js 16+ with App Router)
+- Persistent cloud storage (Neon Serverless PostgreSQL ONLY - no local SQLite files)
+- Modern responsive web interface (Next.js 16+ with App Router, React 19 compatible)
 - RESTful API backend (FastAPI with async support)
 - All Basic features: Add, View, Update, Delete, Mark Complete
 - All Intermediate features: Priorities, Tags, Search, Filter, Sort
@@ -34,40 +23,122 @@ Phase I implemented a rich console application with:
 Phase II extends this foundation by:
 - Moving from single-user file storage to multi-user cloud database
 - Replacing CLI with responsive web UI (accessible from any device)
-- Adding authentication and user isolation (JWT with Better Auth)
+- Adding authentication and user isolation (Better Auth with JWT)
 - Implementing REST API for frontend-backend communication
 - Enabling real-time updates and collaborative features
 - Professional deployment for public access
 
-### High-Level User Journey
-1. **Registration**: User visits app → creates account with email/password → account stored in Neon PostgreSQL
-2. **Login**: User enters credentials → receives JWT token → token stored in browser
-3. **Dashboard**: Authenticated user sees personalized todo list (only their tasks)
-4. **Manage Tasks**:
-   - Add new tasks with title, description, priority, tags
-   - View tasks in responsive table/card layout
-   - Search by title, filter by status/priority/tags, sort by date/priority
-   - Update task details inline
-   - Mark tasks complete/incomplete with one click
-   - Delete tasks with confirmation
-5. **Logout**: User logs out → token cleared → redirected to login
+### Strict PDF Compliance and Structure
+This specification follows the Hackathon II PDF guidelines:
+- Uses Spec-Driven Development methodology
+- Implements Next.js 16+, React 19, FastAPI, SQLModel, Neon Serverless PostgreSQL
+- Includes Basic + Intermediate features
+- Uses Better Auth with JWT for authentication
+- Deploys to Vercel (frontend) and Railway/Render (backend)
 
-### Reference to Reusable Agents/Skills
-This specification enables the following agents and skills created for Phase II:
+---
 
-**Agents** (`.claude/agents/`):
-- `hackathon-nextjs-builder.md`: Frontend component generation expert
-- `hackathon-fastapi-master.md`: Backend API endpoint builder
-- `hackathon-db-architect.md`: Database schema design specialist
-- `hackathon-auth-specialist.md`: JWT authentication and security expert
-- `hackathon-integration-tester.md`: Full-stack testing specialist
+## Project Structure (MANDATORY)
 
-**Skills** (`.claude/skills/`):
-- `nextjs-ui-generator`: Auto-triggers on "Create todo list page", "Build login UI"
-- `fastapi-endpoint-builder`: Auto-triggers on "Create API endpoint", "Build CRUD routes"
-- `sqlmodel-db-designer`: Auto-triggers on "Create database schema", "Define models"
-- `better-auth-setup`: Auto-triggers on "Set up authentication", "Implement login"
-- `fullstack-consistency-checker`: Auto-triggers on "Check consistency", "Verify API contracts"
+### Directory Layout
+```
+specs/phase-2/spec.md (this file)
+phase2-fullstack/frontend/ (Next.js application)
+phase2-fullstack/backend/app/ (FastAPI application with main.py)
+```
+
+### Complete Project Tree
+```
+phase2-fullstack/
+├── backend/                     ← Backend service root
+│   ├── app/                    ← Python package (required: __init__.py)
+│   │   ├── __init__.py         ← REQUIRED: Makes 'app' a Python package
+│   │   ├── main.py             ← FastAPI app instance: app = FastAPI()
+│   │   ├── config.py           ← Settings from environment variables
+│   │   ├── database.py         ← SQLModel engine, connection pooling
+│   │   ├── models/             ← SQLModel table definitions
+│   │   │   ├── __init__.py     ← Export models
+│   │   │   ├── user.py         ← User table model
+│   │   │   └── todo.py         ← Todo table model
+│   │   ├── schemas/            ← Pydantic request/response schemas
+│   │   │   ├── __init__.py     ← Export schemas
+│   │   │   ├── user.py         ← UserCreate, UserResponse, LoginRequest
+│   │   │   └── todo.py         ← TodoCreate, TodoUpdate, TodoResponse
+│   │   ├── routers/            ← API route handlers
+│   │   │   ├── __init__.py     ← Export routers
+│   │   │   ├── auth.py         ← /auth endpoints (register, login)
+│   │   │   └── todos.py        ← /todos CRUD endpoints
+│   │   ├── dependencies/       ← FastAPI dependency functions
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py         ← get_current_user (JWT validation)
+│   │   │   └── database.py     ← get_session (DB lifecycle)
+│   │   └── utils/              ← Helper utilities
+│   │       ├── __init__.py
+│   │       └── security.py     ← Password hashing, JWT creation/validation
+│   ├── alembic/                ← Database migrations
+│   │   ├── env.py
+│   │   └── versions/
+│   ├── tests/                  ← Backend test suite
+│   │   ├── __init__.py
+│   │   ├── conftest.py         ← Shared fixtures
+│   │   ├── test_auth.py        ← Auth endpoint tests
+│   │   └── test_todos.py       ← Todo CRUD tests
+│   ├── scripts/                ← Utility scripts
+│   │   └── seed.py             ← Optional: Database seeding
+│   ├── .env                    ← Environment variables (gitignored)
+│   ├── .env.example            ← Template for .env
+│   ├── requirements.txt        ← Python dependencies
+│   └── alembic.ini             ← Alembic configuration
+│
+├── frontend/                   ← Next.js frontend application
+│   ├── app/                   ← Next.js App Router structure
+│   │   ├── layout.tsx         ← Root layout
+│   │   ├── page.tsx           ← Home page (redirects to /dashboard or /login)
+│   │   ├── login/
+│   │   │   └── page.tsx       ← Login page
+│   │   ├── register/
+│   │   │   └── page.tsx       ← Registration page
+│   │   └── dashboard/
+│   │       ├── layout.tsx     ← Dashboard layout (protected)
+│   │       └── page.tsx       ← Main todo list with advanced task table
+│   ├── components/            ← React components
+│   │   ├── auth/
+│   │   │   ├── LoginForm.tsx
+│   │   │   └── RegisterForm.tsx
+│   │   ├── todos/
+│   │   │   ├── TodoTable.tsx      ← Advanced table with search/filter/sort
+│   │   │   ├── TodoCard.tsx       ← Mobile card view
+│   │   │   ├── AddTaskForm.tsx    ← Add task modal
+│   │   │   ├── EditTaskForm.tsx   ← Edit task form
+│   │   │   ├── FilterBar.tsx      ← Advanced search/filter controls
+│   │   │   └── TodoRow.tsx        ← Single todo row
+│   │   └── ui/
+│   │       ├── Button.tsx
+│   │       ├── Input.tsx
+│   │       ├── Modal.tsx
+│   │       ├── Toast.tsx
+│   │       └── Spinner.tsx
+│   ├── lib/
+│   │   ├── api.ts              ← API client functions
+│   │   ├── auth.ts             ← Auth utilities (getToken, logout)
+│   │   └── utils.ts            ← Helpers (cn, formatDate)
+│   ├── types/
+│   │   ├── user.ts             ← User TypeScript interfaces
+│   │   └── todo.ts             ← Todo TypeScript interfaces
+│   ├── context/
+│   │   └── AuthContext.tsx     ← Global auth state
+│   ├── middleware.ts           ← Route protection (TO BE REPLACED: deprecated, use app/api/auth/proxy or server actions)
+│   ├── tests/                  ← Frontend tests
+│   │   ├── components/
+│   │   └── integration/
+│   ├── .env.local             ← Environment variable template
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── tailwind.config.js
+│
+├── docker-compose.yml          ← Local development orchestration
+└── README.md                   ← Phase II documentation
+```
 
 ---
 
@@ -75,81 +146,61 @@ This specification enables the following agents and skills created for Phase II:
 
 ### Functional Requirements
 
-**AUTH - Authentication & Authorization**
+#### Basic Features (CRUD + Mark Complete)
+- **BASIC-1**: Users must be able to create new todo items with title, description, priority, and tags
+- **BASIC-2**: Users must be able to view all their todo items in a responsive list
+- **BASIC-3**: Users must be able to update any field of their todo items
+- **BASIC-4**: Users must be able to delete their todo items with confirmation
+- **BASIC-5**: Users must be able to mark todo items as complete/incomplete
+
+#### Intermediate Features (Priorities/Tags, Search/Filter, Sort)
+- **INT-1**: Todo items must support priority levels (low, medium, high)
+- **INT-2**: Todo items must support tags (up to 10 tags per item)
+- **INT-3**: Users must be able to search todo items by title content
+- **INT-4**: Users must be able to filter todo items by completion status, priority, and tags
+- **INT-5**: Users must be able to sort todo items by creation date, priority, or title
+
+#### Multi-User with Better Auth JWT
 - **AUTH-1**: Users must register with email (unique), password (8+ chars), and name
 - **AUTH-2**: Passwords must be hashed with bcrypt (12+ rounds) before storage
 - **AUTH-3**: Users must login with email + password to receive JWT token
-- **AUTH-4**: JWT tokens must expire after 30 minutes (configurable)
+- **AUTH-4**: JWT tokens must expire after 30 minutes (configurable), with optional refresh tokens valid for 7 days
 - **AUTH-5**: All task endpoints must require valid JWT token in Authorization header
-- **AUTH-6**: Frontend must store JWT in localStorage and attach to all API requests
+- **AUTH-6**: Frontend must store JWT securely (httpOnly cookies preferred, localStorage as fallback) and attach to all API requests
 - **AUTH-7**: Frontend must redirect to /login when token is missing or expired
 - **AUTH-8**: Backend must return 401 Unauthorized for invalid/expired tokens
 - **AUTH-9**: Users must be able to logout (frontend clears token)
 - **AUTH-10**: Email validation must prevent invalid formats (use Pydantic EmailStr)
+- **AUTH-11**: JWT implementation must use HS256 algorithm with 256-bit secret key
+- **AUTH-12**: Token refresh mechanism must follow security best practices (secure storage, rotation)
 
-**TASK - Task Management Operations**
-- **TASK-1**: Authenticated users must be able to create tasks with title (required, 1-500 chars)
-- **TASK-2**: Tasks may include optional description (max 5000 chars)
-- **TASK-3**: Tasks must have priority field: low, medium (default), or high
-- **TASK-4**: Tasks may have zero or more tags (max 10 tags, each max 50 chars)
-- **TASK-5**: Tasks must have completed boolean field (default: false)
-- **TASK-6**: Tasks must auto-generate id, created_at, updated_at timestamps
-- **TASK-7**: Users must be able to view all their tasks (paginated, 20 per page)
-- **TASK-8**: Users must be able to update any field of their tasks (title, description, priority, tags, completed)
-- **TASK-9**: Users must be able to delete their tasks with confirmation prompt
-- **TASK-10**: Users must be able to toggle task completion status with one click
-- **TASK-11**: Task titles must be trimmed of leading/trailing whitespace
-- **TASK-12**: Empty or whitespace-only titles must be rejected (400 Bad Request)
-
-**ORG - User Isolation & Data Ownership**
-- **ORG-1**: Each task must be associated with exactly one user (user_id foreign key)
-- **ORG-2**: Users must ONLY see their own tasks (enforce in all queries)
-- **ORG-3**: Users must NOT be able to access/modify other users' tasks (403 or 404)
-- **ORG-4**: API must filter all task queries by current_user.id automatically
-- **ORG-5**: Database must enforce user_id foreign key constraint
-- **ORG-6**: Deleting a user must not be allowed if they have tasks (or cascade delete)
-
-**QUERY - Search, Filter, Sort**
-- **QUERY-1**: Users must be able to search tasks by title (case-insensitive, partial match)
-- **QUERY-2**: Users must be able to filter tasks by completion status (completed, pending, all)
-- **QUERY-3**: Users must be able to filter tasks by priority (low, medium, high, all)
-- **QUERY-4**: Users must be able to filter tasks by tags (any task with selected tag)
-- **QUERY-5**: Users must be able to sort tasks by created_at (newest/oldest)
-- **QUERY-6**: Users must be able to sort tasks by priority (high → medium → low)
-- **QUERY-7**: Users must be able to sort tasks by title (A-Z, Z-A)
-- **QUERY-8**: Multiple filters must be combinable (e.g., high priority + incomplete + tagged "urgent")
-- **QUERY-9**: Search and filters must preserve pagination
-- **QUERY-10**: Empty search/filter results must show friendly message
-
-**DATA - Data Persistence & Integrity**
-- **DATA-1**: All tasks must be stored in Neon PostgreSQL database
-- **DATA-2**: Database must use connection pooling (min 5, max 20 connections)
-- **DATA-3**: All database operations must be transactional (rollback on error)
-- **DATA-4**: Timestamps must be stored in UTC and displayed in user's local timezone
-- **DATA-5**: Database schema must be managed via Alembic migrations
-- **DATA-6**: Tags must be stored as JSON array in PostgreSQL
-- **DATA-7**: Indexes must exist on user_id, completed, priority, created_at for query performance
-- **DATA-8**: Database connection must use SSL (required by Neon)
-
-**UI - User Interface Requirements**
-- **UI-1**: Application must be responsive (mobile 320px, tablet 768px, desktop 1024px+)
-- **UI-2**: Login page must have email, password fields and submit button
-- **UI-3**: Registration page must have email, password, name fields and submit button
-- **UI-4**: Dashboard must display tasks in table view (desktop) and card view (mobile)
-- **UI-5**: Add task form must be accessible via button/modal
-- **UI-6**: Task rows must have inline edit, delete, and toggle complete buttons
-- **UI-7**: Filter bar must have dropdowns for status, priority, tags and search input
-- **UI-8**: UI must show loading states during API calls (spinners)
-- **UI-9**: UI must display error messages for failed operations (toast notifications)
-- **UI-10**: UI must display success messages for completed operations (toast notifications)
-- **UI-11**: Delete action must show confirmation dialog before execution
-- **UI-12**: Priority must be color-coded (high: red, medium: yellow, low: green)
-- **UI-13**: Completed tasks must have strikethrough text or different styling
-- **UI-14**: Tags must be displayed as colored badges/chips
+#### User Isolation
+- **ISO-1**: Each task must be associated with exactly one user (user_id foreign key)
+- **ISO-2**: Users must ONLY see their own tasks (enforce in all queries)
+- **ISO-3**: Users must NOT be able to access/modify other users' tasks (403 or 404)
+- **ISO-4**: API must filter all task queries by current_user.id automatically
+- **ISO-5**: Database must enforce user_id foreign key constraint
 
 ### Non-Functional Requirements
 
-**SEC - Security**
+#### Neon DB Only
+- **NEON-1**: All tasks must be stored in Neon PostgreSQL database (NO local SQLite files)
+- **NEON-2**: Database must use SSL connection (required by Neon)
+- **NEON-3**: Database must use connection pooling (min 5, max 20 connections)
+- **NEON-4**: All database operations must be transactional (rollback on error)
+- **NEON-5**: Database schema must be managed via Alembic migrations
+
+#### Responsive Advanced UI
+- **UI-1**: Application must be responsive (mobile 320px, tablet 768px, desktop 1024px+)
+- **UI-2**: Advanced task table must include columns: ID, Title, Description, Priority, Tags, Status, Created Date
+- **UI-3**: Task table must support sorting by clicking column headers
+- **UI-4**: Search bar must support real-time filtering as user types
+- **UI-5**: Multiple filter options must be available in a collapsible sidebar
+- **UI-6**: Priority must be color-coded (high: red, medium: yellow, low: green)
+- **UI-7**: Tags must be displayed as colored badges/chips
+- **UI-8**: Completed tasks must have strikethrough text or different styling
+
+#### Secure API
 - **SEC-1**: All passwords must be hashed with bcrypt (cost factor 12+)
 - **SEC-2**: JWT secret key must be stored in environment variable (min 256 bits)
 - **SEC-3**: HTTPS must be enforced in production (Vercel auto-provides)
@@ -160,46 +211,15 @@ This specification enables the following agents and skills created for Phase II:
 - **SEC-8**: Sensitive data (passwords, tokens) must never appear in logs
 - **SEC-9**: Database credentials must be stored in environment variables only
 - **SEC-10**: JWT tokens must not contain sensitive data (only user_id, email)
+- **SEC-11**: All API endpoints must return appropriate HTTP status codes (200, 201, 400, 401, 403, 404, 500)
+- **SEC-12**: Error responses must follow consistent format with message and error code
+- **SEC-13**: All authentication and authorization failures must be logged for security auditing
 
-**PERF - Performance**
-- **PERF-1**: API endpoints must respond within 200ms (p95) for list queries
-- **PERF-2**: API endpoints must respond within 100ms (p95) for single-item queries
-- **PERF-3**: Frontend must achieve Lighthouse score: Performance 90+, Accessibility 95+
-- **PERF-4**: Database queries must use indexes (verify with EXPLAIN ANALYZE)
-- **PERF-5**: Frontend must use React.memo and useMemo for expensive components
-- **PERF-6**: Pagination must limit results to 20 items per page (max 100)
-- **PERF-7**: Connection pool must handle 50 concurrent requests without timeout
+---
 
-**REL - Reliability**
-- **REL-1**: Backend must handle database connection failures gracefully (retry 3x)
-- **REL-2**: Frontend must handle network errors gracefully (show error, allow retry)
-- **REL-3**: Application must work offline (display cached data, queue writes - future)
-- **REL-4**: Database migrations must be reversible (up/down scripts)
-- **REL-5**: Application must log errors to console (structured JSON format)
+## Data Model
 
-**USE - Usability**
-- **USE-1**: Error messages must be user-friendly (not technical stack traces)
-- **USE-2**: Forms must show validation errors inline (field-specific)
-- **USE-3**: Required fields must be marked with asterisk (*)
-- **USE-4**: Buttons must show loading state during async operations
-- **USE-5**: Empty states must guide users to create first task
-
-**TEST - Testing**
-- **TEST-1**: Backend must achieve 80%+ code coverage (pytest)
-- **TEST-2**: Frontend must achieve 70%+ code coverage (Jest + React Testing Library)
-- **TEST-3**: E2E tests must cover critical flows: register, login, CRUD (Playwright)
-- **TEST-4**: All API endpoints must have unit tests for success and error cases
-- **TEST-5**: Authentication middleware must have security-focused tests
-- **TEST-6**: User isolation must be tested (user A cannot access user B's tasks)
-
-**SCALE - Scalability**
-- **SCALE-1**: Application must support 100 concurrent users (Phase II target)
-- **SCALE-2**: Database must support 10,000 tasks per user
-- **SCALE-3**: API must support 1,000 requests/min (rate limit above this)
-
-### Key Entities
-
-**User**
+### User Model
 - `id`: Integer (auto-increment primary key)
 - `email`: String (unique, indexed, max 255 chars)
 - `hashed_password`: String (bcrypt hash, 60 chars)
@@ -208,7 +228,7 @@ This specification enables the following agents and skills created for Phase II:
 - `created_at`: DateTime (UTC, auto-generated)
 - `updated_at`: DateTime (UTC, auto-updated)
 
-**Task**
+### Task Model
 - `id`: Integer (auto-increment primary key)
 - `user_id`: Integer (foreign key to users.id, indexed, NOT NULL)
 - `title`: String (required, 1-500 chars, indexed for search)
@@ -221,495 +241,394 @@ This specification enables the following agents and skills created for Phase II:
 
 ---
 
-## Data Model
+## Database
 
-### Database Schema (PostgreSQL via Neon)
+### Neon Serverless PostgreSQL ONLY
+- **Provider**: Neon Serverless PostgreSQL (no local SQLite)
+- **Connection**: SSL required (enforced by Neon)
+- **Pool Size**: 10 connections (min), 20 overflow (max)
+- **URL Format**: `postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require`
+- **Storage**: 3GB free tier (sufficient for Phase II)
+- **Compute**: Auto-scaling (suspends after inactivity)
 
-```sql
--- Users table
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    hashed_password VARCHAR(60) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+### Connection via DATABASE_URL from .env
+- **Environment Variable**: `DATABASE_URL` from .env file
+- **No Local Files**: Strictly prohibit local database files like `todo_app.db`
+- **Connection Pooling**: Implemented with SQLModel engine
+- **SSL Mode**: Required (enforced by Neon)
 
-CREATE UNIQUE INDEX idx_users_email ON users(email);
-
--- Todos table
-CREATE TABLE todos (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    title VARCHAR(500) NOT NULL,
-    description TEXT,
-    completed BOOLEAN DEFAULT FALSE,
-    priority VARCHAR(10) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
-    tags JSON DEFAULT '[]',
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexes for performance
-CREATE INDEX idx_todos_user_id ON todos(user_id);
-CREATE INDEX idx_todos_completed ON todos(completed);
-CREATE INDEX idx_todos_priority ON todos(priority);
-CREATE INDEX idx_todos_created_at ON todos(created_at);
-CREATE INDEX idx_todos_title ON todos(title);
-
--- Composite indexes for common queries
-CREATE INDEX idx_todos_user_completed ON todos(user_id, completed);
-CREATE INDEX idx_todos_user_priority ON todos(user_id, priority);
-```
-
-### SQLModel Models (Backend)
-
-```python
-# app/models/user.py
-from sqlmodel import SQLModel, Field
-from datetime import datetime
-from typing import Optional
-
-class User(SQLModel, table=True):
-    __tablename__ = "users"
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    email: str = Field(unique=True, index=True, max_length=255)
-    hashed_password: str = Field(max_length=60)
-    name: str = Field(max_length=255)
-    is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-```
-
-```python
-# app/models/todo.py
-from sqlmodel import SQLModel, Field, Column
-from sqlalchemy import JSON
-from datetime import datetime
-from typing import Optional, List
-from enum import Enum
-
-class Priority(str, Enum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-
-class Todo(SQLModel, table=True):
-    __tablename__ = "todos"
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id", index=True)
-    title: str = Field(max_length=500, index=True)
-    description: Optional[str] = Field(default=None, max_length=5000)
-    completed: bool = Field(default=False, index=True)
-    priority: Priority = Field(default=Priority.MEDIUM, index=True)
-    tags: List[str] = Field(default_factory=list, sa_column=Column(JSON))
-    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-```
-
-### TypeScript Interfaces (Frontend)
-
-```typescript
-// types/user.ts
-export interface User {
-  id: number;
-  email: string;
-  name: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-// types/todo.ts
-export interface Todo {
-  id: number;
-  user_id: number;
-  title: string;
-  description: string | null;
-  completed: boolean;
-  priority: 'low' | 'medium' | 'high';
-  tags: string[];
-  created_at: string;
-  updated_at: string;
-}
-
-export interface TodoFormData {
-  title: string;
-  description?: string;
-  priority?: 'low' | 'medium' | 'high';
-  tags?: string[];
-}
-```
+### No Local Files
+- All data must be stored in Neon PostgreSQL
+- No local SQLite files (todo_app.db, etc.)
+- No file-based persistence (JSON, etc.)
 
 ---
 
-## Authentication & Security
+## Authentication
 
-### Better Auth with JWT Integration
+### Better Auth with JWT
+- **Implementation**: Better Auth with JWT tokens
+- **Flow**: Register → Login → JWT Token → Protected API Access → Logout
+- **Token Storage**: Frontend localStorage (with secure options)
+- **Token Validation**: Backend JWT middleware
 
-**Flow Overview**:
-1. User registers → Backend hashes password with bcrypt → Store in DB
-2. User logs in → Backend verifies password → Generate JWT token → Return to frontend
-3. Frontend stores JWT in localStorage
-4. Frontend includes JWT in Authorization header for all API requests
-5. Backend validates JWT on protected routes → Extract user_id → Use for queries
-
-### JWT Token Structure
-
-```json
-{
-  "sub": "user_id_here",
-  "email": "user@example.com",
-  "exp": 1704153600,
-  "iat": 1704150000
-}
-```
-
-### Backend Authentication Flow
-
-```python
-# app/utils/security.py
-from passlib.context import CryptContext
-from jose import JWTError, jwt
-from datetime import datetime, timedelta
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
-
-def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=30)):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + expires_delta
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-def decode_token(token: str) -> dict:
-    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-```
-
-```python
-# app/dependencies/auth.py
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthCredentials
-from app.utils.security import decode_token
-from app.models.user import User
-from sqlmodel import Session, select
-
-security = HTTPBearer()
-
-async def get_current_user(
-    credentials: HTTPAuthCredentials = Depends(security),
-    session: Session = Depends(get_session)
-) -> User:
-    token = credentials.credentials
-    try:
-        payload = decode_token(token)
-        user_id: int = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    user = session.get(User, user_id)
-    if not user or not user.is_active:
-        raise HTTPException(status_code=401, detail="User not found")
-
-    return user
-```
-
-### Protected Routes (Backend)
-
-All `/todos/*` endpoints require authentication:
-
-```python
-@router.get("/todos", response_model=List[TodoResponse])
-async def get_todos(
-    current_user: User = Depends(get_current_user),  # JWT required
-    session: Session = Depends(get_session)
-):
-    # User isolation enforced automatically
-    query = select(Todo).where(Todo.user_id == current_user.id)
-    return session.exec(query).all()
-```
-
-### Protected Routes (Frontend)
-
-```typescript
-// middleware.ts (Next.js App Router)
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get('access_token');
-
-  // Protected routes
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    if (!token) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-  }
-
-  // Auth routes (redirect if already logged in)
-  if (['/login', '/register'].includes(request.nextUrl.pathname)) {
-    if (token) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-  }
-
-  return NextResponse.next();
-}
-
-export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/register'],
-};
-```
-
----
-
-## Frontend Architecture
-
-### Technology Stack
-- **Framework**: Next.js 16+ (App Router)
-- **Language**: TypeScript (strict mode)
-- **Styling**: Tailwind CSS 4+
-- **State Management**: React Context API + useState/useReducer
-- **HTTP Client**: fetch API with custom wrapper
-- **Forms**: React Hook Form + Zod validation
-- **UI Components**: Headless UI (dialogs, dropdowns)
-- **Icons**: Heroicons or Lucide React
-- **Notifications**: react-hot-toast
-
-### Project Structure
-
-```
-frontend/
-├── app/
-│   ├── layout.tsx              # Root layout
-│   ├── page.tsx                # Home (redirects to /dashboard or /login)
-│   ├── login/
-│   │   └── page.tsx            # Login page
-│   ├── register/
-│   │   └── page.tsx            # Registration page
-│   └── dashboard/
-│       ├── layout.tsx          # Dashboard layout (protected)
-│       └── page.tsx            # Main todo list
-├── components/
-│   ├── auth/
-│   │   ├── LoginForm.tsx
-│   │   └── RegisterForm.tsx
-│   ├── todos/
-│   │   ├── TodoTable.tsx       # Desktop table view
-│   │   ├── TodoCard.tsx        # Mobile card view
-│   │   ├── AddTaskForm.tsx     # Modal form for adding tasks
-│   │   ├── EditTaskForm.tsx    # Inline/modal edit form
-│   │   ├── FilterBar.tsx       # Search + filter controls
-│   │   └── TodoRow.tsx         # Single todo row with actions
-│   └── ui/
-│       ├── Button.tsx
-│       ├── Input.tsx
-│       ├── Modal.tsx
-│       ├── Toast.tsx
-│       └── Spinner.tsx
-├── lib/
-│   ├── api.ts                  # API client functions
-│   ├── auth.ts                 # Auth utilities (getToken, logout)
-│   └── utils.ts                # Helpers (cn, formatDate)
-├── types/
-│   ├── user.ts
-│   └── todo.ts
-├── context/
-│   └── AuthContext.tsx         # Global auth state
-└── middleware.ts               # Route protection
-```
-
-### Key Pages
-
-**1. Login Page (`/login`)**
-- Email input (type="email", required)
-- Password input (type="password", required, min 8 chars)
-- Submit button
-- Link to registration page
-- Error display for invalid credentials
-
-**2. Registration Page (`/register`)**
-- Name input (required, max 255 chars)
-- Email input (type="email", required, unique)
-- Password input (type="password", required, min 8 chars, show strength)
-- Confirm password input
-- Submit button
-- Link to login page
-- Error display for duplicate email or validation failures
-
-**3. Dashboard Page (`/dashboard`)**
-- Header with user name and logout button
-- Add Task button (opens modal)
-- Filter bar (search, status dropdown, priority dropdown, tags filter)
-- Task table (desktop) / Task cards (mobile)
-- Pagination controls (if >20 tasks)
-- Empty state (when no tasks)
-
-### Key Components
-
-**TodoTable.tsx**
-```tsx
-interface TodoTableProps {
-  todos: Todo[];
-  onEdit: (id: number, data: Partial<Todo>) => void;
-  onDelete: (id: number) => void;
-  onToggle: (id: number) => void;
-}
-```
-
-**AddTaskForm.tsx**
-```tsx
-interface AddTaskFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: TodoFormData) => Promise<void>;
-}
-```
-
-**FilterBar.tsx**
-```tsx
-interface FilterBarProps {
-  onSearchChange: (search: string) => void;
-  onStatusChange: (status: 'all' | 'completed' | 'pending') => void;
-  onPriorityChange: (priority: 'all' | 'low' | 'medium' | 'high') => void;
-  onTagsChange: (tags: string[]) => void;
-}
-```
-
-### Responsive Design
-
-**Mobile (320px - 767px)**:
-- Card layout for todos
-- Hamburger menu for filters
-- Full-width forms
-- Single column
-
-**Tablet (768px - 1023px)**:
-- Table layout with horizontal scroll
-- Sidebar filters
-- Two-column forms
-
-**Desktop (1024px+)**:
-- Full table layout
-- Fixed sidebar filters
-- Modal forms
-- Multi-column layout
+### Shared Secret between Frontend/Backend
+- **SECRET_KEY**: Same secret key used by both frontend and backend
+- **Token Format**: HS256 algorithm
+- **Expiration**: 30 minutes (configurable)
+- **Refresh**: Optional refresh token implementation
 
 ---
 
 ## Backend Architecture
 
-### Technology Stack
-- **Framework**: FastAPI 0.100+
-- **Language**: Python 3.11+
-- **ORM**: SQLModel (SQLAlchemy + Pydantic)
-- **Database**: Neon Serverless PostgreSQL
-- **Authentication**: JWT (python-jose) + bcrypt (passlib)
-- **Migrations**: Alembic
-- **Validation**: Pydantic v2
-- **ASGI Server**: Uvicorn
-
-### Project Structure
-
+### phase2-fullstack/backend/app/main.py (uvicorn app.main:app)
+The backend must follow this exact structure:
 ```
-backend/
-├── app/
-│   ├── main.py                 # FastAPI app + CORS
-│   ├── config.py               # Settings (DATABASE_URL, SECRET_KEY)
-│   ├── database.py             # Engine, session, create_db_and_tables
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── user.py
-│   │   └── todo.py
-│   ├── schemas/
-│   │   ├── __init__.py
-│   │   ├── user.py             # UserCreate, UserResponse
-│   │   └── todo.py             # TodoCreate, TodoUpdate, TodoResponse
-│   ├── routers/
-│   │   ├── __init__.py
-│   │   ├── auth.py             # /auth/register, /auth/login
-│   │   └── todos.py            # /todos CRUD
-│   ├── dependencies/
-│   │   ├── auth.py             # get_current_user
-│   │   └── database.py         # get_session
-│   └── utils/
-│       └── security.py         # hash_password, verify_password, create_token
-├── alembic/
-│   ├── env.py
-│   └── versions/
-├── tests/
-│   ├── test_auth.py
-│   ├── test_todos.py
-│   └── conftest.py
-├── .env
+phase2-fullstack/backend/     ← Working directory for Uvicorn
+├── app/                      ← Python package (importable as 'app')
+│   ├── __init__.py          ← Required: Makes 'app' a package
+│   ├── main.py              ← FastAPI instance defined here as 'app'
+│   ├── config.py            ← Database configuration for Neon
+│   └── ...
 ├── requirements.txt
 └── alembic.ini
 ```
 
-### Database Connection
+**Critical Requirements**:
+1. The file `phase2-fullstack/backend/app/__init__.py` **must exist** (can be empty)
+2. The file `phase2-fullstack/backend/app/main.py` must contain:
+   ```python
+   from fastapi import FastAPI
 
-```python
-# app/database.py
-from sqlmodel import create_engine, Session, SQLModel
-from app.config import settings
+   app = FastAPI(title="Todo API", version="1.0.0")
+   # ... rest of application setup
+   ```
+3. All imports must be relative to the `app` package:
+   - ✅ Correct: `from app.routers import todos`
+   - ✅ Correct: `from app.models.user import User`
+   - ❌ Wrong: `from routers import todos`
+   - ❌ Wrong: `from models.user import User`
+4. Uvicorn must be run from `backend/` directory with: `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
+5. Database must use Neon PostgreSQL URL from .env (no local SQLite files)
 
-engine = create_engine(
-    settings.DATABASE_URL,
-    echo=settings.DEBUG,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-    connect_args={"sslmode": "require"}
-)
+### Standard Package Structure
+- Proper Python package with `__init__.py` files
+- Separation of concerns (models, schemas, routers, dependencies, utils)
+- FastAPI with dependency injection
+- SQLModel for database operations
 
-def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
+---
 
-def get_session():
-    with Session(engine) as session:
-        yield session
+## Frontend Architecture
+
+### Advanced Responsive Task Table
+- **Responsive Design**: Table on desktop (1024px+), cards on mobile (<768px), hybrid on tablet
+- **Search Functionality**: Real-time search by title with debounced input (300ms delay)
+- **Filtering**: Multi-select filters for status, priority, tags with visual chips
+- **Sorting**: Click column headers to sort (ID, Title, Priority, Date) with visual indicators (arrows)
+- **Actions**: Inline edit, delete, toggle complete with icon buttons and tooltips
+- **Visual Indicators**: Color-coded priorities, strikethrough for completed tasks, subtle animations
+- **Pagination**: 20 items per page with navigation controls and page number display
+- **Hydration Error Prevention**: Proper SSR handling with useEffect for client-only code, static generation where possible, no random/Date.now() in SSR, consistent date formatting, valid HTML nesting
+- **Empty States**: Attractive empty state with illustration and CTA when no tasks
+- **Loading States**: Skeleton loaders during data fetch, smooth transitions
+
+### High-Quality UI Components
+- **Priority Badges**:
+  - High: Red gradient with border, icon, and hover scale effect
+  - Medium: Yellow/amber gradient with border and icon
+  - Low: Green gradient with border and icon
+  - All badges: Rounded-full, font-semibold, transition-all for smooth effects
+
+- **Tag Pills**:
+  - Multi-color system (8 colors: blue, purple, pink, indigo, green, yellow, red, gray)
+  - Rounded-full shape with border
+  - Hover effects (scale, brightness change)
+  - Interactive (clickable to filter by tag)
+  - Max 10 tags per task with overflow indicator
+
+- **Status Indicators**:
+  - Completed: Strikethrough text, reduced opacity, checkmark icon, green accent
+  - Incomplete: Full opacity, checkbox unchecked, default styling
+  - Toggle animation: Smooth transition between states
+
+- **Interactive Elements**:
+  - Hover states: Scale transforms, shadow changes, color shifts
+  - Focus states: Ring outline for accessibility (ring-4, ring-offset-2)
+  - Active states: Slight scale down for press effect
+  - Disabled states: Reduced opacity, no pointer events
+
+- **High-Quality Design Features**:
+  - Modern gradients for headers and CTAs (from-blue-500 to-purple-600)
+  - Consistent spacing with Tailwind scale (p-4, p-6, gap-4)
+  - Smooth transitions (duration-200, duration-300)
+  - Box shadows for depth (shadow-md, shadow-lg, shadow-xl)
+  - Rounded corners (rounded-lg for cards, rounded-full for badges)
+  - Dark mode support with class-based toggling
+  - Responsive typography (text-sm on mobile, text-base on desktop)
+  - Accessible color contrasts (WCAG AA compliant)
+
+- **Form Validation UI**:
+  - Real-time validation with error messages below fields
+  - Success states with green checkmarks
+  - Error states with red borders and error icons
+  - Loading states with spinners and disabled buttons
+  - Character counters for limited-length fields
+
+---
+
+## UI Error Fixes & Upgrades
+
+### Fix: "[object Object]" Display Error
+- **Issue**: Form labels and UI text showing "[object Object]" instead of actual values
+- **Root Cause**: Rendering JavaScript objects directly in JSX text nodes instead of strings
+- **Common Patterns That Cause This Error**:
+  ```tsx
+  // ❌ WRONG - Renders "[object Object]"
+  <label>{user}</label>                    // user is an object
+  <span>{formData}</span>                  // formData is an object
+  <p>Priority: {task.priority}</p>         // if task.priority is an object
+  <div>{tags}</div>                        // if tags is an array of objects
+
+  // ✅ CORRECT - Renders actual values
+  <label>{user.name}</label>               // Access string property
+  <span>{formData.email}</span>            // Access string property
+  <p>Priority: {task.priority.level}</p>   // Access nested string
+  <div>{tags.map(t => t.name).join(', ')}</div>  // Convert to strings
+  ```
+
+- **Solution Requirements**:
+  1. **Never render objects directly**: Always access specific string properties
+  2. **For arrays of objects**: Map to string properties or use .map() to render components
+  3. **For debugging**: Use `JSON.stringify(obj, null, 2)` in `<pre>` tags only for development
+  4. **Type checking**: Use TypeScript to catch these errors at compile time
+  5. **Validation**: Add runtime checks for object types before rendering
+
+- **Implementation Checklist**:
+  - [ ] Audit all form labels to ensure they use `user.name`, `user.email` (not `user`)
+  - [ ] Check all task displays use `task.title`, `task.description` (not `task`)
+  - [ ] Verify priority displays use string values like `task.priority` as enum string (not object)
+  - [ ] Ensure tags render as `tags.map(tag => <span key={tag}>{tag}</span>)` (not `{tags}`)
+  - [ ] Add TypeScript strict mode to catch object-in-text-node errors
+  - [ ] Test all forms with real data to verify no "[object Object]" appears
+
+### React Hydration Error Resolution
+- **Issue**: "A tree hydrated but some attributes didn't match" error occurs when server-rendered HTML doesn't match client expectations
+- **Root Cause**: Client/server branch usage, variable input like Date.now(), date formatting in locale, external data without snapshot, invalid HTML nesting, or browser extensions
+- **Solution Requirements**:
+  - Use useEffect for client-only code to prevent SSR conflicts
+  - Implement static generation where possible
+  - Avoid random/Date.now() in SSR components
+  - Ensure consistent date formatting between server and client
+  - Maintain valid HTML nesting structure
+  - Handle locale-specific formatting properly
+
+### High-Quality Frontend UI Upgrade Requirements
+
+#### Design System Foundation
+- **Color Palette**: Define primary, secondary, accent, success, warning, error colors with dark mode variants
+- **Typography Scale**: Establish consistent font sizes (text-xs to text-4xl), line heights, and font weights
+- **Spacing System**: Use Tailwind's spacing scale consistently (space-1 to space-16)
+- **Border Radius**: Standard radius values (rounded-sm, rounded-md, rounded-lg, rounded-xl)
+- **Shadows**: Elevation system with shadow-sm, shadow-md, shadow-lg, shadow-xl
+
+#### Modern Component Styling
+
+**Task Table (Desktop)**:
+```tsx
+// High-quality table with modern design
+<table className="w-full border-collapse bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg">
+  <thead className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+    <tr>
+      <th className="px-6 py-4 text-left font-semibold text-sm uppercase tracking-wider hover:bg-blue-600 cursor-pointer transition-colors">
+        Title
+      </th>
+      {/* More columns with same styling */}
+    </tr>
+  </thead>
+  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
+      {/* Row content */}
+    </tr>
+  </tbody>
+</table>
 ```
 
-### Dependency Injection
+**Task Cards (Mobile)**:
+```tsx
+// Beautiful responsive cards for mobile view
+<div className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 p-6 border border-gray-200 dark:border-gray-700">
+  <div className="flex items-start justify-between mb-4">
+    <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate flex-1">
+      {task.title}
+    </h3>
+    <PriorityBadge priority={task.priority} />
+  </div>
+  {/* More card content */}
+</div>
+```
 
-All routes use FastAPI dependencies:
-- `session: Session = Depends(get_session)` - Database session
-- `current_user: User = Depends(get_current_user)` - Authenticated user
+**Priority Badges with Enhanced Styling**:
+```tsx
+// Color-coded priority badges with modern design
+const priorityStyles = {
+  high: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-200',
+  medium: 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-200',
+  low: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-200'
+};
+
+<span className={`px-3 py-1 rounded-full text-xs font-semibold border ${priorityStyles[priority]} transition-all hover:scale-105`}>
+  {priority.toUpperCase()}
+</span>
+```
+
+**Tag Pills with Interactive Design**:
+```tsx
+// Colorful, interactive tag pills
+const tagColors = ['blue', 'purple', 'pink', 'indigo', 'green', 'yellow', 'red', 'gray'];
+
+<div className="flex flex-wrap gap-2">
+  {tags.map((tag, index) => (
+    <span
+      key={tag}
+      className={`px-3 py-1 rounded-full text-xs font-medium bg-${tagColors[index % tagColors.length]}-100 text-${tagColors[index % tagColors.length]}-700 border border-${tagColors[index % tagColors.length]}-300 hover:bg-${tagColors[index % tagColors.length]}-200 transition-colors cursor-pointer`}
+    >
+      {tag}
+    </span>
+  ))}
+</div>
+```
+
+**Form Inputs with Modern Styling**:
+```tsx
+// Beautiful form inputs with focus states
+<input
+  type="text"
+  className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
+  placeholder="Enter task title..."
+/>
+```
+
+**Buttons with Visual Feedback**:
+```tsx
+// Primary button with hover and active states
+<button className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-500/50">
+  Add Task
+</button>
+
+// Secondary button
+<button className="px-6 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 transition-all duration-200">
+  Cancel
+</button>
+
+// Danger button
+<button className="px-6 py-3 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200">
+  Delete
+</button>
+```
+
+#### Dark Mode Implementation
+```tsx
+// Dark mode toggle with smooth transition
+<button
+  onClick={toggleDarkMode}
+  className="p-3 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300"
+>
+  {isDark ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+</button>
+
+// Add to tailwind.config.js
+module.exports = {
+  darkMode: 'class', // Enable class-based dark mode
+  // ... rest of config
+}
+
+// Add to root layout
+<html className={isDarkMode ? 'dark' : ''}>
+```
+
+#### Animations & Transitions
+- **Page Transitions**: Smooth fade-in on route changes (200ms ease-in-out)
+- **List Animations**: Stagger animation for task list items (framer-motion or CSS)
+- **Modal Animations**: Scale and fade animations for dialogs
+- **Loading States**: Skeleton screens and spinners with pulse animation
+- **Micro-interactions**: Button press effects, hover scale transforms, ripple effects
+
+#### Toast Notifications
+```tsx
+// Beautiful toast notifications
+<div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-l-4 border-green-500 p-4 flex items-center gap-3 min-w-[300px]">
+    <CheckCircleIcon className="w-6 h-6 text-green-500" />
+    <div>
+      <p className="font-semibold text-gray-900 dark:text-white">Success</p>
+      <p className="text-sm text-gray-600 dark:text-gray-400">Task created successfully</p>
+    </div>
+  </div>
+</div>
+```
+
+#### Responsive Layout
+- **Mobile (320px-767px)**: Single column, card layout, bottom navigation, hamburger menu
+- **Tablet (768px-1023px)**: Two-column grid, condensed table, side navigation
+- **Desktop (1024px+)**: Full table view, sidebar filters, multi-column layout
+
+#### UI Requirements Checklist
+- [ ] Implement consistent color palette with dark mode support
+- [ ] Use gradient backgrounds for headers and primary CTAs
+- [ ] Add hover effects to all interactive elements (scale, shadow, color)
+- [ ] Implement smooth transitions (200-300ms) for all state changes
+- [ ] Use rounded corners consistently (rounded-lg for cards, rounded-full for badges)
+- [ ] Add drop shadows for depth (shadow-md for cards, shadow-lg for modals)
+- [ ] Implement loading skeletons for async content
+- [ ] Add empty states with illustrations and helpful CTAs
+- [ ] Use icons consistently (Heroicons or Lucide React recommended)
+- [ ] Implement toast notifications for user feedback
+- [ ] Add confirmation modals for destructive actions
+- [ ] Ensure all forms have proper validation states (error borders, success checkmarks)
+- [ ] Implement dark mode toggle with smooth transition
+- [ ] Add keyboard shortcuts for power users
+- [ ] Ensure WCAG 2.1 AA accessibility compliance
+
+---
+
+## Middleware Migration: From 'middleware' to 'proxy'
+
+### Issue: Next.js Middleware Deprecation
+- **Problem**: The "middleware" file convention is deprecated in Next.js
+- **Warning**: "The 'middleware' file convention is deprecated. Please use 'proxy' instead."
+- **Impact**: Current `middleware.ts` file needs to be replaced with the new proxy pattern
+
+### Solution: Proxy Pattern Implementation
+- **Replace**: `middleware.ts` with API routes or server actions for auth protection
+- **New Approach**: Use `app/api/auth/proxy/route.ts` or server actions for route protection
+- **Auth Protection**: Implement authentication checks using Next.js App Router server components
+- **Route Guarding**: Use server-side authentication in layout.tsx or page.tsx files
+
+### Migration Requirements
+- **Remove**: Legacy `middleware.ts` file after implementing proxy pattern
+- **Implement**: API route handlers using the new proxy approach
+- **Preserve**: All existing authentication and route protection functionality
+- **Test**: Ensure all protected routes continue to work as expected
 
 ---
 
 ## API Endpoints
 
-### Base URL
-- **Development**: `http://localhost:8000`
-- **Production**: `https://api.yourdomain.com` (Railway/Render)
+### Table of Endpoints
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/auth/register` | No | Create new user with email, password, name |
+| POST | `/auth/login` | No | Login user with email, password, return JWT |
+| GET | `/todos` | Yes | Get all user's todos with query params |
+| POST | `/todos` | Yes | Create new todo item |
+| GET | `/todos/{id}` | Yes | Get single todo item |
+| PUT | `/todos/{id}` | Yes | Update todo item |
+| DELETE | `/todos/{id}` | Yes | Delete todo item |
+| POST | `/todos/{id}/toggle` | Yes | Toggle completed status |
 
-### Endpoints Table
-
-| Method | Endpoint | Auth | Description | Request Body | Response | Status Codes |
-|--------|----------|------|-------------|--------------|----------|--------------|
-| POST | `/auth/register` | No | Create new user | `{email, password, name}` | `{id, email, name, created_at}` | 201, 400 (duplicate email) |
-| POST | `/auth/login` | No | Login user | `{email, password}` | `{access_token, token_type}` | 200, 401 (invalid creds) |
-| GET | `/todos` | Yes | Get all user's todos | Query params: `skip`, `limit`, `completed`, `priority`, `search`, `sort_by`, `sort_order` | `[{id, title, ...}]` | 200, 401 |
-| POST | `/todos` | Yes | Create new todo | `{title, description?, priority?, tags?}` | `{id, title, ..., user_id}` | 201, 400 (validation), 401 |
-| GET | `/todos/{id}` | Yes | Get single todo | - | `{id, title, ..., user_id}` | 200, 404 (not found or not owned), 401 |
-| PUT | `/todos/{id}` | Yes | Update todo | `{title?, description?, priority?, tags?, completed?}` | `{id, title, ..., updated_at}` | 200, 404, 400, 401 |
-| DELETE | `/todos/{id}` | Yes | Delete todo | - | `null` | 204, 404, 401 |
-| POST | `/todos/{id}/toggle` | Yes | Toggle completed | - | `{id, completed, ...}` | 200, 404, 401 |
-
-### Query Parameters (GET /todos)
-
+### Query Parameters for GET /todos
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `skip` | int | 0 | Pagination offset |
@@ -720,436 +639,259 @@ All routes use FastAPI dependencies:
 | `sort_by` | str | created_at | Sort field (created_at, priority, title) |
 | `sort_order` | str | desc | Sort direction (asc/desc) |
 
-### Example Requests
-
-**Register**
-```bash
-POST /auth/register
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "SecurePass123",
-  "name": "John Doe"
-}
-```
-
-**Login**
-```bash
-POST /auth/login
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "SecurePass123"
-}
-
-Response:
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "token_type": "bearer"
-}
-```
-
-**Create Todo**
-```bash
-POST /todos
-Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
-Content-Type: application/json
-
-{
-  "title": "Buy groceries",
-  "description": "Milk, eggs, bread",
-  "priority": "high",
-  "tags": ["shopping", "urgent"]
-}
-```
-
-**Get Todos with Filters**
-```bash
-GET /todos?completed=false&priority=high&search=grocery&sort_by=created_at&sort_order=desc
-Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
-```
-
 ---
 
 ## Feature Specifications
 
 ### Feature 1: User Registration
-
 **User Story**: As a new user, I want to create an account so that I can manage my personal todo list.
 
 **UI Description**:
 - Page route: `/register`
-- Form fields:
-  - Name (text input, required, max 255 chars)
-  - Email (email input, required, validation for format)
-  - Password (password input, required, min 8 chars, show strength indicator)
-  - Confirm Password (password input, must match password)
-  - Submit button (disabled until valid)
-- Link to login page: "Already have an account? Log in"
-- Error messages displayed inline and as toast
+- Form fields with proper JSX rendering:
+  ```tsx
+  // ✅ CORRECT - Render string values, not objects
+  <input
+    name="name"
+    value={formData.name}  // String property, not formData object
+    onChange={(e) => setFormData({...formData, name: e.target.value})}
+    placeholder="Enter your name"
+  />
+  <input
+    name="email"
+    type="email"
+    value={formData.email}  // String property, not formData object
+    onChange={(e) => setFormData({...formData, email: e.target.value})}
+    placeholder="Enter your email"
+  />
+  <input
+    name="password"
+    type="password"
+    value={formData.password}  // String property, not formData object
+    onChange={(e) => setFormData({...formData, password: e.target.value})}
+    placeholder="Enter password (min 8 chars)"
+  />
+  // Display user feedback with strings only
+  {error && <p className="text-red-600">{error.message}</p>}  // error.message, not error
+  {user && <p>Welcome, {user.name}!</p>}  // user.name, not user
+  ```
+- Form fields: Name (text input, required, max 255 chars), Email (email input, required, unique), Password (password input, required, min 8 chars, show strength), Confirm password
+- Submit button with loading state and proper disabled attribute
+- Link to login page with proper href
+- Error display for duplicate email or validation failures using error.message strings
+- **CRITICAL**: All form labels, placeholders, and error messages must render string values, never objects
 
-**Inputs**:
-- `name`: string (1-255 chars, no leading/trailing whitespace)
-- `email`: string (valid email format, unique in database)
-- `password`: string (8+ chars, must include letter and number)
-- `confirm_password`: string (must match password)
-
-**Outputs**:
-- Success: Redirect to `/login` with success message "Account created! Please log in."
-- Error: Display error message (e.g., "Email already registered")
-
-**Edge Cases**:
-1. Email already exists → 400 Bad Request, message: "Email already registered"
-2. Password too weak → Frontend validation prevents submit
-3. Passwords don't match → Frontend validation prevents submit
-4. Empty fields → Frontend validation prevents submit
-5. Network error → Show error toast, allow retry
-
-**Acceptance Criteria**:
-- [ ] User can submit valid registration form
-- [ ] Email uniqueness enforced (backend returns 400 for duplicates)
-- [ ] Password hashed with bcrypt before storage (never stored in plain text)
-- [ ] User redirected to login after successful registration
-- [ ] Error messages clear and actionable
-- [ ] Form accessible (keyboard navigation, screen reader labels)
-
----
+**API Description**:
+- Endpoint: POST /auth/register
+- Request: `{email, password, name}`
+- Response: `{id, email, name, created_at}`
+- Status: 201 Created, 400 Bad Request (duplicate email)
 
 ### Feature 2: User Login
-
 **User Story**: As a registered user, I want to log in so that I can access my todo list.
 
 **UI Description**:
 - Page route: `/login`
-- Form fields:
-  - Email (email input, required)
-  - Password (password input, required)
-  - Submit button
-- Link to registration: "Don't have an account? Sign up"
-- Error message displayed for invalid credentials
+- Form fields: Email (email input, required), Password (password input, required)
+- Submit button with loading state
+- Link to registration page
+- Error display for invalid credentials
 
-**Inputs**:
-- `email`: string
-- `password`: string
+**API Description**:
+- Endpoint: POST /auth/login
+- Request: `{email, password}`
+- Response: `{access_token, token_type}`
+- Status: 200 OK, 401 Unauthorized (invalid credentials)
 
-**Outputs**:
-- Success: JWT token stored in localStorage, redirect to `/dashboard`
-- Error: "Invalid email or password" (don't reveal which is wrong)
-
-**Edge Cases**:
-1. User doesn't exist → 401 Unauthorized
-2. Wrong password → 401 Unauthorized
-3. Account inactive (is_active=false) → 401 Unauthorized
-4. Rate limit exceeded (5 attempts/min) → 429 Too Many Requests
-5. Token storage fails → Show error, allow retry
-
-**Acceptance Criteria**:
-- [ ] User can login with valid credentials
-- [ ] JWT token stored in localStorage/cookies
-- [ ] Token included in Authorization header for all API requests
-- [ ] Invalid credentials return generic error (no user enumeration)
-- [ ] Rate limiting prevents brute force attacks
-- [ ] Token expiry handled (redirect to login when expired)
-
----
-
-### Feature 3: Add New Task
-
-**User Story**: As an authenticated user, I want to add a new task so that I can track things I need to do.
+### Feature 3: Advanced Task Table
+**User Story**: As a user, I want to see all my tasks in an organized table with advanced features so that I can efficiently manage them.
 
 **UI Description**:
-- Trigger: "Add Task" button on dashboard
-- Modal/form with fields:
-  - Title (text input, required, max 500 chars)
-  - Description (textarea, optional, max 5000 chars)
-  - Priority (dropdown: Low, Medium, High, default: Medium)
-  - Tags (multi-select or comma-separated input, max 10 tags)
-- Save and Cancel buttons
-- Loading state on submit
+- Page route: `/dashboard`
+- Advanced table with columns: ID, Title, Description, Priority, Tags, Status, Created Date
+- Search bar for real-time filtering
+- Filter sidebar with status, priority, and tags filters
+- Sortable column headers
+- Action buttons (edit, delete, toggle) for each row
+- Pagination controls
 
-**Inputs**:
-- `title`: string (1-500 chars, trimmed)
-- `description`: string (optional, max 5000 chars)
-- `priority`: enum ('low', 'medium', 'high')
-- `tags`: array of strings (max 10, each max 50 chars)
+**API Description**:
+- Endpoint: GET /todos
+- Query parameters: skip, limit, completed, priority, search, sort_by, sort_order
+- Response: `[{id, title, description, completed, priority, tags, created_at}, ...]`
+- Status: 200 OK
 
-**Outputs**:
-- Success: New todo appears in list, modal closes, success toast
-- Error: Error toast with message
-
-**Edge Cases**:
-1. Empty title → Frontend prevents submit
-2. Whitespace-only title → Backend returns 400 "Title cannot be empty"
-3. Title too long (>500 chars) → Frontend prevents submit, backend validates
-4. More than 10 tags → Frontend prevents adding more
-5. Network error during submit → Show error, keep modal open with data
-
-**Acceptance Criteria**:
-- [ ] Task created with all fields
-- [ ] Task auto-assigned to current user (user_id set from JWT)
-- [ ] Title trimmed and validated
-- [ ] Priority defaults to 'medium'
-- [ ] Tags deduplicated
-- [ ] Timestamps auto-generated (created_at, updated_at)
-- [ ] New task appears in list immediately (optimistic update or refetch)
-
----
-
-### Feature 4: View Task List
-
-**User Story**: As an authenticated user, I want to view all my tasks so that I can see what I need to do.
+### Feature 4: Create Task
+**User Story**: As a user, I want to add new tasks so that I can track things I need to do.
 
 **UI Description**:
-- Desktop: Table with columns (Checkbox, Title, Description, Priority, Tags, Actions)
-- Mobile: Card layout with all info stacked
-- Priority color-coded (high: red, medium: yellow, low: green)
-- Completed tasks have strikethrough or faded text
-- Tags displayed as colored chips
-- Actions: Edit (pencil icon), Delete (trash icon), Toggle (checkbox)
-- Pagination controls at bottom (showing "1-20 of 45 tasks")
+- Trigger: "Add Task" button opening modal/form
+- Form fields with proper JSX rendering:
+  ```tsx
+  // ✅ CORRECT - Always use string values in JSX
+  <input
+    value={formData.title}  // String property
+    onChange={(e) => setFormData({...formData, title: e.target.value})}
+  />
+  <select
+    value={formData.priority}  // String enum: 'low' | 'medium' | 'high'
+    onChange={(e) => setFormData({...formData, priority: e.target.value})}
+  >
+    <option value="low">Low</option>
+    <option value="medium">Medium</option>
+    <option value="high">High</option>
+  </select>
 
-**Inputs**:
-- Query params from FilterBar (search, completed, priority, tags)
-- Pagination params (skip, limit)
-- Sort params (sort_by, sort_order)
+  // ✅ CORRECT - Render tags as string array
+  <div className="flex flex-wrap gap-2">
+    {formData.tags.map((tag, index) => (
+      <span key={index} className="px-2 py-1 bg-blue-100 rounded-full">
+        {tag}  {/* String value, not object */}
+      </span>
+    ))}
+  </div>
 
-**Outputs**:
-- List of tasks matching filters
-- Total count for pagination
-- Empty state if no tasks
+  // ❌ WRONG - Never do this
+  <div>{formData}</div>  // Shows "[object Object]"
+  <div>{formData.tags}</div>  // Shows "tag1,tag2,tag3" (array toString)
+  ```
+- Form fields: Title (required, 1-500 chars), Description (optional), Priority (dropdown low/medium/high), Tags (multi-select or comma-separated)
+- Save and Cancel buttons with proper event handlers
+- Loading state on submit with disabled form during submission
+- **CRITICAL**: Priority must render as string enum ('low'|'medium'|'high'), tags must map to individual span elements
 
-**Edge Cases**:
-1. No tasks → Show empty state with "Add your first task" CTA
-2. All tasks filtered out → Show "No tasks match your filters"
-3. Loading state → Show skeleton/spinner
-4. Error fetching → Show error message with retry button
-5. Very long title/description → Truncate with "..." and show full in modal on click
+**API Description**:
+- Endpoint: POST /todos
+- Request: `{title, description?, priority?, tags?}`
+- Response: `{id, title, description, completed, priority, tags, created_at, updated_at}`
+- Status: 201 Created, 400 Bad Request (validation), 401 Unauthorized
 
-**Acceptance Criteria**:
-- [ ] Only current user's tasks displayed (user isolation)
-- [ ] Tasks sorted by created_at descending by default
-- [ ] Responsive layout (table on desktop, cards on mobile)
-- [ ] Pagination works (next/prev buttons, page numbers)
-- [ ] Loading and error states handled
-- [ ] Empty state guides user to create first task
-
----
-
-### Feature 5: Search and Filter Tasks
-
-**User Story**: As a user with many tasks, I want to search and filter so that I can find specific tasks quickly.
-
-**UI Description**:
-- Filter bar above task list with:
-  - Search input (placeholder: "Search tasks...")
-  - Status dropdown (All, Completed, Pending)
-  - Priority dropdown (All, Low, Medium, High)
-  - Tags multi-select dropdown (shows all unique tags from user's tasks)
-  - Clear filters button
-- Filters applied on change (debounced search)
-- Filter count badge (e.g., "3 filters active")
-
-**Inputs**:
-- `search`: string (searches in title, case-insensitive, partial match)
-- `completed`: boolean | null (null = all, true = completed, false = pending)
-- `priority`: 'low' | 'medium' | 'high' | null (null = all)
-- `tags`: array of strings (tasks with ANY of these tags)
-
-**Outputs**:
-- Filtered list of tasks
-- Message if no results: "No tasks match your search"
-
-**Edge Cases**:
-1. No results → Show empty state with suggestion to clear filters
-2. Multiple filters active → Combine with AND logic
-3. Search term with special chars → Escape properly to prevent SQL injection
-4. Very fast typing → Debounce search (300ms delay)
-5. Tags filter with no tasks → Show "No tasks with these tags"
-
-**Acceptance Criteria**:
-- [ ] Search filters by title (case-insensitive, partial match)
-- [ ] Status filter works (all/completed/pending)
-- [ ] Priority filter works (all/low/medium/high)
-- [ ] Tags filter works (OR logic: task has ANY selected tag)
-- [ ] Multiple filters combine with AND logic
-- [ ] Clear filters resets all filters
-- [ ] URL params updated (shareable filtered view)
-- [ ] Filters persist on page refresh (read from URL)
-
----
-
-### Feature 6: Update Task
-
-**User Story**: As a user, I want to edit a task so that I can update details or fix mistakes.
+### Feature 5: Update Task
+**User Story**: As a user, I want to edit my tasks so that I can update details or fix mistakes.
 
 **UI Description**:
-- Trigger: Click edit icon on task row
-- Inline edit (desktop) or modal (mobile)
-- Form pre-filled with current values
+- Trigger: Edit button on task row
+- Inline edit form or modal with pre-filled values
 - All fields editable (title, description, priority, tags, completed)
 - Save and Cancel buttons
+- Loading state on save
 
-**Inputs**:
-- `title`: string (optional, 1-500 chars)
-- `description`: string (optional, max 5000 chars)
-- `priority`: enum (optional)
-- `tags`: array of strings (optional)
-- `completed`: boolean (optional)
+**API Description**:
+- Endpoint: PUT /todos/{id}
+- Request: `{title?, description?, priority?, tags?, completed?}`
+- Response: `{id, title, description, completed, priority, tags, updated_at}`
+- Status: 200 OK, 400 Bad Request (validation), 401 Unauthorized, 404 Not Found
 
-**Outputs**:
-- Success: Task updated in list, form closes, success toast
-- Error: Error toast with message
-
-**Edge Cases**:
-1. No changes made → Save button disabled or shows "No changes"
-2. Another user's task → 404 Not Found (user isolation)
-3. Task deleted by another session → 404 Not Found, remove from list
-4. Empty title submitted → Validation error
-5. Network error → Show error, keep form open with unsaved changes
-
-**Acceptance Criteria**:
-- [ ] User can edit any field
-- [ ] Only changed fields sent to backend (PATCH behavior)
-- [ ] User isolation enforced (cannot edit other users' tasks)
-- [ ] updated_at timestamp refreshed
-- [ ] Validation same as create (title required, max lengths)
-- [ ] Optimistic update in UI (revert on error)
-
----
-
-### Feature 7: Delete Task
-
-**User Story**: As a user, I want to delete a task so that I can remove tasks I no longer need.
+### Feature 6: Delete Task
+**User Story**: As a user, I want to delete tasks so that I can remove items I no longer need.
 
 **UI Description**:
-- Trigger: Click delete icon on task row
-- Confirmation dialog: "Are you sure you want to delete this task? This cannot be undone."
+- Trigger: Delete button on task row
+- Confirmation dialog with warning message
 - Confirm and Cancel buttons
 - Loading state on confirm
-- Success toast after deletion
 
-**Inputs**:
-- `task_id`: integer
+**API Description**:
+- Endpoint: DELETE /todos/{id}
+- Response: `null`
+- Status: 204 No Content, 401 Unauthorized, 404 Not Found
 
-**Outputs**:
-- Success: Task removed from list, success toast "Task deleted"
-- Error: Error toast with message
+### Feature 7: Toggle Complete
+**User Story**: As a user, I want to mark tasks as complete/incomplete so that I can track my progress.
 
-**Edge Cases**:
-1. Another user's task → 404 Not Found (user isolation)
-2. Task already deleted → 404 Not Found, remove from UI
-3. User cancels confirmation → Dialog closes, no action
-4. Network error during delete → Show error, task remains in list
+**UI Description**:
+- Trigger: Checkbox in task row
+- Visual indication of completion status (strikethrough, color change)
+- Optimistic update for immediate feedback
 
-**Acceptance Criteria**:
-- [ ] Confirmation dialog prevents accidental deletion
-- [ ] Task deleted from database (hard delete)
-- [ ] User isolation enforced
-- [ ] Task removed from UI immediately after confirmation
-- [ ] Undo functionality (optional, requires soft delete)
+**API Description**:
+- Endpoint: POST /todos/{id}/toggle
+- Response: `{id, completed, updated_at}`
+- Status: 200 OK, 401 Unauthorized, 404 Not Found
 
 ---
 
-### Feature 8: Mark Task Complete/Incomplete
+## Setup & Running
 
-**User Story**: As a user, I want to mark tasks as complete so that I can track my progress.
+### Use Existing .env (CRITICAL: Preserve and Use Correctly)
+- Preserve existing .env file with Neon DATABASE_URL (never overwrite or ignore)
+- Use the same DATABASE_URL for Neon PostgreSQL connection (no local SQLite files)
+- Ensure .env file is properly loaded in all environments (development, testing, production)
+- Environment variables must be loaded before application startup
+- All sensitive data (DATABASE_URL, SECRET_KEY) must be stored in environment variables only
+- Never hardcode sensitive information in source code
 
-**UI Description**:
-- Trigger: Click checkbox next to task title
-- Checkbox checked = completed, unchecked = pending
-- Completed tasks styled differently (strikethrough, faded)
-- Toggle instant (optimistic update)
-- Undo toast shown briefly after toggle (optional)
+### Correct Uvicorn Command
+- Navigate to `phase2-fullstack/backend/` directory
+- Run: `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
+- This imports the 'app' object from 'app.main' module
+- The 'app' directory must contain __init__.py to be a Python package
+- The 'main.py' file must contain the FastAPI instance as 'app'
 
-**Inputs**:
-- `task_id`: integer
-- No body needed (endpoint toggles current state)
+### Development Setup
+```bash
+# 1. Clone repository
+git clone https://github.com/khawajanaqeeb/Q4-hackathon2-todo.git
+cd Q4-hackathon2-todo
 
-**Outputs**:
-- Success: Task completion status flipped, UI updated
-- Error: Revert to previous state, error toast
+# 2. Backend setup
+cd phase2-fullstack/backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
 
-**Edge Cases**:
-1. Rapid clicking → Debounce or disable during request
-2. Another user's task → 404 Not Found
-3. Network error → Revert optimistic update, show error
-4. Task deleted during toggle → 404, remove from UI
+# 3. Configure environment (use existing .env with Neon DATABASE_URL)
+# Ensure DATABASE_URL points to your Neon PostgreSQL instance
+# SECRET_KEY should be a 256-bit secret
 
-**Acceptance Criteria**:
-- [ ] Checkbox toggles completed state
-- [ ] Backend endpoint: POST /todos/{id}/toggle
-- [ ] Optimistic update in UI (instant feedback)
-- [ ] Revert on error
-- [ ] updated_at timestamp refreshed
-- [ ] Visual distinction for completed tasks (strikethrough)
+# 4. Run database migrations
+alembic upgrade head
 
----
+# 5. Start backend server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-### Feature 9: Sort Tasks
+# 6. Frontend setup (in new terminal)
+cd phase2-fullstack/frontend
+npm install
 
-**User Story**: As a user, I want to sort my tasks so that I can view them in my preferred order.
+# 7. Configure frontend environment
+# NEXT_PUBLIC_API_URL=http://localhost:8000
 
-**UI Description**:
-- Sort dropdown or column headers (table view)
-- Options:
-  - Newest first (default)
-  - Oldest first
-  - Priority (High → Low)
-  - Title (A-Z, Z-A)
-- Icon indicates current sort (arrow up/down)
-- Sort persists in URL params
-
-**Inputs**:
-- `sort_by`: 'created_at' | 'priority' | 'title'
-- `sort_order`: 'asc' | 'desc'
-
-**Outputs**:
-- Tasks reordered in list
-
-**Edge Cases**:
-1. Sort + filter combination → Both applied
-2. Invalid sort field → Backend returns 400 or ignores
-3. No tasks to sort → Empty state shown
-
-**Acceptance Criteria**:
-- [ ] Sort by created_at (newest/oldest)
-- [ ] Sort by priority (high → medium → low)
-- [ ] Sort by title (alphabetical A-Z, Z-A)
-- [ ] Sort works with filters (combined)
-- [ ] Sort persists on page refresh (URL params)
-- [ ] Default sort: created_at descending
+# 8. Start frontend server
+npm run dev
+```
 
 ---
 
-### Feature 10: Responsive Design
+## Acceptance Criteria
 
-**User Story**: As a user on any device, I want the app to work well so that I can manage tasks anywhere.
+### Works with Neon DB
+- ✅ All data stored in Neon PostgreSQL database
+- ✅ No local SQLite files used
+- ✅ Database connection uses SSL
+- ✅ Connection pooling configured
+- ✅ Migrations managed via Alembic
 
-**UI Description**:
-- Mobile (320px - 767px):
-  - Card layout for tasks
-  - Full-width forms
-  - Hamburger menu for filters
-  - Bottom tab navigation (if multi-page)
-- Tablet (768px - 1023px):
-  - Table layout with horizontal scroll
-  - Sidebar filters
-  - Touch-friendly buttons
-- Desktop (1024px+):
-  - Full table layout
-  - Fixed sidebar filters
-  - Hover states on buttons
-  - Keyboard shortcuts (optional)
+### Correct Structure
+- ✅ All code in phase2-fullstack/ directory
+- ✅ Backend in phase2-fullstack/backend/app/
+- ✅ Frontend in phase2-fullstack/frontend/
+- ✅ Specification in specs/phase-2/spec.md
+- ✅ Proper Python package structure with __init__.py files
 
-**Acceptance Criteria**:
-- [ ] App usable on mobile (320px width)
-- [ ] Layout adapts at breakpoints (320, 768, 1024px)
-- [ ] Touch targets min 44x44px (mobile)
-- [ ] No horizontal scroll on mobile
-- [ ] Forms full-width on mobile, centered on desktop
-- [ ] Lighthouse accessibility score 95+
+### Advanced Frontend
+- ✅ Responsive task table with ID, Title, Description, Priority, Tags, Status, Created Date
+- ✅ Real-time search functionality
+- ✅ Multiple filter options (status, priority, tags)
+- ✅ Sortable columns with click-to-sort
+- ✅ Priority color coding (red/yellow/green)
+- ✅ Tag chips display
+- ✅ Completed task visual indicators
+
+### Git Tagged v2.0-phase2
+- [ ] Create git tag v2.0-phase2 when Phase II is complete
+- [ ] Tag includes all Phase II features
+- [ ] Tag represents stable, working version
 
 ---
 
@@ -1252,6 +994,12 @@ alembic upgrade head
    - Full flow: register → login → create task → update → delete
    - Database transactions (rollback on error)
 
+**Testing Dependencies**:
+- pytest: Latest stable version
+- pytest-cov: For coverage reports
+- pytest-asyncio: For async tests
+- All testing dependencies must be compatible with Python 3.11+
+
 **Example Test**:
 ```python
 def test_create_todo_requires_auth(client):
@@ -1273,6 +1021,12 @@ def test_user_isolation(client, auth_headers_user1, auth_headers_user2):
 pytest tests/ -v --cov=app --cov-report=html
 ```
 
+**Testing Configuration**:
+- All tests must run successfully in cross-platform environments (Windows, macOS, Linux)
+- Test database connections must use Neon PostgreSQL (no SQLite for testing)
+- Test fixtures and setup must be compatible with async operations
+- Test coverage reports must meet 80%+ requirement
+
 ### Frontend Testing (Jest + React Testing Library)
 
 **Target Coverage**: 70%+
@@ -1287,6 +1041,13 @@ pytest tests/ -v --cov=app --cov-report=html
 2. **Integration Tests**:
    - Full flow: login → view tasks → add task → edit → delete
    - Filter + sort combinations
+
+**Testing Dependencies**:
+- Jest: Latest stable version compatible with React 19
+- @testing-library/react: `^15.0.0` or latest (mandatory for React 19 compatibility)
+- @testing-library/jest-dom: Latest stable version
+- @testing-library/user-event: Latest stable version
+- All testing dependencies must be compatible with React 19 ecosystem
 
 **Example Test**:
 ```tsx
@@ -1312,10 +1073,30 @@ test('login form submits with valid data', async () => {
 });
 ```
 
+**Dependency Requirements**:
+- Frontend must use React 19 compatible testing libraries: `@testing-library/react@^15.0.0` or latest
+- All testing dependencies must be compatible with React 19
+- No deprecated APIs or patterns from older React versions
+
 **Run Tests**:
 ```bash
 npm run test -- --coverage
 ```
+
+### Dependency Version Requirements
+
+**Frontend Dependencies**:
+- Next.js: `^16.0.0` or latest stable
+- React: `^19.0.0` (mandatory for compatibility)
+- React DOM: `^19.0.0` (mandatory for compatibility)
+- @testing-library/react: `^15.0.0` or latest (mandatory for React 19 compatibility)
+- All other dependencies must be compatible with React 19 ecosystem
+
+**Backend Dependencies**:
+- Python: `3.11+` (minimum)
+- FastAPI: Latest stable
+- SQLModel: Latest stable
+- All dependencies specified in requirements.txt with pinned versions for stability
 
 ### E2E Testing (Playwright)
 
@@ -1324,6 +1105,11 @@ npm run test -- --coverage
 2. Create task → view in list → edit → mark complete → delete
 3. Search and filter tasks
 4. Responsive behavior (mobile, tablet, desktop)
+
+**Testing Dependencies**:
+- Playwright: Latest stable version
+- @playwright/test: Latest stable version
+- All E2E testing dependencies must be compatible with React 19 and Next.js 16+
 
 **Example Test**:
 ```typescript
@@ -1376,22 +1162,51 @@ test('full task CRUD flow', async ({ page }) => {
 npx playwright test
 ```
 
+**Cross-Platform Testing**:
+- All E2E tests must pass on Windows, macOS, and Linux
+- Browser compatibility: Chrome, Firefox, and Safari (where applicable)
+- Responsive testing across device sizes
+
 ---
 
 ## Setup & Running Locally
 
 ### Prerequisites
-- **Node.js**: 18+ (for Next.js frontend)
+- **Node.js**: 18+ (for Next.js frontend, Node 20+ recommended for React 19 compatibility)
 - **Python**: 3.11+ (for FastAPI backend)
-- **PostgreSQL**: Neon account (or local PostgreSQL for development)
+- **PostgreSQL**: Neon account (no local SQLite files allowed)
 - **Git**: For version control
+- **Operating System**: Cross-platform support (Windows, macOS, Linux) - all scripts must be compatible
+
+### Troubleshooting Hydration Errors
+- **Issue**: "A tree hydrated but some attributes didn't match" error
+- **Common Causes**:
+  - Using Date.now() or other client-side only code during SSR
+  - Inconsistent date formatting between server and client
+  - Invalid HTML nesting in components
+  - Using browser APIs during server-side rendering
+- **Solutions**:
+  - Wrap client-only code in useEffect hooks
+  - Use dynamic imports with ssr: false for components that use browser APIs
+  - Ensure consistent formatting for dates and times
+  - Validate HTML structure in components
+  - Check for any random values generated during SSR
+
+### Troubleshooting Middleware Deprecation
+- **Issue**: "The 'middleware' file convention is deprecated. Please use 'proxy' instead."
+- **Solution**: Migrate from middleware.ts to the new proxy pattern using API routes or server actions
+- **Migration Steps**:
+  - Replace middleware.ts with API route handlers in app/api/ directory
+  - Use server actions for authentication checks instead of middleware
+  - Implement route protection using server components in layout.tsx
+  - Test all protected routes to ensure authentication still works
 
 ### Backend Setup
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/khawajanaqeeb/Q4-hackathon2-todo.git
-cd Q4-hackathon2-todo/backend
+cd Q4-hackathon2-todo/phase2-fullstack/backend
 
 # 2. Create virtual environment
 python -m venv venv
@@ -1400,14 +1215,17 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Create .env file
+# 4. Create .env file (IMPORTANT: Use Neon PostgreSQL URL, NO local SQLite files)
 cat > .env << EOF
-DATABASE_URL=postgresql://user:password@localhost/todoapp
+DATABASE_URL=postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require
 SECRET_KEY=$(openssl rand -hex 32)
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 DEBUG=true
 EOF
+
+# IMPORTANT: Ensure no local SQLite files are created during development
+# All data must be stored in Neon PostgreSQL database only
 
 # 5. Run migrations
 alembic upgrade head
@@ -1415,18 +1233,38 @@ alembic upgrade head
 # 6. (Optional) Seed database
 python scripts/seed.py
 
-# 7. Start server
-uvicorn app.main:app --reload --port 8000
+# 7. Start server (IMPORTANT: Must be run from backend/ directory)
+# Ensure you are in phase2-fullstack/backend/ before running this command
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+#        ^^^^^^^^^^^
+#        Imports 'app' instance from 'app.main' module
+#        Requires: phase2-fullstack/backend/app/__init__.py (makes 'app' a package)
+#                  phase2-fullstack/backend/app/main.py (contains 'app = FastAPI()')
 ```
 
 Backend runs at `http://localhost:8000`
 API docs at `http://localhost:8000/docs`
 
+**Troubleshooting ModuleNotFoundError**:
+- If you see "ModuleNotFoundError: No module named 'app'":
+  1. Verify you're in the `phase2-fullstack/backend/` directory (not `phase2-fullstack/`)
+  2. Verify `app/__init__.py` exists (can be empty, but must exist)
+  3. Verify `app/main.py` exists and contains `app = FastAPI(...)`
+  4. Check that all imports in your code use `from app.xxx import yyy` pattern
+
+**Windows-Specific Troubleshooting**:
+- Use PowerShell or Command Prompt instead of Git Bash for Windows compatibility
+- Ensure Python virtual environment is activated: `venv\Scripts\activate` (not `source venv/bin/activate`)
+- Use Windows-style paths in all commands
+- Ensure all scripts and dependencies are cross-platform compatible
+- Check that line endings are consistent (CRLF vs LF) across all files
+
 ### Frontend Setup
 
 ```bash
-# 1. Navigate to frontend
-cd ../frontend
+# 1. Navigate to frontend (from project root or backend directory)
+cd phase2-fullstack/frontend
+# OR from backend: cd ../frontend
 
 # 2. Install dependencies
 npm install
@@ -1460,17 +1298,17 @@ Frontend runs at `http://localhost:3000`
 2. **Tasks belong to exactly one user** (no shared/collaborative tasks in Phase II)
 3. **Tags are simple strings** (no tag management UI, users type tags manually)
 4. **No task due dates** (future enhancement)
-5. **No task priorities beyond low/medium/high** (no custom priorities)
-6. **No file attachments** (Phase II focuses on text-based tasks)
-7. **No real-time collaboration** (no WebSockets, users see their own data only)
-8. **No offline support** (requires internet connection, future enhancement)
-9. **No email verification** (users can register and login immediately)
-10. **No password reset** (future enhancement)
-11. **No user profile editing** (name/email fixed after registration)
-12. **No task archiving** (tasks are either active or deleted)
-13. **No notifications** (no email/push notifications for task updates)
-14. **No recurring tasks** (each task is one-time)
-15. **Frontend assumes modern browsers** (ES2020+, no IE11 support)
+5. **No file attachments** (Phase II focuses on text-based tasks)
+6. **No real-time collaboration** (no WebSockets, users see their own data only)
+7. **No offline support** (requires internet connection, future enhancement)
+8. **No email verification** (users can register and login immediately)
+9. **No password reset** (future enhancement)
+10. **No user profile editing** (name/email fixed after registration)
+11. **No task archiving** (tasks are either active or deleted)
+12. **No notifications** (no email/push notifications for task updates)
+13. **No recurring tasks** (each task is one-time)
+14. **Frontend assumes modern browsers** (ES2020+, no IE11 support)
+15. **Neon PostgreSQL is the only database** (no local SQLite files)
 
 ---
 
@@ -1480,6 +1318,8 @@ Frontend runs at `http://localhost:3000`
 - Backend test coverage: 80%+
 - Frontend test coverage: 70%+
 - API response time: <200ms (p95)
+- Page load time: <3 seconds for initial render
+- Concurrent user support: 1000+ simultaneous users
 - Lighthouse performance: 90+
 - Lighthouse accessibility: 95+
 - Zero critical security vulnerabilities (OWASP Top 10)
@@ -1521,6 +1361,36 @@ Future enhancements for Phase III or beyond:
 
 ---
 
-**End of Specification**
+## Clarifications
 
-This specification provides a comprehensive blueprint for implementing Phase II of the todo application. All agents and skills referenced are available in `.claude/agents/` and `.claude/skills/` directories.
+### Session 2026-01-03
+- Q: What are specific performance targets? → A: API response time <200ms p95, page load time <3s, support 1000+ concurrent users
+- Q: What are specific JWT security requirements? → A: HS256 algorithm, 256-bit secret, 30-min expiration with refresh tokens, secure storage
+- Q: What are error handling and logging requirements? → A: Standard HTTP status codes, consistent error format, audit logging for auth failures
+
+## Next Steps
+
+### Implementation Path
+1. **/sp.plan** → Generate implementation plan based on this specification
+2. **/sp.tasks** → Generate atomic task breakdown for implementation
+3. **/sp.implement** → Execute implementation using agents and skills
+
+### Use Agents/Skills
+- **Agents**: Use reusable agents for complex tasks (database schema, API endpoints, UI components)
+- **Skills**: Use building block skills for specific features (auth setup, UI generation, DB design)
+- **Subagents**: Delegate complex subtasks to specialized agents
+- **Building Blocks**: Assemble features from existing skills
+
+### Reusable Intelligence
+- **hackathon-nextjs-builder**: Generate frontend components
+- **hackathon-fastapi-master**: Build backend API endpoints
+- **hackathon-db-architect**: Design database schemas
+- **hackathon-auth-specialist**: Implement authentication
+- **hackathon-integration-tester**: Create full-stack tests
+- **nextjs-ui-generator**: Generate UI components
+- **fastapi-endpoint-builder**: Build API endpoints
+- **sqlmodel-db-designer**: Create database models
+- **better-auth-setup**: Implement authentication
+- **fullstack-consistency-checker**: Verify API contracts
+
+This specification provides a comprehensive blueprint for implementing Phase II of the todo application with all corrections and improvements. All agents and skills referenced are available in `.claude/agents/` and `.claude/skills/` directories.

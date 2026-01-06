@@ -1,0 +1,469 @@
+openapi: 3.0.3
+info:
+  title: Todo Application Todos API
+  description: API endpoints for todo management in the Phase II Todo application
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://your-backend-domain.com
+    description: Production server
+
+paths:
+  /todos:
+    get:
+      summary: Get user's todos
+      description: Retrieve all todos for the authenticated user with optional filtering, sorting, and pagination
+      tags:
+        - Todos
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: skip
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of records to skip (for pagination)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Maximum number of records to return
+        - name: completed
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Filter by completion status (true for completed, false for incomplete, null for all)
+        - name: priority
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [low, medium, high]
+          description: Filter by priority level
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search in title content (case-insensitive)
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [created_at, priority, title]
+            default: created_at
+          description: Field to sort by
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort direction (ascending or descending)
+      responses:
+        '200':
+          description: Todos retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  todos:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TodoResponse'
+                  total:
+                    type: integer
+                    description: Total number of todos matching the criteria
+                    example: 150
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message
+                    example: "Not authenticated"
+    post:
+      summary: Create a new todo
+      description: Creates a new todo item for the authenticated user
+      tags:
+        - Todos
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoCreate'
+      responses:
+        '201':
+          description: Todo created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoResponse'
+        '400':
+          description: Bad request - validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message
+                    example: "Not authenticated"
+
+  /todos/{id}:
+    get:
+      summary: Get a specific todo
+      description: Retrieve a specific todo item by ID for the authenticated user
+      tags:
+        - Todos
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Todo ID
+      responses:
+        '200':
+          description: Todo retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoResponse'
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message
+                    example: "Not authenticated"
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message
+                    example: "Todo not found"
+    put:
+      summary: Update a todo
+      description: Update an existing todo item for the authenticated user
+      tags:
+        - Todos
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Todo ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoUpdate'
+      responses:
+        '200':
+          description: Todo updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoResponse'
+        '400':
+          description: Bad request - validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message
+                    example: "Not authenticated"
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message
+                    example: "Todo not found"
+    delete:
+      summary: Delete a todo
+      description: Delete an existing todo item for the authenticated user
+      tags:
+        - Todos
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Todo ID
+      responses:
+        '204':
+          description: Todo deleted successfully
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message
+                    example: "Not authenticated"
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message
+                    example: "Todo not found"
+
+  /todos/{id}/toggle:
+    post:
+      summary: Toggle todo completion status
+      description: Toggle the completion status of a todo item (completed/incomplete)
+      tags:
+        - Todos
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Todo ID
+      responses:
+        '200':
+          description: Todo completion status toggled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: Todo ID
+                    example: 1
+                  completed:
+                    type: boolean
+                    description: New completion status
+                    example: true
+                  updated_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp when todo was updated
+                    example: "2023-12-29T10:00:00Z"
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message
+                    example: "Not authenticated"
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message
+                    example: "Todo not found"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    TodoResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the todo
+          example: 1
+        user_id:
+          type: integer
+          description: ID of the user who owns this todo
+          example: 1
+        title:
+          type: string
+          description: Title of the todo item
+          example: "Buy groceries"
+        description:
+          type: string
+          description: Detailed description of the todo item
+          example: "Need to buy milk, bread, and eggs"
+        completed:
+          type: boolean
+          description: Whether the todo is completed
+          example: false
+        priority:
+          type: string
+          enum: [low, medium, high]
+          description: Priority level of the todo
+          example: "medium"
+        tags:
+          type: array
+          items:
+            type: string
+          description: Array of tags associated with the todo
+          example: ["shopping", "urgent"]
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the todo was created
+          example: "2023-12-29T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the todo was last updated
+          example: "2023-12-29T10:00:00Z"
+
+    TodoCreate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Title of the todo item (required, 1-500 chars)
+          example: "Buy groceries"
+        description:
+          type: string
+          maxLength: 5000
+          description: Detailed description of the todo item (optional)
+          example: "Need to buy milk, bread, and eggs"
+        priority:
+          type: string
+          enum: [low, medium, high]
+          default: "medium"
+          description: Priority level of the todo (default: medium)
+          example: "high"
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          maxItems: 10
+          description: Array of tags associated with the todo (max 10 tags)
+          example: ["shopping", "urgent"]
+
+    TodoUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Updated title of the todo item
+          example: "Buy groceries and cook dinner"
+        description:
+          type: string
+          maxLength: 5000
+          description: Updated description of the todo item
+          example: "Need to buy milk, bread, eggs, and ingredients for dinner"
+        completed:
+          type: boolean
+          description: Updated completion status
+          example: true
+        priority:
+          type: string
+          enum: [low, medium, high]
+          description: Updated priority level
+          example: "high"
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          maxItems: 10
+          description: Updated array of tags
+          example: ["shopping", "cooking", "urgent"]
+
+    ValidationError:
+      type: object
+      properties:
+        loc:
+          type: array
+          items:
+            type: string
+          description: Location of the validation error
+          example: ["body", "title"]
+        msg:
+          type: string
+          description: Error message
+          example: "ensure this value has at least 1 characters"
+        type:
+          type: string
+          description: Error type
+          example: "value_error.any_str.min_length"
