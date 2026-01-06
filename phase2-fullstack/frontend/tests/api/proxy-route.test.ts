@@ -18,7 +18,7 @@ jest.mock('next/server', () => ({
   },
 }));
 
-import { safeJsonParse, createErrorResponse, logBackendResponse } from '@/lib/api-utils';
+import { safeJsonParse, createErrorResponse, logBackendResponse } from '../../lib/api-utils';
 
 describe('API Proxy Error Handling', () => {
   // Suppress console warnings/errors during tests
