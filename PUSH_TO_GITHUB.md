@@ -11,22 +11,29 @@ All changes have been committed and are ready to push to your GitHub repository.
    - Updated frontend to use 'username' field
    - Created comprehensive documentation
 
-2. **API Routing Fix** (Latest)
+2. **API Routing Fix**
    - Fixed 404 errors on todo endpoints
    - Corrected proxy routing from `/api/auth/proxy/todos` to `/api/auth/todos`
    - Updated `buildBackendUrl` to only prepend `/auth` for auth routes
    - Todo routes now correctly forward to `/todos` (not `/auth/todos`)
 
-3. **Specs Reorganization**
+3. **Vercel Deployment Fix** (Latest - CRITICAL)
+   - Fixed module resolution error: "Can't resolve lib/api-utils"
+   - Updated `.gitignore` pattern from `lib-cov/` to `/lib-cov/`
+   - Force-added `lib/api-utils.ts` to Git tracking
+   - Build tested successfully (27.5s compile time)
+   - **Impact**: Unblocks all production deployments to Vercel
+
+4. **Specs Reorganization**
    - Moved `specs/001-fix-auth-422` → `specs/phase-2/001-fix-auth-422`
    - Moved `specs/002-use-email-password` → `specs/phase-2/002-use-email-password`
    - Moved prompt history to `history/prompts/phase-2/`
 
-4. **New Specification** (Branch: 002-use-email-password)
+5. **New Specification** (Branch: 002-use-email-password)
    - Spec for using `email` field directly (instead of `username`)
    - Complete documentation and implementation guide
 
-5. **All Project Files Synced**
+6. **All Project Files Synced**
    - Updated 165 files with latest changes
    - All documentation synchronized
    - Test files updated
@@ -34,12 +41,19 @@ All changes have been committed and are ready to push to your GitHub repository.
 ### 📦 Commits Ready to Push
 
 ```
+480b783 - Merge branch '001-fix-vercel-build' - Fix Vercel deployment build error
+6578d52 - fix: track lib/ source files by correcting .gitignore pattern
+7b3a99e - docs: add PHR for Vercel build failure diagnosis
+40325e3 - spec: fix Vercel deployment build error (module not found lib/api-utils)
+7053373 - docs: update push instructions with latest routing fix
 1f27128 - fix: correct API proxy routing for todos endpoints
 9a87222 - docs: add GitHub push instructions
 cb35559 - chore: sync all project files and documentation
 d42625c - chore: reorganize specs - move new features to specs/phase-2
 1529262 - fix: resolve 422 authentication errors with OAuth2PasswordRequestForm
 ```
+
+**Latest Critical Fix**: Vercel deployment module resolution error (commit 480b783)
 
 ---
 
@@ -110,13 +124,19 @@ git push origin main --force
 Once pushed, verify on GitHub:
 
 1. **Check Commits**: https://github.com/khawajanaqeeb/Q4-hackathon2-todo/commits/main
-   - Should see 5 new commits (1f27128, 9a87222, cb35559, d42625c, 1529262)
+   - Should see 10 new commits (latest: 480b783)
+   - Most critical: Vercel deployment fix (480b783, 6578d52)
 
-2. **Check Specs Folder**: https://github.com/khawajanaqeeb/Q4-hackathon2-todo/tree/main/specs/phase-2
-   - Should see `001-fix-auth-422/` folder
-   - Should see `002-use-email-password/` folder
+2. **Check Vercel Fix**: https://github.com/khawajanaqeeb/Q4-hackathon2-todo/tree/main/phase2-fullstack/frontend/lib
+   - Should see `api-utils.ts` file present (this was missing before!)
+   - Should see `api.ts` file present
+   - Check `.gitignore` has `/lib-cov/` with leading slash
 
-3. **Check Auth Code**: https://github.com/khawajanaqeeb/Q4-hackathon2-todo/blob/main/phase2-fullstack/backend/app/routers/auth.py
+3. **Check Specs Folders**:
+   - Phase 2: https://github.com/khawajanaqeeb/Q4-hackathon2-todo/tree/main/specs/phase-2
+   - Vercel Fix: https://github.com/khawajanaqeeb/Q4-hackathon2-todo/tree/main/specs/001-fix-vercel-build
+
+4. **Check Auth Code**: https://github.com/khawajanaqeeb/Q4-hackathon2-todo/blob/main/phase2-fullstack/backend/app/routers/auth.py
    - Should show OAuth2PasswordRequestForm implementation
 
 ---
