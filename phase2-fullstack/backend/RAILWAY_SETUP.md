@@ -48,15 +48,23 @@ Or use this one (for development only):
 7e9c6587d261ae0045fe2d1edf5d6c4092fbf2a78861bba727def768504b53dd
 ```
 
-## Step 3: Update CORS_ORIGINS
+## Step 3: Update CORS_ORIGINS (CRITICAL for Vercel)
 
-Once your Vercel frontend is deployed, update the `CORS_ORIGINS` variable:
+**IMPORTANT**: Your Vercel frontend needs permission to call your Railway backend!
+
+Once your Vercel frontend is deployed, update the `CORS_ORIGINS` variable in Railway:
 
 ```bash
-CORS_ORIGINS=https://your-app.vercel.app,http://localhost:3000
+# Include ALL these origins (comma-separated, no spaces):
+CORS_ORIGINS=http://localhost:3000,https://q4-hackathon2-todo-fullstack.vercel.app,https://q4-hackathon2-todo-fullstack-*.vercel.app
 ```
 
-You can add multiple origins separated by commas.
+**What this does**:
+- `http://localhost:3000` - Allows local development
+- `https://q4-hackathon2-todo-fullstack.vercel.app` - Your production Vercel URL
+- `https://q4-hackathon2-todo-fullstack-*.vercel.app` - Vercel preview deployments
+
+**Without this**: You'll get "Authentication service unavailable" errors in production!
 
 ## Step 4: Deploy
 
