@@ -78,10 +78,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Check for existing token on initial load
   useEffect(() => {
     // In the new proxy pattern, tokens are stored in cookies
-    // We'll check for authentication status using the proxy route
+    // We'll check for authentication status using the unified auth proxy
     const checkAuth = async () => {
       try {
-        const response = await fetch('/api/auth/proxy', {
+        const response = await fetch('/api/auth/verify', {
           method: 'GET',
         });
         if (response.ok) {
@@ -103,37 +103,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'LOGIN_START' });
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      // Use the unified auth proxy - it handles cookie setting automatically
+      // OAuth2PasswordRequestForm expects 'username' field (we pass email as username)
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          email,
+          username: email,  // OAuth2 standard uses 'username' field
           password,
         }),
       });
 
       if (response.ok) {
-        // Extract the access token from the response
+        // Token is now automatically set in httpOnly cookie by the proxy
         const tokenData = await response.json();
 
-        // Save the token as an httpOnly cookie via our API route
-        const setTokenResponse = await fetch('/api/auth/set-token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ access_token: tokenData.access_token }),
-        });
-
-        if (!setTokenResponse.ok) {
-          dispatch({ type: 'ERROR' });
-          throw new Error('Failed to save authentication token');
-        }
-
-        // Now verify the user with the token in the cookie
-        const userDataResponse = await fetch('/api/auth/proxy', {
+        // Verify the user with the token in the cookie
+        const userDataResponse = await fetch('/api/auth/verify', {
           method: 'GET',
         });
 
@@ -150,7 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         const errorData = await response.json();
         dispatch({ type: 'ERROR' });
-        throw new Error(errorData.detail || 'Login failed');
+        throw new Error(errorData.error || errorData.detail || 'Login failed');
       }
     } catch (error) {
       dispatch({ type: 'ERROR' });
@@ -168,7 +156,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'LOGIN_START' });
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+      // Use the unified auth proxy for registration
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -181,38 +170,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (response.ok) {
-        // After successful registration, log the user in
-        const loginResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+        // After successful registration, log the user in through the proxy
+        // OAuth2PasswordRequestForm expects 'username' field (we pass email as username)
+        const loginResponse = await fetch('/api/auth/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: new URLSearchParams({
-            email,
+            username: email,  // OAuth2 standard uses 'username' field
             password,
           }),
         });
 
         if (loginResponse.ok) {
-          // Extract the access token from the response
+          // Token is now automatically set in httpOnly cookie by the proxy
           const tokenData = await loginResponse.json();
 
-          // Save the token as an httpOnly cookie via our API route
-          const setTokenResponse = await fetch('/api/auth/set-token', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ access_token: tokenData.access_token }),
-          });
-
-          if (!setTokenResponse.ok) {
-            dispatch({ type: 'ERROR' });
-            throw new Error('Failed to save authentication token');
-          }
-
-          // Now verify the user with the token in the cookie
-          const userDataResponse = await fetch('/api/auth/proxy', {
+          // Verify the user with the token in the cookie
+          const userDataResponse = await fetch('/api/auth/verify', {
             method: 'GET',
           });
 
@@ -229,12 +205,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           const errorData = await loginResponse.json();
           dispatch({ type: 'ERROR' });
-          throw new Error(errorData.detail || 'Registration successful but login failed');
+          throw new Error(errorData.error || errorData.detail || 'Registration successful but login failed');
         }
       } else {
         const errorData = await response.json();
         dispatch({ type: 'ERROR' });
-        throw new Error(errorData.detail || 'Registration failed');
+        throw new Error(errorData.error || errorData.detail || 'Registration failed');
       }
     } catch (error) {
       dispatch({ type: 'ERROR' });

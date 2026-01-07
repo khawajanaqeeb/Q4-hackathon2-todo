@@ -24,7 +24,9 @@ from app.utils.security import (
     validate_password_strength
 )
 
-# Import limiter for rate limiting (avoid circular import)
+# Import limiter for rate limiting
+# Note: This creates a local instance. In production, consider using
+# request.app.state.limiter (set in main.py) for centralized config
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -97,19 +99,21 @@ from fastapi.security import OAuth2PasswordRequestForm
 @limiter.limit("5/minute")  # Rate limit login attempts to 5 per minute per IP
 async def login(
     request: Request,
-    email: str = Form(...),
-    password: str = Form(...),
+    form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session),
 ):
     """Authenticate user and return JWT access token.
 
-    Validates email and password, returns JWT token on success.
+    Uses OAuth2PasswordRequestForm which expects:
+    - username: User's email (we use email as username)
+    - password: User's password
+
+    Validates credentials and returns JWT token on success.
     Token expires after ACCESS_TOKEN_EXPIRE_MINUTES (default: 30).
 
     Args:
         request: FastAPI request object (for rate limiting)
-        email: User's email address (form field)
-        password: User's password (form field)
+        form_data: OAuth2 form data with username (email) and password
         session: Database session (injected)
 
     Returns:
@@ -118,6 +122,10 @@ async def login(
     Raises:
         HTTPException 401: Invalid credentials or inactive account
     """
+    # OAuth2PasswordRequestForm uses 'username' field, but we use email as username
+    email = form_data.username
+    password = form_data.password
+
     # Find user by email
     statement = select(User).where(User.email == email)
     user = session.exec(statement).first()
