@@ -76,10 +76,20 @@ function isPublicRoute(path: string): boolean {
 
 /**
  * Build backend URL from path and query params
- * Prepends /auth to all paths since backend expects /auth/* routes
+ * Prepends /auth only for auth-specific routes (login, register, refresh, verify, logout)
+ * Other routes (like /todos) go directly to their backend endpoints
  */
 function buildBackendUrl(path: string, searchParams: string): string {
-  return `${BACKEND_URL}/auth${path}${searchParams}`;
+  // Auth-specific routes need /auth prefix
+  const authRoutes = ['/login', '/register', '/refresh', '/verify', '/logout'];
+  const isAuthRoute = authRoutes.some(route => path === route || path.startsWith(route + '/'));
+
+  if (isAuthRoute) {
+    return `${BACKEND_URL}/auth${path}${searchParams}`;
+  }
+
+  // All other routes (todos, etc.) go directly
+  return `${BACKEND_URL}${path}${searchParams}`;
 }
 
 /**
