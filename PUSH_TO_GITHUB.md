@@ -11,16 +11,22 @@ All changes have been committed and are ready to push to your GitHub repository.
    - Updated frontend to use 'username' field
    - Created comprehensive documentation
 
-2. **Specs Reorganization**
+2. **API Routing Fix** (Latest)
+   - Fixed 404 errors on todo endpoints
+   - Corrected proxy routing from `/api/auth/proxy/todos` to `/api/auth/todos`
+   - Updated `buildBackendUrl` to only prepend `/auth` for auth routes
+   - Todo routes now correctly forward to `/todos` (not `/auth/todos`)
+
+3. **Specs Reorganization**
    - Moved `specs/001-fix-auth-422` → `specs/phase-2/001-fix-auth-422`
    - Moved `specs/002-use-email-password` → `specs/phase-2/002-use-email-password`
    - Moved prompt history to `history/prompts/phase-2/`
 
-3. **New Specification** (Branch: 002-use-email-password)
+4. **New Specification** (Branch: 002-use-email-password)
    - Spec for using `email` field directly (instead of `username`)
    - Complete documentation and implementation guide
 
-4. **All Project Files Synced**
+5. **All Project Files Synced**
    - Updated 165 files with latest changes
    - All documentation synchronized
    - Test files updated
@@ -28,6 +34,8 @@ All changes have been committed and are ready to push to your GitHub repository.
 ### 📦 Commits Ready to Push
 
 ```
+1f27128 - fix: correct API proxy routing for todos endpoints
+9a87222 - docs: add GitHub push instructions
 cb35559 - chore: sync all project files and documentation
 d42625c - chore: reorganize specs - move new features to specs/phase-2
 1529262 - fix: resolve 422 authentication errors with OAuth2PasswordRequestForm
@@ -88,7 +96,8 @@ git push origin main --force
 ### Modified Files
 - `phase2-fullstack/backend/app/routers/auth.py` (OAuth2 fix)
 - `phase2-fullstack/frontend/context/AuthContext.tsx` (username field)
-- `phase2-fullstack/frontend/app/api/auth/[...path]/route.ts` (new unified proxy)
+- `phase2-fullstack/frontend/app/api/auth/[...path]/route.ts` (unified proxy + routing fix)
+- `phase2-fullstack/frontend/lib/api.ts` (corrected proxy endpoint)
 - Many documentation and configuration files
 
 ### Deleted Files (Cleanup)
@@ -101,7 +110,7 @@ git push origin main --force
 Once pushed, verify on GitHub:
 
 1. **Check Commits**: https://github.com/khawajanaqeeb/Q4-hackathon2-todo/commits/main
-   - Should see 3 new commits (cb35559, d42625c, 1529262)
+   - Should see 5 new commits (1f27128, 9a87222, cb35559, d42625c, 1529262)
 
 2. **Check Specs Folder**: https://github.com/khawajanaqeeb/Q4-hackathon2-todo/tree/main/specs/phase-2
    - Should see `001-fix-auth-422/` folder
