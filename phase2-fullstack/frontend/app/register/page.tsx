@@ -48,7 +48,7 @@ export default function RegisterPage() {
         {/* Back to website link */}
         <Link
           href="/"
-          className="text-slate-300 hover:text-white text-sm flex items-center gap-2 mb-6 transition-all duration-300 hover:translate-x-1"
+          className="text-slate-200 hover:text-white text-sm flex items-center gap-2 mb-6 transition-all duration-300 hover:translate-x-1 font-medium"
           style={{
             background: 'rgba(255, 255, 255, 0.05)',
             backdropFilter: 'blur(10px)',
@@ -75,7 +75,7 @@ export default function RegisterPage() {
               <span className="text-blue-400 text-sm font-semibold uppercase tracking-wider">Start Your Journey</span>
             </div>
             <h1 className="text-4xl font-bold text-white mb-3">Create Account</h1>
-            <p className="text-slate-300 text-sm leading-relaxed">
+            <p className="text-slate-200 text-sm leading-relaxed">
               Join the elite circle of high-performers today.
             </p>
           </div>
@@ -93,7 +93,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-slate-300 text-sm font-semibold mb-2 uppercase tracking-wider">
+              <label className="block text-slate-200 text-sm font-semibold mb-2 uppercase tracking-wider">
                 Business Email
               </label>
               <input
@@ -108,7 +108,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-slate-300 text-sm font-semibold mb-2 uppercase tracking-wider">
+              <label className="block text-slate-200 text-sm font-semibold mb-2 uppercase tracking-wider">
                 Full Name
               </label>
               <input
@@ -123,7 +123,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-slate-300 text-sm font-semibold mb-2 uppercase tracking-wider">
+              <label className="block text-slate-200 text-sm font-semibold mb-2 uppercase tracking-wider">
                 Password
               </label>
               <input
@@ -138,7 +138,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-slate-300 text-sm font-semibold mb-2 uppercase tracking-wider">
+              <label className="block text-slate-200 text-sm font-semibold mb-2 uppercase tracking-wider">
                 Confirm Password
               </label>
               <input
@@ -152,17 +152,17 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div className="text-xs p-4 rounded-xl" style={{
+            <div className="text-xs p-4 rounded-xl font-medium" style={{
               background: 'rgba(255, 255, 255, 0.03)',
               backdropFilter: 'blur(10px)',
               WebkitBackdropFilter: 'blur(10px)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: 'rgba(255, 255, 255, 0.6)'
+              color: 'rgba(255, 255, 255, 0.7)'
             }}>
               BY CLICKING "CREATE WORKSPACE" YOU ARE AGREEING TO OUR{' '}
-              <span className="text-blue-400 cursor-pointer hover:text-blue-300 transition-colors duration-300">TERMS OF SERVICE</span>
+              <span className="text-blue-400 cursor-pointer hover:text-blue-300 transition-colors duration-300 font-semibold">TERMS OF SERVICE</span>
               {' '}AND{' '}
-              <span className="text-blue-400 cursor-pointer hover:text-blue-300 transition-colors duration-300">PRIVACY POLICY</span>
+              <span className="text-blue-400 cursor-pointer hover:text-blue-300 transition-colors duration-300 font-semibold">PRIVACY POLICY</span>
             </div>
 
             <button
@@ -177,7 +177,7 @@ export default function RegisterPage() {
           <div className="mt-8 pt-6 text-center" style={{
             borderTop: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
-            <p className="text-slate-300 text-sm">
+            <p className="text-slate-200 text-sm">
               Already have an account?{' '}
               <Link href="/login" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors duration-300">
                 Sign in instead
@@ -187,13 +187,13 @@ export default function RegisterPage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 flex justify-center gap-6 text-xs text-slate-400 uppercase tracking-wider">
+        <div className="mt-8 flex justify-center gap-6 text-xs text-slate-300 uppercase tracking-wider font-medium">
           <span>🔒 SOC2 Certified</span>
           <span>📊 ISO Certified</span>
           <span>⚡ 24/7 Support</span>
         </div>
 
-        <div className="mt-4 text-center text-xs text-slate-500 uppercase tracking-wider">
+        <div className="mt-4 text-center text-xs text-slate-400 uppercase tracking-wider font-medium">
           Bitcraft Institute © 2026
         </div>
       </div>

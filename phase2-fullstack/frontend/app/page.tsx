@@ -142,8 +142,8 @@ export default function HomePage() {
               <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-2xl">📋</span>
               </div>
-              <h1 className="text-2xl font-bold dark:text-white text-white">
-                Premium<span className="text-blue-500">Task</span>
+              <h1 className="text-2xl font-bold text-white">
+                Premium<span className="text-blue-400">Task</span>
               </h1>
             </div>
             <div className="flex items-center gap-4">
@@ -174,8 +174,8 @@ export default function HomePage() {
 
               {user ? (
                 <>
-                  <span className="dark:text-slate-400 text-white/90 text-sm">
-                    👤 <span className="dark:text-white text-white">{user.name}</span>
+                  <span className="text-white text-sm">
+                    👤 <span className="font-medium">{user.name}</span>
                   </span>
                   <button
                     onClick={handleLogout}
@@ -204,16 +204,16 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="stat-card">
-              <div className="dark:text-slate-400 text-gray-600 text-xs font-medium mb-1">TOTAL TASKS</div>
-              <div className="text-2xl font-bold dark:text-white text-gray-800">{todos.length}</div>
+              <div className="text-slate-300 text-xs font-semibold mb-1 uppercase tracking-wider">TOTAL TASKS</div>
+              <div className="text-2xl font-bold text-white">{todos.length}</div>
             </div>
             <div className="stat-card">
-              <div className="dark:text-slate-400 text-gray-600 text-xs font-medium mb-1">IN PROGRESS</div>
-              <div className="text-2xl font-bold text-orange-500">{todos.filter(t => !t.completed).length}</div>
+              <div className="text-slate-300 text-xs font-semibold mb-1 uppercase tracking-wider">IN PROGRESS</div>
+              <div className="text-2xl font-bold text-orange-400">{todos.filter(t => !t.completed).length}</div>
             </div>
             <div className="stat-card">
-              <div className="dark:text-slate-400 text-gray-600 text-xs font-medium mb-1">COMPLETED</div>
-              <div className="text-2xl font-bold text-green-500">{todos.filter(t => t.completed).length}</div>
+              <div className="text-slate-300 text-xs font-semibold mb-1 uppercase tracking-wider">COMPLETED</div>
+              <div className="text-2xl font-bold text-green-400">{todos.filter(t => t.completed).length}</div>
             </div>
           </div>
         </div>
@@ -226,9 +226,9 @@ export default function HomePage() {
             <h2 className="text-5xl font-bold text-white mb-4 leading-tight">
               Transform Chaos Into
               <br />
-              <span className="text-blue-500">Flawless Execution.</span>
+              <span className="text-blue-400">Flawless Execution.</span>
             </h2>
-            <p className="dark:text-slate-400 text-gray-600 text-lg mb-8 leading-relaxed">
+            <p className="text-slate-200 text-lg mb-8 leading-relaxed">
               The ultimate productivity powerhouse for elite performers. Military-grade security, blazing-fast sync, and laser-focused workflow automation.
             </p>
             <div className="flex justify-center gap-4">
@@ -296,7 +296,7 @@ export default function HomePage() {
             {/* Filter Controls */}
             <div className="premium-card">
               <div className="flex flex-wrap gap-3 items-center">
-                <span className="dark:text-slate-400 text-gray-600 text-xs font-medium uppercase tracking-wider">Filters:</span>
+                <span className="text-slate-300 text-xs font-semibold uppercase tracking-wider">Filters:</span>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value as 'all' | 'pending' | 'completed')}
@@ -350,17 +350,17 @@ export default function HomePage() {
                         type="checkbox"
                         checked={todo.completed}
                         onChange={() => handleToggle(todo.id)}
-                        className="w-5 h-5 mt-1 cursor-pointer rounded border-slate-600 bg-slate-900 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900"
+                        className="w-5 h-5 mt-1 cursor-pointer rounded border-slate-500 bg-slate-800/50 text-blue-500 focus:ring-blue-500"
                       />
                       <div className="flex-1 min-w-0">
-                        <h4 className={`text-base font-medium mb-2 ${
+                        <h4 className={`text-base font-semibold mb-2 ${
                           todo.completed ? 'line-through text-slate-500' : 'text-white'
                         }`}>
                           {todo.title}
                         </h4>
                         {todo.description && (
                           <p className={`text-sm mb-3 ${
-                            todo.completed ? 'line-through text-slate-600' : 'text-slate-400'
+                            todo.completed ? 'line-through text-slate-600' : 'text-slate-300'
                           }`}>
                             {todo.description}
                           </p>
@@ -411,12 +411,12 @@ export default function HomePage() {
       }}>
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex justify-between items-center text-sm">
-            <div className="flex gap-6 dark:text-slate-400 text-white/80">
+            <div className="flex gap-6 text-slate-300">
               <span>🔒 SECURE SSL</span>
               <span>📊 DATA ENCRYPTED</span>
               <span>⚡ 24/7 SUPPORT</span>
             </div>
-            <div className="dark:text-white text-white font-medium">
+            <div className="text-white font-semibold">
               BITCRAFT INSTITUTE © 2026
             </div>
           </div>
