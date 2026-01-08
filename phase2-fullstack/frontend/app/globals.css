@@ -15,75 +15,207 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  /* Dark mode (default) */
+  /* Dark mode (default) - Glassmorphic gradient background */
   body {
-    background: #000000;
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 50%, #16213e 100%);
     color: #ffffff;
+    position: relative;
   }
 
-  /* Light mode */
+  /* Animated gradient overlay for depth */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Light mode - Beautiful gradient with glassmorphism */
   :root:not(.dark) body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
     color: #1f2937;
+  }
+
+  :root:not(.dark) body::before {
+    background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
   }
 }
 
 @layer components {
-  /* Premium card - responsive to theme */
+  /* Premium card - Glassmorphism effect */
   .premium-card {
-    @apply rounded-lg shadow-xl p-4 transition-all duration-300;
-    @apply bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-blue-500/20;
+    @apply rounded-2xl shadow-2xl p-6 transition-all duration-300;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   }
 
   :root:not(.dark) .premium-card {
-    @apply bg-white/95 backdrop-blur-sm border-purple-100;
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
   }
 
-  /* Blue accent button */
+  /* Blue accent button with glassmorphism */
   .btn-primary {
-    @apply px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-all duration-200 shadow-md shadow-blue-500/30 text-sm;
+    @apply px-6 py-2.5 text-white font-medium rounded-xl transition-all duration-300 text-sm;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.8) 0%, rgba(139, 92, 246, 0.8) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(99, 102, 241, 0.4);
   }
 
   .btn-secondary {
-    @apply px-4 py-2 font-medium rounded-md transition-all duration-200 text-sm;
-    @apply bg-slate-800 hover:bg-slate-700 text-white border border-slate-600;
+    @apply px-6 py-2.5 font-medium rounded-xl transition-all duration-300 text-sm;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
   }
 
   :root:not(.dark) .btn-secondary {
-    @apply bg-white hover:bg-gray-100 text-gray-800 border-gray-300;
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: #1f2937;
+  }
+
+  :root:not(.dark) .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.6);
   }
 
   .btn-danger {
-    @apply px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition-all duration-200 text-xs;
+    @apply px-4 py-2 text-white font-medium rounded-xl transition-all duration-300 text-xs;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.8) 0%, rgba(220, 38, 38, 0.8) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
-  /* Input field - responsive to theme */
+  .btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+  }
+
+  /* Input field with glassmorphism */
   .input-dark {
-    @apply w-full px-3 py-2 rounded-md text-sm outline-none transition-all duration-200;
-    @apply bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20;
+    @apply w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-300;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+
+  .input-dark::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .input-dark:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
   }
 
   :root:not(.dark) .input-dark {
-    @apply bg-white border-purple-200 text-gray-800 placeholder-gray-400 focus:border-purple-500 focus:ring-purple-200;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: #1f2937;
   }
 
-  /* Stats card - responsive to theme */
+  :root:not(.dark) .input-dark::placeholder {
+    color: rgba(31, 41, 55, 0.5);
+  }
+
+  :root:not(.dark) .input-dark:focus {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(139, 92, 246, 0.6);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+  }
+
+  /* Stats card with glassmorphism */
   .stat-card {
-    @apply rounded-lg p-4 hover:border-blue-500/50 transition-all duration-300;
-    @apply bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/50;
+    @apply rounded-xl p-5 transition-all duration-300;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .stat-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
   }
 
   :root:not(.dark) .stat-card {
-    @apply bg-white/95 backdrop-blur-sm border-purple-100;
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
   }
 
-  /* Task card - responsive to theme */
+  :root:not(.dark) .stat-card:hover {
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(139, 92, 246, 0.5);
+    box-shadow: 0 8px 30px rgba(139, 92, 246, 0.2);
+  }
+
+  /* Task card with glassmorphism */
   .task-card {
-    @apply rounded-lg p-4 hover:shadow-lg transition-all duration-300;
-    @apply bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/50 hover:border-blue-500/50 hover:shadow-blue-500/10;
+    @apply rounded-xl p-5 transition-all duration-300;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .task-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
   }
 
   :root:not(.dark) .task-card {
-    @apply bg-white/95 backdrop-blur-sm border-purple-100 hover:border-purple-500/50 hover:shadow-purple-500/10;
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+
+  :root:not(.dark) .task-card:hover {
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(139, 92, 246, 0.5);
+    box-shadow: 0 8px 30px rgba(139, 92, 246, 0.2);
   }
 }

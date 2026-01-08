@@ -124,9 +124,18 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen transition-colors duration-300 dark:bg-black bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600">
+    <div className="min-h-screen transition-colors duration-300 relative">
       {/* Premium Header with Theme Toggle */}
-      <header className="border-b transition-colors duration-300 dark:border-slate-800 dark:bg-gradient-to-r dark:from-slate-950 dark:to-slate-900 border-purple-200/50 bg-white/20 backdrop-blur-md">
+      <header className="border-b transition-colors duration-300 relative z-10" style={{
+        background: theme === 'dark'
+          ? 'rgba(255, 255, 255, 0.03)'
+          : 'rgba(255, 255, 255, 0.15)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderColor: theme === 'dark'
+          ? 'rgba(255, 255, 255, 0.1)'
+          : 'rgba(255, 255, 255, 0.3)'
+      }}>
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -141,7 +150,15 @@ export default function HomePage() {
               {/* Theme Toggle Button */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg transition-all duration-200 dark:bg-slate-800 dark:hover:bg-slate-700 bg-white/20 hover:bg-white/30 backdrop-blur-sm"
+                className="p-2.5 rounded-xl transition-all duration-300 hover:scale-110"
+                style={{
+                  background: theme === 'dark'
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(255, 255, 255, 0.3)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                }}
                 aria-label="Toggle theme"
               >
                 {theme === 'dark' ? (
@@ -279,11 +296,11 @@ export default function HomePage() {
             {/* Filter Controls */}
             <div className="premium-card">
               <div className="flex flex-wrap gap-3 items-center">
-                <span className="dark:text-slate-400 text-gray-600 text-xs font-medium">FILTERS:</span>
+                <span className="dark:text-slate-400 text-gray-600 text-xs font-medium uppercase tracking-wider">Filters:</span>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value as 'all' | 'pending' | 'completed')}
-                  className="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-md text-white text-xs focus:border-blue-500 outline-none"
+                  className="input-dark px-3 py-2 text-xs w-auto"
                 >
                   <option value="all">All Status</option>
                   <option value="pending">Pending</option>
@@ -292,7 +309,7 @@ export default function HomePage() {
                 <select
                   value={filterPriority}
                   onChange={(e) => setFilterPriority(e.target.value as 'all' | 'low' | 'medium' | 'high')}
-                  className="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-md text-white text-xs focus:border-blue-500 outline-none"
+                  className="input-dark px-3 py-2 text-xs w-auto"
                 >
                   <option value="all">All Priorities</option>
                   <option value="high">High</option>
@@ -302,7 +319,7 @@ export default function HomePage() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as 'date' | 'priority' | 'title')}
-                  className="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-md text-white text-xs focus:border-blue-500 outline-none"
+                  className="input-dark px-3 py-2 text-xs w-auto"
                 >
                   <option value="date">Sort by Date</option>
                   <option value="priority">Sort by Priority</option>
@@ -382,15 +399,24 @@ export default function HomePage() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 mt-16">
+      <footer className="border-t mt-16 relative z-10" style={{
+        background: theme === 'dark'
+          ? 'rgba(255, 255, 255, 0.03)'
+          : 'rgba(255, 255, 255, 0.15)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderColor: theme === 'dark'
+          ? 'rgba(255, 255, 255, 0.1)'
+          : 'rgba(255, 255, 255, 0.3)'
+      }}>
         <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex justify-between items-center text-sm text-slate-500">
-            <div className="flex gap-6">
+          <div className="flex justify-between items-center text-sm">
+            <div className="flex gap-6 dark:text-slate-400 text-white/80">
               <span>🔒 SECURE SSL</span>
               <span>📊 DATA ENCRYPTED</span>
               <span>⚡ 24/7 SUPPORT</span>
             </div>
-            <div className="text-white">
+            <div className="dark:text-white text-white font-medium">
               BITCRAFT INSTITUTE © 2026
             </div>
           </div>
