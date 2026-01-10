@@ -45,12 +45,13 @@ function getAuthToken(request: NextRequest): string | null {
  * Set auth cookie on response
  */
 function setAuthCookie(response: NextResponse, token: string): void {
+  const isProd = process.env.NODE_ENV === 'production';
   response.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProd, // Always secure in production (HTTPS)
     maxAge: COOKIE_MAX_AGE,
     path: '/',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    sameSite: isProd ? 'none' : 'lax', // 'none' requires 'secure: true'
   });
 }
 
@@ -58,12 +59,13 @@ function setAuthCookie(response: NextResponse, token: string): void {
  * Clear auth cookie on response
  */
 function clearAuthCookie(response: NextResponse): void {
+  const isProd = process.env.NODE_ENV === 'production';
   response.cookies.set(COOKIE_NAME, '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProd,
     maxAge: 0,
     path: '/',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    sameSite: isProd ? 'none' : 'lax',
   });
 }
 
