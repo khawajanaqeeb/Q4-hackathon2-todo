@@ -17,6 +17,7 @@ const makeRequest = async (endpoint: string, options: RequestInit = {}) => {
   const response = await fetch(proxyEndpoint, {
     ...options,
     headers,
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -69,6 +70,7 @@ export const authAPI = {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -104,6 +106,7 @@ export const authAPI = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ name, email, password }),
+      credentials: 'include',
     });
 
     if (!response.ok) {
