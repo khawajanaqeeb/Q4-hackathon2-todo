@@ -63,7 +63,7 @@ export const authAPI = {
     formData.append('email', email);
     formData.append('password', password);
 
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -98,7 +98,7 @@ export const authAPI = {
   },
 
   register: async (name: string, email: string, password: string) => {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
