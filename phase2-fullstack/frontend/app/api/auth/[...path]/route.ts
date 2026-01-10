@@ -50,7 +50,7 @@ function setAuthCookie(response: NextResponse, token: string): void {
     secure: process.env.NODE_ENV === 'production',
     maxAge: COOKIE_MAX_AGE,
     path: '/',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   });
 }
 
@@ -63,7 +63,7 @@ function clearAuthCookie(response: NextResponse): void {
     secure: process.env.NODE_ENV === 'production',
     maxAge: 0,
     path: '/',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   });
 }
 
