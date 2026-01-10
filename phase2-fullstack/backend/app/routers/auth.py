@@ -53,43 +53,56 @@ async def register(
         UserResponse: Created user data (no password)
 
     Raises:
-        HTTPException 400: Email already registered
-        HTTPException 422: Validation error (invalid email, weak password, etc.)
+        HTTPException 400: Validation error (invalid email, weak password, etc.)
+        HTTPException 409: Email already registered
+        HTTPException 500: Database or server error
     """
-    # Check if email already exists
-    statement = select(User).where(User.email == user_data.email)
-    existing_user = session.exec(statement).first()
+    try:
+        # Check if email already exists
+        statement = select(User).where(User.email == user_data.email)
+        existing_user = session.exec(statement).first()
 
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already registered"
+            )
+
+        # Validate password strength
+        is_valid, message = validate_password_strength(user_data.password)
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=message
+            )
+
+        # Hash password with bcrypt
+        hashed_password = hash_password(user_data.password)
+
+        # Create new user
+        user = User(
+            email=user_data.email,
+            hashed_password=hashed_password,
+            name=user_data.name,
+            is_active=True,
         )
 
-    # Validate password strength
-    is_valid, message = validate_password_strength(user_data.password)
-    if not is_valid:
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+
+        return user
+
+    except HTTPException:
+        # Re-raise HTTP exceptions (validation errors)
+        raise
+    except Exception as e:
+        # Catch database/hashing errors and rollback
+        session.rollback()
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=message
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Registration failed: {str(e)}"
         )
-
-    # Hash password with bcrypt
-    hashed_password = hash_password(user_data.password)
-
-    # Create new user
-    user = User(
-        email=user_data.email,
-        hashed_password=hashed_password,
-        name=user_data.name,
-        is_active=True,
-    )
-
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-
-    return user
 
 
 from fastapi import Request, Form
