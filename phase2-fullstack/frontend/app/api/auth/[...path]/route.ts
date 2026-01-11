@@ -251,6 +251,22 @@ async function handleRequest(
       if (redirectUrl) {
         // Follow the redirect with the same authorization token
         const redirectedResponse = await proxyToBackend(method, redirectUrl, token, body);
+
+        // Check if the redirected response is also a redirect (avoid infinite loops)
+        if (redirectedResponse.status >= 300 && redirectedResponse.status < 400) {
+          const secondRedirectUrl = redirectedResponse.headers.get('Location');
+          if (secondRedirectUrl && secondRedirectUrl !== redirectUrl) {
+            const finalResponse = await proxyToBackend(method, secondRedirectUrl, token, body);
+            if (!finalResponse.ok) {
+              const errorData = await safeJsonParse(finalResponse).catch(() => null);
+              const message = errorData?.error || errorData?.detail || 'API request failed';
+              return createErrorResponse(message, finalResponse.status);
+            }
+            const data = await safeJsonParse(finalResponse);
+            return NextResponse.json(data, { status: finalResponse.status });
+          }
+        }
+
         if (!redirectedResponse.ok) {
           const errorData = await safeJsonParse(redirectedResponse).catch(() => null);
           const message = errorData?.error || errorData?.detail || 'API request failed';
