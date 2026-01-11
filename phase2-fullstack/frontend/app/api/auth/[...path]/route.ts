@@ -11,6 +11,7 @@ const COOKIE_NAME = 'auth_token';
 const COOKIE_MAX_AGE = 60 * 30; // 30 minutes
 
 const PUBLIC_ROUTES = ['/login', '/register'];
+const AUTH_ROUTES = ['/login', '/register', '/logout', '/refresh', '/verify'];
 const SPECIAL_ROUTES = {
   LOGOUT: '/logout',
   REFRESH: '/refresh',
@@ -57,8 +58,7 @@ function clearAuthCookie(response: NextResponse) {
  * Build backend URL
  */
 function buildBackendUrl(path: string, searchParams: string): string {
-  const authRoutes = ['/login', '/register', '/refresh', '/verify', '/logout'];
-  const isAuthRoute = authRoutes.some(route => path === route || path.startsWith(route + '/'));
+  const isAuthRoute = AUTH_ROUTES.some(route => path === route || path.startsWith(route + '/'));
   const queryString = searchParams ? searchParams : '';
 
   return isAuthRoute
@@ -141,6 +141,62 @@ async function handleRequest(
     } catch (error) {
       console.error('[Proxy] Public route error:', error);
       return createErrorResponse('Authentication service unavailable', 503);
+    }
+  }
+
+  // Special handling for logout route
+  if (apiPath === SPECIAL_ROUTES.LOGOUT) {
+    try {
+      const response = NextResponse.json({ message: 'Logged out successfully' });
+      clearAuthCookie(response);
+      return response;
+    } catch (error) {
+      console.error('[Proxy] Logout error:', error);
+      return createErrorResponse(
+        'Logout service unavailable',
+        503,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+  }
+
+  // Special handling for refresh route
+  if (apiPath === SPECIAL_ROUTES.REFRESH) {
+    if (!token) {
+      return createErrorResponse('Unauthorized', 401);
+    }
+
+    try {
+      const backendUrl = buildBackendUrl('/refresh', searchParams);
+      const contentType = request.headers.get('content-type') || '';
+      let body: any = null;
+
+      if (contentType.includes('application/json')) body = await request.json().catch(() => null);
+      else if (contentType.includes('application/x-www-form-urlencoded')) body = await request.text();
+
+      const backendResponse = await proxyToBackend('POST', backendUrl, token, body);
+
+      if (backendResponse.ok) {
+        const refreshData = await safeJsonParse(backendResponse);
+        const newToken = refreshData.access_token || refreshData.token;
+
+        if (newToken) {
+          const response = NextResponse.json(refreshData);
+          setAuthCookie(response, newToken);
+          return response;
+        }
+
+        return NextResponse.json(refreshData);
+      } else {
+        return createErrorResponse('Token refresh failed', 401);
+      }
+    } catch (error) {
+      console.error('[Proxy] Token refresh error:', error);
+      return createErrorResponse(
+        'Token refresh service unavailable',
+        503,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
     }
   }
 
