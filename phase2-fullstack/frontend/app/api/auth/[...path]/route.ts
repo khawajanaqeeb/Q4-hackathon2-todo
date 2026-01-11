@@ -75,10 +75,16 @@ async function proxyToBackend(
   token: string | null,
   body?: any
 ): Promise<Response> {
-  const headers: HeadersInit = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
 
-  const options: RequestInit = { method, headers };
+  const options: RequestInit = {
+    method,
+    headers,
+    redirect: 'manual' // Prevent automatic redirects to maintain auth headers
+  };
   if (body && !['GET', 'DELETE'].includes(method)) options.body = JSON.stringify(body);
 
   return fetch(url, options);
@@ -182,6 +188,22 @@ async function handleRequest(
 
     const backendUrl = buildBackendUrl(apiPath, searchParams);
     const backendResponse = await proxyToBackend(method, backendUrl, token, body);
+
+    // Handle redirects manually to preserve authorization headers
+    if (backendResponse.status >= 300 && backendResponse.status < 400) {
+      const redirectUrl = backendResponse.headers.get('Location');
+      if (redirectUrl) {
+        // Follow the redirect with the same authorization token
+        const redirectedResponse = await proxyToBackend(method, redirectUrl, token, body);
+        if (!redirectedResponse.ok) {
+          const errorData = await safeJsonParse(redirectedResponse).catch(() => null);
+          const message = errorData?.error || errorData?.detail || 'API request failed';
+          return createErrorResponse(message, redirectedResponse.status);
+        }
+        const data = await safeJsonParse(redirectedResponse);
+        return NextResponse.json(data, { status: redirectedResponse.status });
+      }
+    }
 
     if (!backendResponse.ok) {
       const errorData = await safeJsonParse(backendResponse).catch(() => null);
