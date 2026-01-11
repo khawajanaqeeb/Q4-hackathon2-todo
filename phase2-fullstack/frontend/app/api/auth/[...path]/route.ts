@@ -138,7 +138,38 @@ async function handleRequest(
     }
   }
 
-  // Require token for non-public routes
+  // Special handling for verify route (can be empty path or /verify)
+  // Backend verify endpoint expects POST method, but frontend might call it as GET
+  if (!apiPath || apiPath === '/' || apiPath === SPECIAL_ROUTES.VERIFY) {
+    if (!token) {
+      return createErrorResponse('Unauthorized', 401);
+    }
+
+    try {
+      const backendUrl = buildBackendUrl('/verify', '');
+      const backendResponse = await proxyToBackend(
+        'POST',  // Always use POST for verify endpoint (backend expects it)
+        backendUrl,
+        token
+      );
+
+      if (backendResponse.ok) {
+        const userData = await safeJsonParse(backendResponse);
+        return NextResponse.json(userData);
+      } else {
+        return createErrorResponse('Invalid token', 401);
+      }
+    } catch (error) {
+      console.error('[Proxy] Auth verification error:', error);
+      return createErrorResponse(
+        'Authentication service unavailable',
+        503,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+  }
+
+  // Require token for other non-public routes
   if (!token) return createErrorResponse('Unauthorized', 401);
 
   try {
