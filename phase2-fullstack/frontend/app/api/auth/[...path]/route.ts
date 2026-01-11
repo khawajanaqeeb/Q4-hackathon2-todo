@@ -2,28 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { safeJsonParse, createErrorResponse } from '../../../../lib/api-utils';
 
 /**
- * UNIFIED AUTHENTICATION PROXY - SINGLE SOURCE OF TRUTH
- *
- * This is the ONLY auth route in the application.
- * Handles all authentication and API proxying through one clean interface.
- *
- * Routes handled:
- * - POST /api/auth/login -> proxies to backend, sets cookie on success
- * - POST /api/auth/register -> proxies to backend, sets cookie on success
- * - POST /api/auth/logout -> clears cookie, returns success
- * - POST /api/auth/refresh -> proxies to backend, updates cookie on success
- * - GET /api/auth/verify -> verifies token with backend
- * - ALL /api/auth/* -> proxies to backend with auth token
+ * UNIFIED AUTHENTICATION PROXY
+ * Handles all auth and backend API proxying.
  */
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL;
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL!;
 const COOKIE_NAME = 'auth_token';
 const COOKIE_MAX_AGE = 60 * 30; // 30 minutes
 
-// Routes that don't require authentication
 const PUBLIC_ROUTES = ['/login', '/register'];
-
-// Routes that have special handling
 const SPECIAL_ROUTES = {
   LOGOUT: '/logout',
   REFRESH: '/refresh',
@@ -31,71 +18,56 @@ const SPECIAL_ROUTES = {
 };
 
 /**
- * Extract auth token from cookies or Authorization header
+ * Extract auth token from cookies or header
  */
 function getAuthToken(request: NextRequest): string | null {
-  return (
-    request.cookies.get(COOKIE_NAME)?.value ||
-    request.headers.get('Authorization')?.replace('Bearer ', '') ||
-    null
-  );
+  const tokenFromCookie = request.cookies.get(COOKIE_NAME)?.value || null;
+  const tokenFromHeader = request.headers.get('Authorization')?.replace('Bearer ', '') || null;
+
+  return tokenFromCookie || tokenFromHeader;
 }
 
 /**
- * Set auth cookie on response
+ * Set auth cookie
  */
-function setAuthCookie(response: NextResponse, token: string): void {
-  const isProd = process.env.NODE_ENV === 'production';
+function setAuthCookie(response: NextResponse, token: string) {
   response.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: isProd, // Always secure in production (HTTPS)
+    secure: process.env.NODE_ENV === 'production',
     maxAge: COOKIE_MAX_AGE,
     path: '/',
-    sameSite: isProd ? 'none' : 'lax', // 'none' requires 'secure: true'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   });
 }
 
 /**
- * Clear auth cookie on response
+ * Clear auth cookie
  */
-function clearAuthCookie(response: NextResponse): void {
-  const isProd = process.env.NODE_ENV === 'production';
+function clearAuthCookie(response: NextResponse) {
   response.cookies.set(COOKIE_NAME, '', {
     httpOnly: true,
-    secure: isProd,
+    secure: process.env.NODE_ENV === 'production',
     maxAge: 0,
     path: '/',
-    sameSite: isProd ? 'none' : 'lax',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   });
 }
 
 /**
- * Check if route requires authentication
- */
-function isPublicRoute(path: string): boolean {
-  return PUBLIC_ROUTES.some(route => path === route || path.startsWith(route));
-}
-
-/**
- * Build backend URL from path and query params
- * Prepends /auth only for auth-specific routes (login, register, refresh, verify, logout)
- * Other routes (like /todos) go directly to their backend endpoints
+ * Build backend URL
  */
 function buildBackendUrl(path: string, searchParams: string): string {
-  // Auth-specific routes need /auth prefix
   const authRoutes = ['/login', '/register', '/refresh', '/verify', '/logout'];
   const isAuthRoute = authRoutes.some(route => path === route || path.startsWith(route + '/'));
+  const queryString = searchParams ? searchParams : '';
 
-  if (isAuthRoute) {
-    return `${BACKEND_URL}/auth${path}${searchParams}`;
-  }
-
-  // All other routes (todos, etc.) go directly
-  return `${BACKEND_URL}${path}${searchParams}`;
+  return isAuthRoute
+    ? `${BACKEND_URL}/auth${path}${queryString}`
+    : `${BACKEND_URL}${path}${queryString}`;
 }
 
 /**
- * Proxy request to backend
+ * Proxy request to backend with Authorization header
  */
 async function proxyToBackend(
   method: string,
@@ -103,428 +75,102 @@ async function proxyToBackend(
   token: string | null,
   body?: any
 ): Promise<Response> {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+  const headers: HeadersInit = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const options: RequestInit = {
-    method,
-    headers,
-  };
-
-  if (body && method !== 'GET' && method !== 'DELETE') {
-    options.body = JSON.stringify(body);
-  }
+  const options: RequestInit = { method, headers };
+  if (body && !['GET', 'DELETE'].includes(method)) options.body = JSON.stringify(body);
 
   return fetch(url, options);
 }
 
 /**
- * Handle GET requests
+ * Main handler for all methods
  */
-export async function GET(
+async function handleRequest(
+  method: string,
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> }
 ) {
   const params = await context.params;
   const apiPath = params.path ? `/${params.path.join('/')}` : '';
   const url = new URL(request.url);
-  const searchParams = url.search;
-
-  // Special handling for verify route (can be empty path or /verify)
-  if (!apiPath || apiPath === '/' || apiPath === SPECIAL_ROUTES.VERIFY) {
-    const token = getAuthToken(request);
-    if (!token) {
-      return createErrorResponse('Unauthorized', 401);
-    }
-
-    try {
-      const response = await proxyToBackend(
-        'POST',
-        buildBackendUrl('/verify', ''),
-        token
-      );
-
-      if (response.ok) {
-        const userData = await safeJsonParse(response);
-        return NextResponse.json(userData);
-      } else {
-        return createErrorResponse('Invalid token', 401);
-      }
-    } catch (error) {
-      console.error('Auth verification error:', error);
-      return createErrorResponse(
-        'Authentication service unavailable',
-        503,
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-    }
-  }
-
-  // All other GET requests require authentication
+  const searchParams = url.search ? url.search : '';
   const token = getAuthToken(request);
-  if (!token) {
-    return createErrorResponse('Unauthorized', 401);
+
+  // Log for debugging
+  if (!token && !PUBLIC_ROUTES.includes(apiPath)) {
+    console.warn(`[Proxy] No auth token found for ${method} ${apiPath}`);
   }
 
-  try {
-    const backendUrl = buildBackendUrl(apiPath, searchParams);
-    const backendResponse = await proxyToBackend('GET', backendUrl, token);
-
-    if (!backendResponse.ok) {
-      let errorMessage = 'API request failed';
-      let errorDetails: string | undefined;
-      try {
-        const errorData = await safeJsonParse(backendResponse);
-        errorMessage = errorData.error || errorData.detail || errorMessage;
-        errorDetails = errorData.details;
-      } catch {
-        errorMessage = backendResponse.statusText || errorMessage;
-      }
-      return createErrorResponse(errorMessage, backendResponse.status, errorDetails);
-    }
-
-    const data = await safeJsonParse(backendResponse);
-    return NextResponse.json(data, { status: backendResponse.status });
-  } catch (error) {
-    console.error('API proxy error:', error);
-    return createErrorResponse(
-      'API service unavailable',
-      503,
-      error instanceof Error ? error.message : 'Unknown error'
-    );
-  }
-}
-
-/**
- * Handle POST requests
- */
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
-) {
-  const params = await context.params;
-  const apiPath = params.path ? `/${params.path.join('/')}` : '';
-  const url = new URL(request.url);
-  const searchParams = url.search;
-
-  // Special handling for logout
-  if (apiPath === SPECIAL_ROUTES.LOGOUT) {
-    const response = NextResponse.json({ message: 'Logged out successfully' });
-    clearAuthCookie(response);
-    return response;
-  }
-
-  // Get request body and content type
-  const contentType = request.headers.get('content-type') || '';
-  let body: any = null;
-
-  // Handle different content types
-  if (contentType.includes('application/x-www-form-urlencoded')) {
-    // For form data, read as text to preserve format
-    body = await request.text();
-  } else if (contentType.includes('application/json')) {
-    // For JSON, parse as JSON
-    body = await request.json().catch(() => null);
-  }
-
-  // Special handling for login and register - proxy to backend and set cookie on success
-  if (apiPath === '/login' || apiPath === '/register') {
+  // Handle public routes: login/register
+  if (PUBLIC_ROUTES.includes(apiPath)) {
     try {
       const backendUrl = buildBackendUrl(apiPath, searchParams);
+      const contentType = request.headers.get('content-type') || '';
+      let body: any = null;
 
-      // For login (form data), send directly with form content type
-      if (apiPath === '/login') {
-        const backendResponse = await fetch(backendUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: body,
-        });
+      if (contentType.includes('application/json')) body = await request.json().catch(() => null);
+      else if (contentType.includes('application/x-www-form-urlencoded')) body = await request.text();
 
-        if (!backendResponse.ok) {
-          let errorMessage = 'Authentication failed';
-          let errorDetails: string | undefined;
-          try {
-            const errorData = await safeJsonParse(backendResponse);
-            errorMessage = errorData.error || errorData.detail || errorMessage;
-            errorDetails = errorData.details;
-          } catch {
-            errorMessage = backendResponse.statusText || errorMessage;
-          }
-          return createErrorResponse(errorMessage, backendResponse.status, errorDetails);
-        }
-
-        const data = await safeJsonParse(backendResponse);
-
-        // Extract token from response and set cookie
-        const token = data.access_token || data.token;
-        if (token) {
-          const response = NextResponse.json(data, { status: backendResponse.status });
-          setAuthCookie(response, token);
-          return response;
-        } else {
-          return NextResponse.json(data, { status: backendResponse.status });
-        }
-      }
-
-      // For register (JSON), use the proxy function
-      const backendResponse = await proxyToBackend('POST', backendUrl, null, body);
+      const backendResponse =
+        apiPath === '/login' && contentType.includes('application/x-www-form-urlencoded')
+          ? await fetch(backendUrl, { method, headers: { 'Content-Type': contentType }, body })
+          : await proxyToBackend(method, backendUrl, null, body);
 
       if (!backendResponse.ok) {
-        let errorMessage = 'Authentication failed';
-        let errorDetails: string | undefined;
-        try {
-          const errorData = await safeJsonParse(backendResponse);
-          errorMessage = errorData.error || errorData.detail || errorMessage;
-          errorDetails = errorData.details;
-        } catch {
-          errorMessage = backendResponse.statusText || errorMessage;
-        }
-        return createErrorResponse(errorMessage, backendResponse.status, errorDetails);
+        const errorData = await safeJsonParse(backendResponse).catch(() => null);
+        const message = errorData?.error || errorData?.detail || 'Authentication failed';
+        return createErrorResponse(message, backendResponse.status);
       }
 
       const data = await safeJsonParse(backendResponse);
-
-      // Extract token from response and set cookie
-      const token = data.access_token || data.token;
-      if (token) {
-        const response = NextResponse.json(data, { status: backendResponse.status });
-        setAuthCookie(response, token);
-        return response;
-      } else {
-        // Return data even if no token (shouldn't happen but handle gracefully)
-        return NextResponse.json(data, { status: backendResponse.status });
-      }
-    } catch (error) {
-      console.error('Auth proxy error:', error);
-      return createErrorResponse(
-        'Authentication service unavailable',
-        503,
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-    }
-  }
-
-  // Special handling for refresh - proxy to backend and update cookie on success
-  if (apiPath === SPECIAL_ROUTES.REFRESH) {
-    const token = getAuthToken(request);
-    if (!token) {
-      return createErrorResponse('Unauthorized', 401);
-    }
-
-    try {
-      const backendUrl = buildBackendUrl(apiPath, searchParams);
-      const backendResponse = await proxyToBackend('POST', backendUrl, token, body);
-
-      if (!backendResponse.ok) {
-        let errorMessage = 'Token refresh failed';
-        let errorDetails: string | undefined;
-        try {
-          const errorData = await safeJsonParse(backendResponse);
-          errorMessage = errorData.error || errorData.detail || errorMessage;
-          errorDetails = errorData.details;
-        } catch {
-          errorMessage = backendResponse.statusText || errorMessage;
-        }
-        return createErrorResponse(errorMessage, backendResponse.status, errorDetails);
-      }
-
-      const data = await safeJsonParse(backendResponse);
-
-      // Update cookie with new token
-      const newToken = data.access_token || data.token;
       const response = NextResponse.json(data, { status: backendResponse.status });
-      if (newToken) {
-        setAuthCookie(response, newToken);
-      }
+
+      // Set cookie if token exists
+      const tokenFromData = data.access_token || data.token;
+      if (tokenFromData) setAuthCookie(response, tokenFromData);
+
       return response;
     } catch (error) {
-      console.error('Token refresh error:', error);
-      return createErrorResponse(
-        'Authentication service unavailable',
-        503,
-        error instanceof Error ? error.message : 'Unknown error'
-      );
+      console.error('[Proxy] Public route error:', error);
+      return createErrorResponse('Authentication service unavailable', 503);
     }
   }
 
-  // All other POST requests require authentication
-  const token = getAuthToken(request);
-  if (!token) {
-    return createErrorResponse('Unauthorized', 401);
-  }
+  // Require token for non-public routes
+  if (!token) return createErrorResponse('Unauthorized', 401);
 
   try {
+    let body: any = null;
+    const contentType = request.headers.get('content-type') || '';
+    if (['POST', 'PUT', 'PATCH'].includes(method)) {
+      if (contentType.includes('application/json')) body = await request.json().catch(() => null);
+      else if (contentType.includes('application/x-www-form-urlencoded')) body = await request.text();
+    }
+
     const backendUrl = buildBackendUrl(apiPath, searchParams);
-    const backendResponse = await proxyToBackend('POST', backendUrl, token, body);
+    const backendResponse = await proxyToBackend(method, backendUrl, token, body);
 
     if (!backendResponse.ok) {
-      let errorMessage = 'API request failed';
-      let errorDetails: string | undefined;
-      try {
-        const errorData = await safeJsonParse(backendResponse);
-        errorMessage = errorData.error || errorData.detail || errorMessage;
-        errorDetails = errorData.details;
-      } catch {
-        errorMessage = backendResponse.statusText || errorMessage;
-      }
-      return createErrorResponse(errorMessage, backendResponse.status, errorDetails);
+      const errorData = await safeJsonParse(backendResponse).catch(() => null);
+      const message = errorData?.error || errorData?.detail || 'API request failed';
+      return createErrorResponse(message, backendResponse.status);
     }
 
     const data = await safeJsonParse(backendResponse);
     return NextResponse.json(data, { status: backendResponse.status });
   } catch (error) {
-    console.error('API proxy error:', error);
-    return createErrorResponse(
-      'API service unavailable',
-      503,
-      error instanceof Error ? error.message : 'Unknown error'
-    );
+    console.error(`[Proxy] ${method} ${apiPath} error:`, error);
+    return createErrorResponse('API service unavailable', 503);
   }
 }
 
 /**
- * Handle PUT requests
+ * Export handlers for each method
  */
-export async function PUT(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
-) {
-  const params = await context.params;
-  const apiPath = params.path ? `/${params.path.join('/')}` : '';
-  const url = new URL(request.url);
-  const searchParams = url.search;
-
-  const token = getAuthToken(request);
-  if (!token) {
-    return createErrorResponse('Unauthorized', 401);
-  }
-
-  try {
-    const body = await request.json().catch(() => null);
-    const backendUrl = buildBackendUrl(apiPath, searchParams);
-    const backendResponse = await proxyToBackend('PUT', backendUrl, token, body);
-
-    if (!backendResponse.ok) {
-      let errorMessage = 'API request failed';
-      let errorDetails: string | undefined;
-      try {
-        const errorData = await safeJsonParse(backendResponse);
-        errorMessage = errorData.error || errorData.detail || errorMessage;
-        errorDetails = errorData.details;
-      } catch {
-        errorMessage = backendResponse.statusText || errorMessage;
-      }
-      return createErrorResponse(errorMessage, backendResponse.status, errorDetails);
-    }
-
-    const data = await safeJsonParse(backendResponse);
-    return NextResponse.json(data, { status: backendResponse.status });
-  } catch (error) {
-    console.error('API proxy error:', error);
-    return createErrorResponse(
-      'API service unavailable',
-      503,
-      error instanceof Error ? error.message : 'Unknown error'
-    );
-  }
-}
-
-/**
- * Handle DELETE requests
- */
-export async function DELETE(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
-) {
-  const params = await context.params;
-  const apiPath = params.path ? `/${params.path.join('/')}` : '';
-  const url = new URL(request.url);
-  const searchParams = url.search;
-
-  const token = getAuthToken(request);
-  if (!token) {
-    return createErrorResponse('Unauthorized', 401);
-  }
-
-  try {
-    const backendUrl = buildBackendUrl(apiPath, searchParams);
-    const backendResponse = await proxyToBackend('DELETE', backendUrl, token);
-
-    if (!backendResponse.ok) {
-      let errorMessage = 'API request failed';
-      let errorDetails: string | undefined;
-      try {
-        const errorData = await safeJsonParse(backendResponse);
-        errorMessage = errorData.error || errorData.detail || errorMessage;
-        errorDetails = errorData.details;
-      } catch {
-        errorMessage = backendResponse.statusText || errorMessage;
-      }
-      return createErrorResponse(errorMessage, backendResponse.status, errorDetails);
-    }
-
-    const data = await safeJsonParse(backendResponse);
-    return NextResponse.json(data, { status: backendResponse.status });
-  } catch (error) {
-    console.error('API proxy error:', error);
-    return createErrorResponse(
-      'API service unavailable',
-      503,
-      error instanceof Error ? error.message : 'Unknown error'
-    );
-  }
-}
-
-/**
- * Handle PATCH requests
- */
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
-) {
-  const params = await context.params;
-  const apiPath = params.path ? `/${params.path.join('/')}` : '';
-  const url = new URL(request.url);
-  const searchParams = url.search;
-
-  const token = getAuthToken(request);
-  if (!token) {
-    return createErrorResponse('Unauthorized', 401);
-  }
-
-  try {
-    const body = await request.json().catch(() => null);
-    const backendUrl = buildBackendUrl(apiPath, searchParams);
-    const backendResponse = await proxyToBackend('PATCH', backendUrl, token, body);
-
-    if (!backendResponse.ok) {
-      let errorMessage = 'API request failed';
-      let errorDetails: string | undefined;
-      try {
-        const errorData = await safeJsonParse(backendResponse);
-        errorMessage = errorData.error || errorData.detail || errorMessage;
-        errorDetails = errorData.details;
-      } catch {
-        errorMessage = backendResponse.statusText || errorMessage;
-      }
-      return createErrorResponse(errorMessage, backendResponse.status, errorDetails);
-    }
-
-    const data = await safeJsonParse(backendResponse);
-    return NextResponse.json(data, { status: backendResponse.status });
-  } catch (error) {
-    console.error('API proxy error:', error);
-    return createErrorResponse(
-      'API service unavailable',
-      503,
-      error instanceof Error ? error.message : 'Unknown error'
-    );
-  }
-}
+export const GET = (req: NextRequest, ctx: any) => handleRequest('GET', req, ctx);
+export const POST = (req: NextRequest, ctx: any) => handleRequest('POST', req, ctx);
+export const PUT = (req: NextRequest, ctx: any) => handleRequest('PUT', req, ctx);
+export const PATCH = (req: NextRequest, ctx: any) => handleRequest('PATCH', req, ctx);
+export const DELETE = (req: NextRequest, ctx: any) => handleRequest('DELETE', req, ctx);
