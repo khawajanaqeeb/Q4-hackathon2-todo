@@ -205,6 +205,43 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 - `history/prompts/` — Prompt History Records
 - `history/adr/` — Architecture Decision Records
 - `.specify/` — SpecKit Plus templates and scripts
+- `.claude/agents/` — Reusable agents for AI-powered features (Phase III)
+- `.claude/skills/` — Specialized skills for AI agent orchestration (Phase III)
+- `specs/phase-3/` — Specifications for Todo AI Chatbot (Phase III)
+
+## Phase Descriptions
+
+### Phase I: Console Application
+- `phase1-console/` - Command-line todo application
+- Basic CRUD operations for todos
+- Priority, tags, search, filter, sort functionality
+
+### Phase II: Full-Stack Application
+- `phase2-fullstack/` - Complete web application with backend and frontend
+- `specs/phase-1/` and `specs/phase-2/` - Specifications for both phases
+- Full authentication, API endpoints, and UI components
+
+### Phase III: Todo AI Chatbot
+- `.claude/agents/` - Modular agents for AI functionality:
+  - `nlp_agent.md` - Natural Language Processing for intent classification
+  - `todo_command_interpreter_agent.md` - Converts NLP results to API commands
+  - `conversation_context_manager_agent.md` - Manages conversation state
+  - `api_integration_agent.md` - Handles API communication
+  - `response_generation_agent.md` - Creates natural language responses
+  - `voice_processing_agent.md` - Speech-to-text and text-to-speech
+  - `multi_platform_adapter_agent.md` - Cross-platform compatibility
+- `.claude/skills/` - Specialized skills for agent management:
+  - `chatbot-orchestration/` - Coordinates agent interactions
+  - `nlp-training/` - Trains and tunes NLP models
+  - `api-mapping/` - Maps intents to API endpoints
+  - `response-templating/` - Manages response formatting
+  - `context-persistence/` - Handles context storage
+  - `conversation-flow/` - Designs conversation pathways
+  - `voice-interface/` - Configures voice processing
+  - `multi-platform-deployment/` - Manages cross-platform deployment
+  - `analytics-learning/` - Collects usage data for improvements
+  - `security-privacy/` - Ensures secure data handling
+- `specs/phase-3/` - Specifications for the AI chatbot functionality
 
 ## Code Standards
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
