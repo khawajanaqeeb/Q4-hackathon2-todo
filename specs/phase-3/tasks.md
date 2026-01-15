@@ -18,10 +18,10 @@
 - Verify SDK installation with basic agent creation
 - Test API key configuration
 **Acceptance Criteria**:
-- [ ] OpenAI Agents SDK installed and importable
-- [ ] API keys properly configured
-- [ ] Basic agent can be instantiated
-- [ ] Environment variables properly set
+- [x] OpenAI Agents SDK installed and importable
+- [x] API keys properly configured
+- [x] Basic agent can be instantiated
+- [x] Environment variables properly set
 
 #### Task 1.2: Implement Basic NLP Agent
 **From**: spec.md §Core Features, plan.md §Phase 1
@@ -36,10 +36,10 @@
 - Test LIST_TODOS intent recognition
 - Test error handling for unknown intents
 **Acceptance Criteria**:
-- [ ] Can classify at least 5 basic intents
-- [ ] Returns confidence scores with classifications
-- [ ] Handles unknown input gracefully
-- [ ] Unit tests cover 80%+ of code
+- [x] Can classify at least 5 basic intents
+- [x] Returns confidence scores with classifications
+- [x] Handles unknown input gracefully
+- [x] Unit tests cover 80%+ of code
 
 #### Task 1.3: Create Todo Command Interpreter Agent
 **From**: spec.md §Core Features, plan.md §Phase 1
@@ -54,10 +54,10 @@
 - Test LIST_TODOS mapping to GET /api/todos
 - Test error handling for invalid commands
 **Acceptance Criteria**:
-- [ ] Maps all core intents to appropriate API endpoints
-- [ ] Transforms entities to API-compatible parameters
-- [ ] Handles missing information gracefully
-- [ ] Unit tests cover 80%+ of code
+- [x] Maps all core intents to appropriate API endpoints
+- [x] Transforms entities to API-compatible parameters
+- [x] Handles missing information gracefully
+- [x] Unit tests cover 80%+ of code
 
 #### Task 1.4: Establish Basic Agent Communication Framework
 **From**: spec.md §Core Features, plan.md §Phase 1
@@ -73,10 +73,10 @@
 - Test error handling in communication
 - Test message serialization/deserialization
 **Acceptance Criteria**:
-- [ ] Messages can be sent between agents
-- [ ] Message format follows defined protocol
-- [ ] Error handling for communication failures
-- [ ] Unit tests cover 80%+ of code
+- [x] Messages can be sent between agents
+- [x] Message format follows defined protocol
+- [x] Error handling for communication failures
+- [x] Unit tests cover 80%+ of code
 
 ### Sprint 2: Context Management and API Integration
 **Objective**: Implement conversation state management and backend integration
