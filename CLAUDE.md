@@ -1,5 +1,9 @@
 ﻿# Claude Code Rules
 
+IMPORTANT – HACKATHON CONSTRAINTS (Jan 2026)
+This project is strictly limited to the hackathon spec.
+Do NOT implement voice, multi-platform, analytics, training, or any out-of-scope features.
+
 This file is generated during init for the selected agent.
 
 You are an expert AI assistant specializing in Spec-Driven Development (SDD). Your primary goal is to work with the architext to build products.
@@ -205,9 +209,9 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 - `history/prompts/` — Prompt History Records
 - `history/adr/` — Architecture Decision Records
 - `.specify/` — SpecKit Plus templates and scripts
-- `.claude/agents/` — Reusable agents for AI-powered features (Phase III)
-- `.claude/skills/` — Specialized skills for AI agent orchestration (Phase III)
-- `specs/phase-3/` — Specifications for Todo AI Chatbot (Phase III)
+- `.claude/agents/` — Reusable agents for AI-powered features (Phase III - Hacked)
+- `.claude/skills/` — Specialized skills for AI agent orchestration (Phase III - Hacked)
+- `specs/phase-3/` — Specifications for Todo AI Chatbot (Phase III - Hacked)
 
 ## Phase Descriptions
 
@@ -221,27 +225,65 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 - `specs/phase-1/` and `specs/phase-2/` - Specifications for both phases
 - Full authentication, API endpoints, and UI components
 
-### Phase III: Todo AI Chatbot
-- `.claude/agents/` - Modular agents for AI functionality:
-  - `nlp_agent.md` - Natural Language Processing for intent classification
-  - `todo_command_interpreter_agent.md` - Converts NLP results to API commands
-  - `conversation_context_manager_agent.md` - Manages conversation state
-  - `api_integration_agent.md` - Handles API communication
-  - `response_generation_agent.md` - Creates natural language responses
-  - `voice_processing_agent.md` - Speech-to-text and text-to-speech
-  - `multi_platform_adapter_agent.md` - Cross-platform compatibility
-- `.claude/skills/` - Specialized skills for agent management:
-  - `chatbot-orchestration/` - Coordinates agent interactions
-  - `nlp-training/` - Trains and tunes NLP models
-  - `api-mapping/` - Maps intents to API endpoints
-  - `response-templating/` - Manages response formatting
-  - `context-persistence/` - Handles context storage
-  - `conversation-flow/` - Designs conversation pathways
-  - `voice-interface/` - Configures voice processing
-  - `multi-platform-deployment/` - Manages cross-platform deployment
-  - `analytics-learning/` - Collects usage data for improvements
-  - `security-privacy/` - Ensures secure data handling
-- `specs/phase-3/` - Specifications for the AI chatbot functionality
+### Phase III: Todo AI Chatbot (2026 – Hackathon Scope)
+
+Goal:
+Build a stateless conversational todo manager using natural language.
+Users manage tasks via chat → AI understands intent → calls MCP tools → confirms actions.
+
+Core technologies that MUST be used:
+- OpenAI Agents SDK                (agents, handoffs, function calling)
+- Official MCP SDK                  (expose task operations as tools)
+- FastAPI                           (chat endpoint + MCP server)
+- SQLModel + Neon Serverless PostgreSQL  (tasks + conversations + messages)
+- Better Auth JWT                   (user isolation – every tool MUST check user_id)
+
+MANDATORY architecture:
+- Multi-agent system with handoff pattern
+- 1 Router Agent + 5 specialized task agents
+- Stateless design (conversation state only in database)
+- All tools enforce user ownership via JWT user_id
+
+Correct folder structure for Phase III:
+
+.claude/agents/
+├── router_agent.md
+├── add_task_agent.md
+├── list_tasks_agent.md
+├── complete_task_agent.md
+├── delete_task_agent.md
+├── update_task_agent.md
+└── base_agent.md                # JWT extraction, history loading, shared utils
+
+.claude/skills/
+├── mcp-crud-tools.md           # add_task, list_tasks, complete_task, delete_task, update_task
+└── router-orchestration.md     # handoff logic + workflow
+
+specs/phase-3/
+├── spec.md
+├── architecture.md
+├── mcp-tools.md
+├── chat-endpoint.md
+└── database-models.md          # Conversation + Message models
+
+Important rules for Phase III work:
+- Never create agents for voice, speech-to-text, multi-platform, analytics, nlp-training, etc.
+- All agents and tools MUST validate user_id from Better Auth JWT
+- Prefer very focused, short system prompts per agent
+- Use handoff pattern (router → specialized agent)
+- Every tool call result must be stored in conversation messages table
+- Keep changes incremental and testable
+
+⚠️ OUTDATED/OUT-OF-SCOPE (COMMENTED FOR REFERENCE ONLY):
+The following items were originally planned but are OUT OF SCOPE for the hackathon:
+- voice_processing_agent (voice/speech features not required)
+- multi_platform_adapter_agent (cross-platform features not required)
+- nlp-training skill (training models not required)
+- analytics-learning (usage analytics not required)
+- security-privacy (as separate skill - security is built into other components)
+- voice-interface (voice processing not required)
+- multi-platform-deployment (deployment automation not required)
+- Any mention of training models, voice, cross-platform apps, etc.
 
 ## Code Standards
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
