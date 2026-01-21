@@ -48,14 +48,34 @@ export const makeAuthenticatedRequest = async (
     throw new Error('No authentication token available');
   }
 
-  const defaultHeaders = {
+  // Create default headers
+  const defaultHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${authState.token}`,
   };
 
+  // Safely merge headers
+  const mergedHeaders: Record<string, string> = { ...defaultHeaders };
+
+  if (options.headers) {
+    if (options.headers instanceof Headers) {
+      // If headers is a Headers object, convert to plain object
+      options.headers.forEach((value, key) => {
+        mergedHeaders[key] = value;
+      });
+    } else if (typeof options.headers === 'object') {
+      // If headers is a plain object, merge safely
+      Object.entries(options.headers).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          mergedHeaders[key] = value;
+        }
+      });
+    }
+  }
+
   const config: APIConfig = {
     baseUrl,
-    headers: { ...defaultHeaders, ...options.headers },
+    headers: mergedHeaders,
     timeout: 30000, // 30 seconds
   };
 
