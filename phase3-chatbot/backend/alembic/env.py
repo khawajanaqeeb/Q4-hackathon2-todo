@@ -7,7 +7,7 @@ from sqlalchemy import pool
 from alembic import context
 
 # Import app config and models
-from app.config import settings
+from ..config import settings  # Use Phase 3 settings instead of Phase 2
 from sqlmodel import SQLModel
 
 # Import all models to ensure they're registered with SQLModel metadata

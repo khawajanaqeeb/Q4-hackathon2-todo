@@ -20,7 +20,7 @@ from app.models.user import User
 from mcp.server import FastMCP
 import json
 from datetime import datetime
-from app.config import settings
+from ..config import settings  # Use Phase 3 settings instead of Phase 2
 
 
 # Create the FastMCP server instance

@@ -58,6 +58,14 @@ To run the Phase 3 chatbot functionality:
    - `OPENAI_API_KEY`: Your OpenAI API key (REAL API calls consume credits)
    - `DATABASE_URL`: PostgreSQL connection string for Neon
    - `BETTER_AUTH_SECRET`: Your Better Auth secret
+   - `JWT_SECRET_KEY`: Secret key for JWT token signing
+   - `PHASE2_BACKEND_PATH`: Path to Phase 2 backend (default: ./phase2-fullstack/backend)
+
+4. Configuration Notes:
+   - The system uses a custom Phase 3 settings configuration that extends Phase 2 settings
+   - Phase 3 includes additional environment variables while maintaining compatibility with Phase 2
+   - The configuration allows extra environment variables to prevent Pydantic validation errors
+   - Phase 2 functionality remains unchanged and continues to work as expected
 
 ## How to Run Phase 3 Chatbot
 

@@ -6,7 +6,7 @@ in the database according to the SQLModel definitions.
 from sqlmodel import SQLModel, create_engine
 from app.models.conversation import Conversation
 from app.models.message import Message
-from app.config import settings
+from ..config import settings  # Use Phase 3 settings instead of Phase 2
 
 
 def init_db():

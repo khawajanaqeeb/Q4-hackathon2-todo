@@ -26,6 +26,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Import Phase 3 settings
+from .config import settings
+
 from routers import chat_router
 
 # Create FastAPI application instance
@@ -38,7 +41,7 @@ app = FastAPI(
 # Configure CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
+    allow_origins=settings.CORS_ORIGINS.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
