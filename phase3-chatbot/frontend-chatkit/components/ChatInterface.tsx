@@ -135,6 +135,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* Chat messages container */}
       <div
         id="chat-container"
+        data-testid="chat-container"
         className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 min-h-[400px]"
       >
         {messages.length === 0 ? (
