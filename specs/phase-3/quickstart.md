@@ -1,60 +1,105 @@
-# Quickstart: OpenAI Migration for Phase 3 Chatbot
+# Quickstart Guide: Phase 3 Enhancement
 
-## Overview
-This guide provides the essential steps to set up and run the Phase 3 chatbot with native OpenAI integration after the migration from Gemini.
+**Feature**: Phase 3 Copy and Enhancement
+**Created**: 2026-01-22
 
-## Prerequisites
+## Development Setup
+
+### Prerequisites
 - Python 3.13+
-- OpenAI API key (real key, not compatibility layer)
-- Existing project dependencies (FastAPI, SQLModel, etc.)
+- Node.js 20+
+- uv (Python package manager)
+- OPENAI_API_KEY
+- Git
 
-## Setup Steps
+### Initial Setup
 
-### 1. Environment Configuration
-1. Copy `.env.example` to `.env`
-2. Add your OpenAI API key:
+1. **Phase 3 directory structure already exists**
+   The phase3-chatbot directory with backend and frontend is already set up.
+
+2. **Install backend dependencies**
+   ```bash
+   cd phase3-chatbot/backend
+   uv venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   uv pip install -r requirements.txt
    ```
-   OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+3. **Install frontend dependencies**
+   ```bash
+   cd phase3-chatbot/frontend-chatkit
+   npm install
    ```
-3. Remove any existing GEMINI_API_KEY entries
 
-### 2. Install Dependencies
-```bash
-pip install openai
-```
+4. **Configure environment variables**
+   ```bash
+   # In phase3-chatbot/.env
+   OPENAI_API_KEY=your_openai_api_key_here
+   DATABASE_URL=postgresql://user:password@localhost/dbname
+   SECRET_KEY=your_secret_key
+   ```
 
-### 3. Verify Agent Configuration
-Ensure all agent files are updated to use:
-- `from openai import AsyncOpenAI`
-- `openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))`
-- `model="gpt-4o-mini"`
+5. **Run the backend**
+   ```bash
+   cd phase3-chatbot/backend
+   uv run uvicorn main_phase3:app --reload --port 8000
+   ```
 
-### 4. Run the Application
+6. **Run the frontend**
+   ```bash
+   cd phase3-chatbot/frontend-chatkit
+   npm run dev
+   ```
+
+## Adding MCP Tools
+
+1. **Create MCP tools directory**
+   ```bash
+   mkdir -p phase3-chatbot/backend/mcp/tools
+   ```
+
+2. **Create task operation tools**
+   ```bash
+   touch phase3-chatbot/backend/mcp/tools/__init__.py
+   touch phase3-chatbot/backend/mcp/tools/task_tools.py
+   ```
+
+3. **Register MCP tools with OpenAI**
+   - In your agent initialization code, register the task tools
+   - Ensure JWT validation is performed for each tool call
+
+## Running Tests
+
+### Backend Tests
 ```bash
 cd phase3-chatbot/backend
-uvicorn main:app --reload
+uv run pytest
 ```
 
-## Key Changes
+### Frontend Tests
+```bash
+cd phase3-chatbot/frontend-chatkit
+npm test
+```
 
-### Removed Components
-- Gemini compatibility layer
-- `AsyncOpenAI(base_url="https://generativelanguage.googleapis.com/v1beta/openai/")`
-- `model="gemini-2.0-flash"`
-- External client passing mechanisms
+## Deployment
 
-### Added Components
-- Native OpenAI AsyncOpenAI client
-- Direct API key loading from environment
-- OpenAIChatCompletionsModel configuration
+### Local Development
+- Backend runs on http://localhost:8000
+- Frontend runs on http://localhost:3000
+- Chat interface available at http://localhost:3000/chat
+- Use main_phase3.py to run the Phase 3 specific server
 
-## Verification
-1. Start the application
-2. Test chatbot functionality
-3. Verify API calls are made to OpenAI (not Gemini)
-4. Confirm all existing features work as before
+### Environment Variables
+Required for Phase 3:
+- `OPENAI_API_KEY` - OpenAI API key for chat functionality
+- `DATABASE_URL` - PostgreSQL database connection string
+- `SECRET_KEY` - JWT signing key
+- `NEXT_PUBLIC_CHAT_ENDPOINT_BASE_URL` - Base URL for chat API calls
 
-## Troubleshooting
-- If API calls fail, verify your OpenAI API key is valid and has sufficient credits
-- If agents don't start, check that all agent files have been updated correctly
-- If functionality is broken, ensure all existing features were preserved during migration
+## Key Directories
+- `phase3-chatbot/backend/` - Phase 3 backend code
+- `phase3-chatbot/frontend-chatkit/` - Phase 3 frontend code with OpenAI ChatKit
+- `phase3-chatbot/backend/mcp/` - MCP tools implementation
+- `phase3-chatbot/backend/agents/` - AI agent implementations
+- `phase3-chatbot/frontend-chatkit/app/chat/` - Chat interface page

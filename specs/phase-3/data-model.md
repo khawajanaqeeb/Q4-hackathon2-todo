@@ -1,54 +1,64 @@
-# Data Model: OpenAI Migration for Phase 3 Chatbot
+# Data Model: Phase 3 Enhancement
 
-## Overview
-This document describes the data models and configurations affected by the migration from Gemini to OpenAI models. The migration primarily affects configuration and runtime parameters rather than persistent data models.
+**Feature**: Phase 3 Copy and Enhancement
+**Created**: 2026-01-22
 
-## Configuration Models
+## Database Schema
 
-### OpenAI Client Configuration
-- **Entity**: OpenAIAsyncClient
-- **Fields**:
-  - api_key: String (loaded from environment variable)
-  - base_url: String (default OpenAI endpoint)
-  - timeout: Integer (request timeout in seconds)
-  - max_retries: Integer (number of retry attempts)
+### Extended Task Table (from Phase 2)
+- id: UUID (Primary Key) - Unique identifier for each task
+- title: VARCHAR(255) - Task title/description
+- description: TEXT - Detailed task description (nullable)
+- completed: BOOLEAN - Whether the task is completed
+- priority: VARCHAR(20) - Task priority (low, medium, high)
+- tags: JSON - Array of tags associated with the task
+- created_at: TIMESTAMP - When the task was created
+- updated_at: TIMESTAMP - When the task was last updated
+- user_id: UUID (Foreign Key) - Links to the user who owns this task
+- due_date: TIMESTAMP - Optional due date for the task
 
-### Model Configuration
-- **Entity**: OpenAIModelConfig
-- **Fields**:
-  - model_name: String (currently "gpt-4o-mini")
-  - temperature: Float (creativity control)
-  - max_tokens: Integer (response length limit)
-  - client: OpenAIAsyncClient (reference to client instance)
+### Conversation Table (new for Phase 3)
+- id: UUID (Primary Key) - Unique identifier for each conversation
+- user_id: UUID (Foreign Key) - Links to the user who owns this conversation
+- title: VARCHAR(255) - Auto-generated title based on first message or user input
+- created_at: TIMESTAMP - When the conversation was created
+- updated_at: TIMESTAMP - When the conversation was last updated
 
-### Run Configuration
-- **Entity**: RunConfig
-- **Fields**:
-  - model: OpenAIChatCompletionsModel (model configuration)
-  - model_provider: OpenAIAsyncClient (provider reference)
-  - tracing_disabled: Boolean (tracing flag)
+### Message Table (new for Phase 3)
+- id: UUID (Primary Key) - Unique identifier for each message
+- conversation_id: UUID (Foreign Key) - Links to the conversation this message belongs to
+- role: VARCHAR(20) - Role of the message sender (user, assistant)
+- content: TEXT - The actual message content
+- timestamp: TIMESTAMP - When the message was sent
+- metadata: JSON - Additional data about the message (token usage, model info, etc.)
 
-## Affected Files
-The following files will be updated to use the new OpenAI configuration:
-
-### Agent Files
-- `phase3-chatbot/backend/agents/base.py`
-- `phase3-chatbot/backend/agents/router_agent.py`
-- `phase3-chatbot/backend/agents/add_task_agent.py`
-- `phase3-chatbot/backend/agents/list_tasks_agent.py`
-- `phase3-chatbot/backend/agents/complete_task_agent.py`
-- `phase3-chatbot/backend/agents/update_task_agent.py`
-- `phase3-chatbot/backend/agents/delete_task_agent.py`
-
-### Configuration Files
-- `.env.example`
-- `README-phase3.md`
-
-## State Transitions
-No state transitions are affected by this migration as it only changes the underlying LLM provider while maintaining all existing functionality.
+### Relationships
+- Task.user_id → User.id (one-to-many relationship)
+- Conversation.user_id → User.id (one-to-many relationship)  
+- Message.conversation_id → Conversation.id (one-to-many relationship)
 
 ## Validation Rules
-- API key must be properly formatted (starts with "sk-")
-- Model name must be valid and available in OpenAI
-- Client initialization must succeed before agent startup
-- All existing agent interfaces must remain compatible
+
+### Task Validation
+- Title is required and must be 1-255 characters
+- User_id is required and must reference an existing user
+- Priority must be one of: 'low', 'medium', 'high'
+- Completed defaults to FALSE
+- Due date must be a valid future date if provided
+
+### Conversation Validation
+- User_id is required and must reference an existing user
+- Title is required and must be 1-255 characters
+- Created_at and updated_at are automatically managed by the database
+
+### Message Validation
+- Conversation_id is required and must reference an existing conversation
+- Role must be one of: 'user', 'assistant'
+- Content is required and must be 1-10000 characters
+- Timestamp is automatically set to current time if not provided
+
+## Indexes
+- idx_tasks_user_id: Index on user_id for efficient user-based queries
+- idx_conversations_user_id: Index on user_id for efficient user-based queries
+- idx_messages_conversation_id: Index on conversation_id for efficient conversation-based queries
+- idx_messages_timestamp: Index on timestamp for chronological ordering

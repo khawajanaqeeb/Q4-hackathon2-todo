@@ -1,82 +1,185 @@
-# Implementation Plan: Switch Phase 3 Backend to Native OpenAI Models
+# Implementation Plan: Phase 3 Enhancement
 
-**Branch**: `001-switch-openai-models` | **Date**: 2026-01-21 | **Spec**: [specs/phase-3/spec.md](./spec.md)
-**Input**: Feature specification from `/specs/phase-3/spec.md`
-
-**Note**: This template is filled in by the `/sp.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
-
-## Summary
-
-This plan outlines the migration of the Phase 3 chatbot backend from Google Gemini compatibility layer to native OpenAI models. The primary requirement is to replace all Gemini-specific configurations with native OpenAI AsyncOpenAI client using the purchased OpenAI API key. This involves updating all agent files, configuration, and documentation while preserving all existing functionality including agents, handoff pattern, MCP tools, DB operations, JWT auth, and conversation persistence.
+**Feature**: Phase 3 Copy and Enhancement
+**Branch**: `phase-3-enhancement`
+**Created**: 2026-01-22
+**Status**: Draft
 
 ## Technical Context
 
-**Language/Version**: Python 3.13+
-**Primary Dependencies**: OpenAI Python SDK, FastAPI, SQLModel, Better Auth
-**Storage**: Neon Serverless PostgreSQL (via SQLModel ORM)
-**Testing**: pytest
-**Target Platform**: Linux server (cloud deployment)
-**Project Type**: Web application (backend API services)
-**Performance Goals**: Maintain current response times with improved reliability via native OpenAI integration
-**Constraints**: Must preserve all existing functionality, maintain backward compatibility with current agent patterns, ensure secure API key handling
-**Scale/Scope**: Support current user base and anticipated growth with OpenAI's reliable infrastructure
+**Project Overview**:
+- Phase 3: AI-Powered Chatbot - OpenAI ChatKit, Agents SDK, MCP tools
+- Goal: Enhance Phase 2 backend and frontend with AI chatbot capabilities
+- Technology Stack: Python FastAPI, Next.js, OpenAI Agents SDK, MCP SDK, SQLModel, Neon PostgreSQL, Better Auth
+
+**Current State**:
+- Phase 2 backend exists in `phase2-fullstack/backend/`
+- Phase 2 frontend exists in `phase2-fullstack/frontend/`
+- Both are functional with authentication, API endpoints, and UI components
+- Need to copy and enhance these for Phase 3 chatbot functionality
+
+**Target State**:
+- Copied backend in `phase3-chatbot/backend/` with MCP tools and chat functionality
+- Copied frontend in `phase3-chatbot/frontend/` with OpenAI ChatKit component
+- Multi-agent architecture with router and specialized task agents
+- MCP tools for add_task, list_tasks, complete_task, delete_task, update_task operations
+- JWT-based user authentication and data isolation
+
+**Unknowns**: All resolved in research.md
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+**SDD Compliance**: ✅ - Following Spec-Driven Development workflow (Spec → Plan → Tasks → Implement)
+**Phase Constraints**: ✅ - Adhering to Phase III technology stack additions (OpenAI Agents SDK, MCP SDK, ChatKit)
+**Architecture Standards**: ✅ - Planning clean architecture with separation of concerns
+**Security Considerations**: ✅ - Including JWT validation and user isolation in design
+**Documentation**: ✅ - Creating comprehensive plan with implementation details
 
-1. **SDD Mandate**: ✓ Plan follows Spec-Driven Development by building on the existing spec.md
-2. **Workflow Compliance**: ✓ Following Phase III technology stack requirements (OpenAI Agents SDK, MCP tools)
-3. **Phase Constraints**: ✓ Working within Phase III scope (AI-powered chatbot with OpenAI integration)
-4. **Security Requirements**: ✓ Maintaining Better Auth JWT user isolation and secure API key handling
-5. **Code Quality**: ✓ Will maintain PEP 8 compliance and type hints as specified in constitution
-6. **Feature Progression**: ✓ Building on existing Phase III features without removing functionality
+**Gates**:
+- [x] **Gate 1**: All unknowns from Technical Context resolved via research
+- [x] **Gate 2**: Data model and API contracts defined
+- [x] **Gate 3**: Architecture diagram and component relationships established
 
-## Project Structure
+## Phase 0: Research & Unknown Resolution
 
-### Documentation (this feature)
+### Research Tasks
 
-```text
-specs/phase-3/
-├── plan.md              # This file (/sp.plan command output)
-├── research.md          # Phase 0 output (/sp.plan command)
-├── data-model.md        # Phase 1 output (/sp.plan command)
-├── quickstart.md        # Phase 1 output (/sp.plan command)
-├── contracts/           # Phase 1 output (/sp.plan command)
-└── tasks.md             # Phase 2 output (/sp.tasks command - NOT created by /sp.plan)
-```
+1. **MCP Tools Implementation Research**
+   - Investigate MCP SDK integration with FastAPI backend
+   - Research best practices for exposing CRUD operations as MCP tools
+   - Document security considerations for MCP tool authentication
 
-### Source Code (repository root)
+2. **OpenAI Agents Architecture Research**
+   - Study multi-agent architecture patterns (router + specialized agents)
+   - Research conversation state management in stateless design
+   - Document handoff patterns between specialized agents
 
-```text
-phase3-chatbot/
-├── backend/
-│   ├── agents/
-│   │   ├── base.py
-│   │   ├── router_agent.py
-│   │   ├── add_task_agent.py
-│   │   ├── list_tasks_agent.py
-│   │   ├── complete_task_agent.py
-│   │   ├── update_task_agent.py
-│   │   └── delete_task_agent.py
-│   ├── api/
-│   ├── models/
-│   ├── database/
-│   ├── auth/
-│   ├── mcp_tools/
-│   └── main.py
-├── frontend/
-├── .env
-├── .env.example
-└── README-phase3.md
-```
+3. **Database Schema Extension Research**
+   - Research conversation and message model designs
+   - Plan migration strategy for existing Phase 2 data
+   - Define relationships between tasks, conversations, and messages
 
-**Structure Decision**: The migration affects the backend agent files in phase3-chatbot/backend/agents/ and related configuration files. The structure maintains the existing Phase III architecture while updating the LLM integration layer.
+## Phase 1: Design & Architecture
 
-## Complexity Tracking
+### Data Model Design
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
+**Conversation Entity**:
+- id: UUID (primary key)
+- user_id: UUID (foreign key to user table)
+- title: String
+- created_at: DateTime
+- updated_at: DateTime
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [None] | [N/A] | [N/A] |
+**Message Entity**:
+- id: UUID (primary key)
+- conversation_id: UUID (foreign key to conversation)
+- role: String (user/assistant)
+- content: Text
+- timestamp: DateTime
+- metadata: JSON (optional)
+
+**Task Entity** (extended from Phase 2):
+- Inherits existing fields from Phase 2
+- user_id: UUID (foreign key to user table) - for authorization
+- Additional fields as needed for AI interactions
+
+### API Contract Design
+
+**MCP Tools Endpoints**:
+- POST `/mcp/tools/add_task` - Create new task via MCP
+- POST `/mcp/tools/list_tasks` - Retrieve user's tasks via MCP
+- POST `/mcp/tools/complete_task` - Mark task as completed via MCP
+- POST `/mcp/tools/delete_task` - Delete task via MCP
+- POST `/mcp/tools/update_task` - Update task via MCP
+
+**Chat Endpoint**:
+- POST `/api/{user_id}/chat` - Main chat endpoint with JWT validation
+- Requires Bearer token authentication
+- Returns structured responses for ChatKit
+
+### Architecture Components
+
+1. **Router Agent**:
+   - Determines which specialized agent to route to based on user intent
+   - Handles conversation state loading/storing
+   - Manages authentication and user context
+
+2. **Specialized Task Agents**:
+   - Add Task Agent: Handles task creation requests
+   - List Tasks Agent: Handles task listing requests
+   - Complete Task Agent: Handles task completion requests
+   - Delete Task Agent: Handles task deletion requests
+   - Update Task Agent: Handles task update requests
+
+3. **MCP Tool Layer**:
+   - Exposes task operations as MCP tools
+   - Enforces user authentication and authorization
+   - Maps natural language to structured operations
+
+4. **Data Access Layer**:
+   - Database models for tasks, conversations, messages
+   - Repository pattern for data access
+   - JWT validation utilities
+
+## Phase 2: Implementation Roadmap
+
+### Sprint 1: Infrastructure Setup
+- [ ] Copy Phase 2 backend to `phase3-chatbot/backend/`
+- [ ] Copy Phase 2 frontend to `phase3-chatbot/frontend/`
+- [ ] Add OPENAI_API_KEY to config.py Settings
+- [ ] Configure development environment for Phase 3
+
+### Sprint 2: MCP Tools Implementation
+- [ ] Create MCP tool layer for task operations
+- [ ] Implement add_task MCP tool with JWT validation
+- [ ] Implement list_tasks MCP tool with user isolation
+- [ ] Implement complete_task, delete_task, update_task MCP tools
+- [ ] Add error handling and validation for all MCP tools
+
+### Sprint 3: Multi-Agent Architecture
+- [ ] Create base agent with JWT extraction and history loading
+- [ ] Implement router agent with intent detection
+- [ ] Create specialized task agents (add, list, complete, delete, update)
+- [ ] Implement handoff patterns between agents
+- [ ] Add conversation state management
+
+### Sprint 4: Frontend Integration
+- [ ] Create /chat page with OpenAI ChatKit component
+- [ ] Integrate with existing Better Auth session
+- [ ] Connect to backend chat endpoint with proper authentication
+- [ ] Implement error handling and loading states
+
+### Sprint 5: Testing and Validation
+- [ ] Unit tests for MCP tools and agents
+- [ ] Integration tests for chat functionality
+- [ ] Security validation for JWT authentication
+- [ ] Performance testing for response times
+- [ ] User acceptance testing
+
+## Risk Assessment
+
+**High Risks**:
+- MCP tools integration complexity
+- AI agent handoff reliability
+- Security vulnerabilities in authentication
+
+**Medium Risks**:
+- Performance degradation with AI processing
+- Database schema migration issues
+- Third-party API availability (OpenAI)
+
+**Mitigation Strategies**:
+- Extensive testing of MCP tool authentication
+- Fallback mechanisms for AI agent failures
+- Comprehensive error handling and logging
+
+## Success Criteria Validation
+
+- [ ] Phase 3 backend starts successfully on port 8000 without errors
+- [ ] Phase 3 frontend starts successfully on port 3000 and provides chat interface
+- [ ] Users can add, list, complete, and delete tasks through natural language chat interface
+- [ ] All user data is properly isolated - users cannot access other users' tasks
+- [ ] Original Phase 2 functionality remains unchanged and accessible
+- [ ] Natural language processing achieves at least 80% accuracy for basic task operations
+- [ ] System responds to chat requests within 3 seconds for 95% of requests
+

@@ -152,7 +152,7 @@ class RouterAgent:
 
     async def run(self, user_message: str, user_id: int, history: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
         """
-        Run the router agent with user message and conversation history using real Google Gemini API.
+        Run the router agent with user message and conversation history using real OpenAI API.
 
         Args:
             user_message: The user's message

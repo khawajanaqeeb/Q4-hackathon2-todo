@@ -90,7 +90,7 @@ async def chat_endpoint(
 ):
     """
     Real chat endpoint that processes user messages through the Router Agent.
-    Makes real API calls to Google Gemini via OpenAI-compatible endpoint.
+    Makes real API calls to OpenAI API.
 
     Args:
         user_id: The ID of the user (should match authenticated user)
