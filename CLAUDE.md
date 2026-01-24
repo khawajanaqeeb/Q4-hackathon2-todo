@@ -222,6 +222,15 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 - `specs/phase-1/` and `specs/phase-2/` - Specifications for both phases
 - Full authentication, API endpoints, and UI components
 
+### Phase III: AI Chatbot Integration
+- `phase3-chatbot/` - AI-powered chatbot for todo management
+- `specs/phase-3/` - Specifications for Phase 3 including:
+  - `spec1-chatcore.md` - Core chatbot functionality and task management
+  - `spec2-state.md` - Session, context, and persistence management
+  - `spec3-mcp-integration.md` - Model Context Protocol integration and API key management
+  - `spec4-ui.md` - Frontend chat interface and user experience
+- Natural language processing for todo operations, MCP integration, and enhanced UI
+
 
 ## Code Standards
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
