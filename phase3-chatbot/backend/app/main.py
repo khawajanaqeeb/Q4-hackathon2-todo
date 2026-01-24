@@ -16,10 +16,11 @@ app = FastAPI(
     description="Phase II Full-Stack Todo Application API",
 )
 
-# Initialize rate limiter
-limiter = Limiter(key_func=get_remote_address)
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Initialize rate limiter only if not disabled
+if not settings.DISABLE_RATE_LIMIT:
+    limiter = Limiter(key_func=get_remote_address)
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configure CORS middleware - More restrictive than default
 origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",")]

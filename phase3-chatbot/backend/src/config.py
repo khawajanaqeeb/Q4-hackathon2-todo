@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
+from pydantic import Field
 import os
 
 
@@ -36,6 +37,8 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        # Allow extra fields to prevent validation errors
+        extra = "allow"
 
     @property
     def cors_origins_list(self) -> List[str]:

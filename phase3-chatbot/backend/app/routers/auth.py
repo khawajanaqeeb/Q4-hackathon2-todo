@@ -25,11 +25,11 @@ from app.utils.security import (
 )
 
 # Import limiter for rate limiting
-# Note: This creates a local instance. In production, consider using
-# request.app.state.limiter (set in main.py) for centralized config
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from app.config import settings
 
+# Create limiter that respects the DISABLE_RATE_LIMIT setting
 limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter()
@@ -108,8 +108,19 @@ async def register(
 from fastapi import Request, Form
 from fastapi.security import OAuth2PasswordRequestForm
 
+# Define conditional rate limiter decorator
+def conditional_rate_limit(limit_str: str):
+    if settings.DISABLE_RATE_LIMIT:
+        # Return a decorator that does nothing
+        def no_rate_limit(func):
+            return func
+        return no_rate_limit
+    else:
+        # Return the actual rate limiter
+        return limiter.limit(limit_str)
+
 @router.post("/login", response_model=TokenResponse)
-@limiter.limit("5/minute")  # Rate limit login attempts to 5 per minute per IP
+@conditional_rate_limit("5/minute")  # Rate limit login attempts to 5 per minute per IP
 async def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -181,7 +192,7 @@ async def login(
 
 
 @router.post("/refresh", response_model=TokenResponse)
-@limiter.limit("10/minute")  # Rate limit refresh attempts to 10 per minute per IP
+@conditional_rate_limit("10/minute")  # Rate limit refresh attempts to 10 per minute per IP
 async def refresh_token(
     request: Request,
     refresh_token: str = Form(...),

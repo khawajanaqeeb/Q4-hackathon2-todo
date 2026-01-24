@@ -12,6 +12,8 @@ os.environ["SECRET_KEY"] = "test_secret_key_for_testing_purposes_only"
 os.environ["ALGORITHM"] = "HS256"
 os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
 os.environ["REFRESH_TOKEN_EXPIRE_DAYS"] = "7"
+os.environ["ENVIRONMENT"] = "testing"
+os.environ["DISABLE_RATE_LIMIT"] = "True"  # Explicitly disable rate limiting for tests
 
 from app.main import app
 from app.database import get_session
