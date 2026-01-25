@@ -173,7 +173,7 @@ async def get_tool_schema(
     """
     # This would typically fetch from the database or a predefined schema
     # For now, we'll return a generic response
-    # In a real implementation, this would fetch from McpTool.model.schema_json
+    # In a real implementation, this would fetch from McpTool.model.tool_schema
     from sqlmodel import select
     from ..models.mcp_tool import McpTool
 
@@ -208,7 +208,7 @@ async def get_tool_schema(
         "name": tool.name,
         "description": tool.description,
         "provider": tool.provider,
-        "schema": tool.schema_json
+        "tool_schema": tool.tool_schema
     }
 
 
@@ -343,7 +343,6 @@ async def register_tool(
                 "provider": provider
             }
 
-        # Register the tool
         registered_tool = await tool_registration_service.register_tool(
             name=tool_name,
             provider=provider,

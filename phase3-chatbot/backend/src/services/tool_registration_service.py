@@ -52,7 +52,7 @@ class ToolRegistrationService:
             # Update existing tool
             existing_tool.provider = provider
             existing_tool.description = description
-            existing_tool.schema_json = schema_json or {}
+            existing_tool.tool_schema = schema_json or {}
             existing_tool.user_id = user_id
             existing_tool.is_active = True
             existing_tool.updated_at = datetime.utcnow()
@@ -66,7 +66,7 @@ class ToolRegistrationService:
                 'handler': handler,
                 'description': description,
                 'provider': provider,
-                'schema_json': schema_json or {},
+                'tool_schema': schema_json or {},
                 'user_id': user_id
             }
 
@@ -77,7 +77,7 @@ class ToolRegistrationService:
                 name=name,
                 provider=provider,
                 description=description,
-                schema_json=schema_json or {},
+                tool_schema=schema_json or {},
                 user_id=user_id,
                 is_active=True
             )
@@ -91,7 +91,7 @@ class ToolRegistrationService:
                 'handler': handler,
                 'description': description,
                 'provider': provider,
-                'schema_json': schema_json or {},
+                'tool_schema': schema_json or {},
                 'user_id': user_id
             }
 
@@ -150,7 +150,7 @@ class ToolRegistrationService:
                 'handler': None,  # Handler is only in memory
                 'description': db_tool.description,
                 'provider': db_tool.provider,
-                'schema_json': db_tool.schema_json,
+                'tool_schema': db_tool.tool_schema,
                 'user_id': db_tool.user_id
             }
 
@@ -181,7 +181,7 @@ class ToolRegistrationService:
                 'name': db_tool.name,
                 'description': db_tool.description,
                 'provider': db_tool.provider,
-                'schema_json': db_tool.schema_json,
+                'tool_schema': db_tool.tool_schema,
                 'user_id': db_tool.user_id,
                 'is_active': db_tool.is_active
             })
@@ -228,7 +228,7 @@ class ToolDiscoveryService:
                 'name': db_tool.name,
                 'description': db_tool.description,
                 'provider': db_tool.provider,
-                'schema_json': db_tool.schema_json,
+                'tool_schema': db_tool.tool_schema,
                 'user_id': db_tool.user_id
             })
 
@@ -265,7 +265,7 @@ class ToolDiscoveryService:
                 'name': db_tool.name,
                 'description': db_tool.description,
                 'provider': db_tool.provider,
-                'schema_json': db_tool.schema_json,
+                'tool_schema': db_tool.tool_schema,
                 'user_id': db_tool.user_id
             })
 
@@ -294,7 +294,7 @@ class ToolDiscoveryService:
                 'name': db_tool.name,
                 'description': db_tool.description,
                 'provider': db_tool.provider,
-                'schema_json': db_tool.schema_json,
+                'tool_schema': db_tool.tool_schema,
                 'user_id': db_tool.user_id
             })
 
@@ -339,7 +339,7 @@ class ToolValidationService:
             }
 
         # Validate against schema if available
-        schema = db_tool.schema_json
+        schema = db_tool.tool_schema
         if not schema:
             return {
                 "success": True,

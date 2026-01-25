@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '@/store';
+import { RootState, AppDispatch } from '@/store';
 import { TodoItem, TodoPriority } from '@/types';
 import { addTodo, updateTodo, deleteTodo, toggleTodoCompletion, setFilter } from '@/store/slices/todoSlice';
 import { v4 as uuidv4 } from 'uuid';
 
 const TodoPanel: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { todos, filter, loading, error } = useSelector((state: RootState) => state.todo);
   const { theme } = useSelector((state: RootState) => state.ui);
 
@@ -158,7 +158,13 @@ const TodoPanel: React.FC = () => {
 
         {/* Todo list */}
         <div className="space-y-2">
-          {loading && <p>Loading todos...</p>}
+          {loading && (
+            <div className={`p-4 text-center ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            }`}>
+              Loading todos...
+            </div>
+          )}
 
           {error && (
             <div className="text-red-500 p-2 bg-red-100 rounded">

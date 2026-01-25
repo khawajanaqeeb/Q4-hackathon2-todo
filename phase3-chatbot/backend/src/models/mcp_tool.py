@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field, Column, DateTime, func
 from sqlalchemy import String, JSON
 from datetime import datetime
 import uuid
-from typing import Optional
+from typing import Optional, Dict, Any
 
 
 class McpToolBase(SQLModel):
@@ -10,7 +10,7 @@ class McpToolBase(SQLModel):
     name: str = Field(sa_column=Column(String, nullable=False, unique=True))
     description: str = Field(sa_column=Column(String, nullable=True))
     provider: str = Field(sa_column=Column(String, nullable=False))
-    schema_json: str = Field(sa_column=Column(String, nullable=False))  # Store as JSON string
+    tool_schema: Dict[str, Any] = Field(sa_column=Column(JSON, nullable=False))  # Store as JSON
     is_active: bool = Field(default=True)
 
 
