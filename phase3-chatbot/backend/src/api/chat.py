@@ -7,7 +7,7 @@ from ..dependencies.auth import get_current_user
 from ..models.user import User  # Assuming User model exists from phase 2
 from ..services.chat_service import ChatService
 from ..services.agent_runner import AgentRunner
-from ..services.mcp_integration import MCPIntegrationService
+from ..services.mcp_integration import McpIntegrationService
 from pydantic import BaseModel
 from ..models.conversation import Conversation  # Import the Conversation model
 
@@ -63,7 +63,7 @@ async def send_message(
     # Initialize services
     chat_service = ChatService(session)
     agent_runner = AgentRunner()
-    mcp_service = MCPIntegrationService(session)
+    mcp_service = McpIntegrationService(session)
 
     try:
         # Convert conversation_id to UUID if provided
@@ -108,11 +108,22 @@ async def send_message(
         # If the agent identified a task operation, process it via MCP
         intent = agent_result["action_taken"]
         if intent in ["task_creation", "task_listing", "task_update", "task_deletion", "task_completion"]:
-            params = agent_result["intent_result"]["parsed_command"]["parameters"]
-            mcp_result = await mcp_service.process_task_operation(
-                user_id=conversation_uuid,
-                operation=intent,
-                params=params
+            # Map the intent to an appropriate MCP tool
+            tool_mapping = {
+                "task_creation": "create_task",
+                "task_listing": "list_tasks",
+                "task_update": "update_task",
+                "task_deletion": "delete_task",
+                "task_completion": "complete_task"
+            }
+
+            tool_name = tool_mapping.get(intent, "todo_operation")
+            params = agent_result["intent_result"]["parsed_command"]["parameters"] if "intent_result" in agent_result and "parsed_command" in agent_result["intent_result"] else {}
+
+            mcp_result = await mcp_service.invoke_tool(
+                tool_name=tool_name,
+                parameters=params,
+                user_id=conversation_uuid
             )
 
             if not mcp_result["success"]:
@@ -246,7 +257,7 @@ async def get_conversation_messages(
                 "role": msg.role.value,
                 "content": msg.content,
                 "timestamp": msg.timestamp.isoformat(),
-                "metadata": msg.metadata
+                "message_metadata": msg.message_metadata
             }
             for msg in messages
         ]

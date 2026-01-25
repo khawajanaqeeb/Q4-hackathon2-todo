@@ -6,7 +6,7 @@ from enum import Enum
 
 if TYPE_CHECKING:
     from .message import Message
-    from .user import User  # Assuming User model exists from phase 2
+    from .user import User
 
 
 class Conversation(SQLModel, table=True):
@@ -20,24 +20,10 @@ class Conversation(SQLModel, table=True):
     is_active: bool = Field(default=True)
 
     # Relationship to messages
-    messages: list["Message"] = Relationship(back_populates="conversation", cascade_delete=True)
+    messages: list["Message"] = Relationship(back_populates="conversation")
 
 
 class MessageRole(str, Enum):
     USER = "user"
     ASSISTANT = "assistant"
     SYSTEM = "system"
-
-
-class Message(SQLModel, table=True):
-    """Message model for storing individual chat messages."""
-
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    conversation_id: uuid.UUID = Field(foreign_key="conversation.id")
-    role: MessageRole = Field(sa_column_kwargs={"default": "user"})
-    content: str = Field(min_length=1, max_length=10000)
-    timestamp: datetime = Field(default=datetime.utcnow())
-    metadata: Optional[dict] = Field(default=None, sa_column_type="JSONB")  # For tokens used, AI response details
-
-    # Relationship to conversation
-    conversation: Conversation = Relationship(back_populates="messages")

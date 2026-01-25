@@ -2,7 +2,8 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 import uuid
 from sqlmodel import Session, select
-from ..models.conversation import Conversation, Message, MessageRole
+from ..models.conversation import Conversation, MessageRole
+from ..models.message import Message
 from ..models.task import Task
 from ..models.user import User  # Assuming User model exists from phase 2
 

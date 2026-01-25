@@ -23,7 +23,7 @@ class Message(SQLModel, table=True):
     role: MessageRole = Field(sa_column_kwargs={"default": "user"})
     content: str = Field(min_length=1, max_length=10000)
     timestamp: datetime = Field(default=datetime.utcnow())
-    metadata: Optional[dict] = Field(default=None, sa_column_type="JSONB")  # For tokens used, AI response details
+    message_metadata: Optional[str] = Field(default=None)  # Renamed from metadata to avoid conflict
 
     # Relationship to conversation
     conversation: "Conversation" = Relationship(back_populates="messages")
