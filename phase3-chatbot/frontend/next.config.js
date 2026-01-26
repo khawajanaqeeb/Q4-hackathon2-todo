@@ -2,10 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Turbopack-specific optimizations for development
+  // Next.js 16.1.1 compatible configuration
   experimental: {
     // Memory optimizations for development
-    serverExternalPackages: [
+    serverComponentsExternalPackages: [
       // Add packages that should be externalized to save memory
     ],
 
@@ -15,7 +15,7 @@ const nextConfig = {
     ],
   },
 
-  // Webpack configuration for development memory management
+  // Turbopack-compatible configuration
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
       // Add plugins for memory monitoring during development
@@ -59,10 +59,6 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_DEV_MEMORY_MONITORING: process.env.NODE_ENV === 'development' ? 'true' : 'false',
   },
-
-  // Development-specific optimizations
-  // Enable faster refresh - this is now enabled by default in Next.js 14+
-  // fastRefresh is deprecated in newer versions
 };
 
 module.exports = nextConfig
