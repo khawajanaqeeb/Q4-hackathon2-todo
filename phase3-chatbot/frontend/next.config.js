@@ -2,10 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Next.js 16.1.1 compatible configuration
+  // Next.js 16.1.1 and Turbopack compatible configuration
   experimental: {
     // Memory optimizations for development
-    serverComponentsExternalPackages: [
+    serverExternalPackages: [
       // Add packages that should be externalized to save memory
     ],
 
@@ -13,6 +13,16 @@ const nextConfig = {
     optimizePackageImports: [
       // Optimize imports for faster startup
     ],
+
+    // Turbopack-specific features
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
   },
 
   // Turbopack-compatible configuration
@@ -23,33 +33,6 @@ const nextConfig = {
         ...config.resolve.fallback,
         fs: false, // Don't bundle fs module in client
       };
-
-      // Reduce memory footprint in development
-      if (process.env.NODE_ENV === 'development') {
-        // Add memory monitoring plugin if available
-        config.optimization = {
-          ...config.optimization,
-          splitChunks: {
-            chunks: 'all',
-            cacheGroups: {
-              // Separate auth-related chunks for easier debugging
-              auth: {
-                test: /[\\/]src[\\/]lib[\\/]auth/,
-                name: 'auth',
-                chunks: 'all',
-                priority: 10,
-              },
-              // Vendor chunk for dependencies
-              vendor: {
-                test: /[\\/]node_modules[\\/]/,
-                name: 'vendors',
-                chunks: 'all',
-                priority: 5,
-              }
-            }
-          }
-        };
-      }
     }
 
     return config;
