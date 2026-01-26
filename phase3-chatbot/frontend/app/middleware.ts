@@ -37,8 +37,9 @@ export function middleware(request: NextRequest) {
     `Middleware processing for ${pathname}`
   );
 
-  // Check for potential recursive loops
-  if (originTracker.detectRecursiveLoops(5000, 3)) {
+  // Check for potential recursive loops, but exclude auth verification routes
+  // since legitimate auth checks can happen frequently during page load
+  if (!pathname.includes('/api/auth/verify') && originTracker.detectRecursiveLoops(5000, 10)) {
     authLogger.error('Potential authentication verification loop detected in middleware', {
       pathname,
       method: request.method,

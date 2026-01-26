@@ -22,14 +22,15 @@ const SPECIAL_ROUTES = {
 const requestCounts = new Map<string, { count: number; timestamp: number }>();
 
 // Function to increment and check request count for a specific path
-function incrementRequestCount(path: string, maxAttempts: number = 3): boolean {
+function incrementRequestCount(path: string, maxAttempts: number = 5): boolean {
   const key = `${path}_${new Date().toISOString().split('T')[0]}`; // Daily count
   const now = Date.now();
 
   const current = requestCounts.get(key);
   if (current) {
-    // Reset count if it's been more than 1 minute since last request
-    if (now - current.timestamp > 60000) {
+    // Reset count if it's been more than 10 minutes since last request (for development)
+    // This allows more flexibility during development when pages are reloaded frequently
+    if (now - current.timestamp > 600000) { // 10 minutes instead of 5 minutes
       requestCounts.set(key, { count: 1, timestamp: now });
       return true;
     }
@@ -245,7 +246,12 @@ async function handleRequest(
     }
 
     // Check if we've exceeded the maximum verification attempts to prevent loops
-    if (!incrementRequestCount(apiPath, 3)) { // Limit to 3 attempts per path
+    // Only apply the counter if the token exists (otherwise it's just a normal unauthorized request)
+    // For verification endpoint specifically, allow more attempts since it's a legitimate auth check
+    const isVerifyEndpoint = apiPath === '/' || apiPath === SPECIAL_ROUTES.VERIFY;
+    const maxAttempts = isVerifyEndpoint ? 20 : 10; // Higher limit for verify endpoint
+
+    if (!incrementRequestCount(apiPath, maxAttempts)) {
       console.error(`[Proxy] Blocking potential verification loop for path: ${apiPath}`);
       return createErrorResponse('Too many verification attempts', 429); // Too Many Requests
     }
@@ -261,7 +267,8 @@ async function handleRequest(
       if (backendResponse.ok) {
         const userData = await safeJsonParse(backendResponse);
         // Reset counter on successful verification
-        requestCounts.delete(`${apiPath}_${new Date().toISOString().split('T')[0]}`);
+        const key = `${apiPath}_${new Date().toISOString().split('T')[0]}`; // Daily count key
+        requestCounts.delete(key);
 
         // Add headers to help prevent recursive calls
         const response = NextResponse.json(userData);
