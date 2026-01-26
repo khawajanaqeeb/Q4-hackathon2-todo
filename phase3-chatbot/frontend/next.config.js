@@ -4,22 +4,8 @@ const nextConfig = {
 
   // Turbopack-specific optimizations for development
   experimental: {
-    // Enable Turbopack in development
-    turbo: {
-      // Enable Turbopack build system
-      enabled: process.env.NODE_ENV === 'development',
-
-      // Rules for specific file types
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
-
     // Memory optimizations for development
-    serverComponentsExternalPackages: [
+    serverExternalPackages: [
       // Add packages that should be externalized to save memory
     ],
 
@@ -75,19 +61,8 @@ const nextConfig = {
   },
 
   // Development-specific optimizations
-  ...(process.env.NODE_ENV === 'development' && {
-    // Enable faster refresh
-    fastRefresh: true,
-
-    // Optimize for development experience
-    trailingSlash: false,
-
-    // Configure dev server
-    devIndicators: {
-      buildActivity: true,
-      buildActivityPosition: 'bottom-right',
-    },
-  }),
+  // Enable faster refresh - this is now enabled by default in Next.js 14+
+  // fastRefresh is deprecated in newer versions
 };
 
 module.exports = nextConfig
