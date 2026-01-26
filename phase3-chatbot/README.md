@@ -1,14 +1,49 @@
-# Phase II: Full-Stack Web Application
+# Phase 3: AI Chatbot Integration
 
-Transform the Phase I console-based todo application into a production-ready full-stack web application with multi-user support, authentication, persistent cloud storage, and responsive UI.
+This phase implements an AI-powered chatbot for todo management with MCP integration, featuring enhanced authentication safeguards to prevent memory exhaustion during development.
 
 ## Tech Stack
 
 - **Frontend**: Next.js 16+ (App Router) with TypeScript and Tailwind CSS
 - **Backend**: FastAPI with SQLModel ORM for type-safe database operations
-- **Database**: Neon Serverless PostgreSQL
-- **Authentication**: JWT-based auth with bcrypt password hashing
-- **Deployment**: Vercel (frontend) + Railway/Render (backend)
+- **AI Framework**: OpenAI Agents SDK
+- **Chatbot UI**: OpenAI ChatKit
+- **MCP Server**: Official MCP SDK (Python)
+- **State Management**: Database-backed (stateless server)
+- **Authentication**: JWT-based auth with circuit breaker and memory safeguards
+
+## Authentication Safeguards
+
+The application implements a secure authentication flow with safeguards against memory exhaustion issues that can occur during development with Turbopack.
+
+### Authentication Architecture
+
+- **Frontend Authentication**: Uses a unified auth proxy at `/api/auth/[...path]/route.ts` that handles all authentication requests
+- **Token Management**: Tokens are stored in both localStorage and cookies with proper security settings
+- **Verification Flow**: Authentication verification is performed via the `/api/auth/verify` endpoint
+- **Circuit Breaker**: Implemented to prevent infinite loops during authentication verification
+- **Request Counting**: Tracks verification attempts to prevent abuse
+- **Origin Tracking**: Monitors where authentication requests originate from
+
+### Development Safeguards
+
+The system includes several safeguards specifically designed to prevent the memory exhaustion issues that were occurring during development:
+
+1. **Request Limiting**: Maximum 3 verification attempts per minute per path
+2. **Circuit Breaker**: Trips after 3 failures and resets after 30 seconds
+3. **Memory Monitoring**: Tracks memory usage during authentication operations
+4. **Loop Detection**: Identifies potential recursive authentication calls
+5. **Turbopack Optimization**: Special handling for hot reloads to prevent state inconsistency
+6. **Depth Tracking**: Monitors the depth of authentication verification calls to prevent infinite recursion
+7. **State Management**: Proper authentication state management to prevent recursive verification attempts
+
+### Security Measures
+
+- Secure cookie settings with HttpOnly and SameSite attributes
+- Proper token validation and refresh mechanisms
+- Rate limiting for authentication endpoints
+- Protection against token replay attacks
+- Verification attempt limiting to prevent brute force attacks
 
 ## Quick Start
 
@@ -16,13 +51,30 @@ Transform the Phase I console-based todo application into a production-ready ful
 
 - Node.js 18+ and npm
 - Python 3.11+
-- Neon PostgreSQL account (free tier)
 - Git
+
+### Frontend Setup
+
+```bash
+cd phase3-chatbot/frontend
+
+# Install dependencies
+npm install
+
+# Configure environment
+cp .env.example .env.local
+# Edit .env.local with your backend URL and API keys
+
+# Start development server
+npm run dev
+```
+
+Frontend will be available at http://localhost:3000
 
 ### Backend Setup
 
 ```bash
-cd phase2-fullstack/backend
+cd phase3-chatbot/backend
 
 # Create virtual environment
 python -m venv venv
@@ -33,120 +85,91 @@ pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your DATABASE_URL and SECRET_KEY
-
-# Run database migrations
-alembic upgrade head
+# Edit .env with your settings
 
 # Start backend server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Backend will be available at http://localhost:8000
-API docs at http://localhost:8000/docs
 
-### Frontend Setup
+## Troubleshooting
 
-```bash
-cd phase2-fullstack/frontend
+### Common Issues
 
-# Install dependencies
-npm install
+If experiencing authentication issues during development:
 
-# Configure environment
-cp .env.example .env.local
-# Edit .env.local with your backend URL
+1. Check the browser console for authentication-related errors
+2. Verify that the API server is running and accessible
+3. Clear authentication tokens from localStorage if needed
+4. Restart the development server if authentication state becomes inconsistent
 
-# Start development server
-npm run dev
-```
+### Memory Issues During Development
 
-Frontend will be available at http://localhost:3000
+If you encounter memory exhaustion during development:
 
-### Docker Setup (Optional)
+1. The system has built-in safeguards that should prevent infinite loops
+2. Check the console for messages about verification attempts
+3. Look for circuit breaker trips that indicate potential issues
+4. Verify that hot reloads aren't causing authentication state problems
 
-```bash
-cd phase2-fullstack
-docker-compose up --build
-```
+### Authentication Flow Debugging
 
-This starts all services:
-- Backend: http://localhost:8000
-- Frontend: http://localhost:3000
-- PostgreSQL: localhost:5432
+Enable detailed logging by setting `NEXT_PUBLIC_DEBUG_AUTH=true` in your environment to get detailed information about authentication flows and potential issues.
 
 ## Project Structure
 
 ```
-phase2-fullstack/
+phase3-chatbot/
 ├── backend/               # FastAPI backend service
-│   ├── app/              # Python package
-│   │   ├── __init__.py  # REQUIRED for package structure
-│   │   ├── main.py      # FastAPI app entry point
-│   │   ├── config.py    # Settings from environment
-│   │   ├── database.py  # SQLModel engine
-│   │   ├── models/      # Database table definitions
-│   │   ├── schemas/     # Request/response schemas
-│   │   ├── routers/     # API endpoints
-│   │   ├── dependencies/# Auth and DB dependencies
-│   │   └── utils/       # Security helpers
-│   ├── tests/           # Backend tests (pytest)
-│   ├── alembic/         # Database migrations
-│   └── requirements.txt # Python dependencies
+│   ├── src/              # Python source code
+│   │   ├── api/          # API endpoints
+│   │   ├── models/       # Database models
+│   │   ├── services/     # Business logic
+│   │   └── dependencies/# Auth and other dependencies
+│   ├── tests/            # Backend tests
+│   └── requirements.txt  # Python dependencies
 │
-├── frontend/            # Next.js frontend
-│   ├── app/            # Next.js App Router pages
-│   ├── components/     # React components
-│   ├── lib/            # API client and utilities
-│   ├── types/          # TypeScript interfaces
-│   ├── context/        # Auth state management
-│   ├── middleware.ts   # Route protection
-│   └── package.json    # Node dependencies
+├── frontend/             # Next.js frontend
+│   ├── app/             # Next.js App Router pages
+│   ├── components/      # React components
+│   ├── lib/             # Utilities and API clients
+│   │   └── auth/        # Authentication-specific code
+│   ├── src/             # Source files
+│   │   └── lib/         # Libraries
+│   │       └── auth/    # Authentication utilities
+│   ├── middleware.ts    # Route protection
+│   └── package.json     # Node dependencies
 │
-└── docker-compose.yml  # Local development orchestration
+└── README.md            # This file
 ```
 
 ## Features
 
-### Basic Features (MVP)
-- ✅ User Registration & Login
-- ✅ Add New Task
-- ✅ View Task List
-- ✅ Update Task
-- ✅ Delete Task
-- ✅ Mark Task Complete/Incomplete
+### Authentication Safeguards (New in Phase 3)
+- ✅ Circuit breaker pattern to prevent infinite loops
+- ✅ Request counting to limit verification attempts
+- ✅ Memory monitoring during authentication
+- ✅ Origin tracking for request monitoring
+- ✅ Depth tracking to prevent recursion
+- ✅ Hot reload handling for Turbopack stability
+- ✅ Development-specific safeguards
 
-### Intermediate Features
-- ✅ Task Priorities (Low, Medium, High)
-- ✅ Task Tags (max 10 per task)
-- ✅ Search Tasks by Title
-- ✅ Filter by Status/Priority/Tags
-- ✅ Sort by Date/Priority/Title
-
-### Technical Features
-- ✅ JWT Authentication
-- ✅ User Isolation (users only see their tasks)
-- ✅ Responsive Design (mobile-first)
-- ✅ Cloud Database (Neon PostgreSQL)
-- ✅ Production Deployment
-- ✅ Comprehensive Testing (80% backend, 70% frontend coverage)
+### AI Chatbot Integration
+- ✅ Natural language processing for todo operations
+- ✅ MCP integration for enhanced capabilities
+- ✅ State management for conversation context
+- ✅ Enhanced UI for chat interactions
 
 ## Development Workflow
 
-1. **Register**: Navigate to /register, create account
-2. **Login**: Login with credentials, receive JWT token
-3. **Dashboard**: View/manage personal todo list
-4. **CRUD Operations**: Add, edit, delete, toggle tasks
-5. **Search & Filter**: Find tasks by keywords or filters
-6. **Logout**: Clear session and return to login
+1. **Start Backend**: Run the backend server with `uvicorn`
+2. **Start Frontend**: Run the frontend with `npm run dev`
+3. **Authentication**: Secure login flow with safeguards
+4. **Chat Interaction**: Natural language todo management
+5. **Debugging**: Built-in safeguards prevent common memory issues
 
 ## Testing
-
-### Backend Tests
-```bash
-cd backend
-pytest tests/ -v --cov=app --cov-report=html
-```
 
 ### Frontend Tests
 ```bash
@@ -154,32 +177,11 @@ cd frontend
 npm run test:coverage
 ```
 
-### E2E Tests
-```bash
-cd frontend
-npx playwright test
-```
-
-## Deployment
-
-### Backend (Railway/Render)
-1. Create new project from GitHub repo
-2. Set root directory: `/phase2-fullstack/backend`
-3. Add environment variables (DATABASE_URL, SECRET_KEY, etc.)
-4. Deploy (auto-detects Dockerfile)
-
-### Frontend (Vercel)
-1. Import GitHub repository
-2. Set root directory: `phase2-fullstack/frontend`
-3. Framework: Next.js
-4. Add environment variable: NEXT_PUBLIC_API_URL
-5. Deploy
-
 ## Documentation
 
-- See `specs/001-fullstack-web-app/` for detailed specifications
-- API contracts in `specs/001-fullstack-web-app/contracts/`
-- Setup guide in `specs/001-fullstack-web-app/quickstart.md`
+- See `specs/phase-3/` for detailed specifications
+- API contracts in `specs/phase-3/contracts/`
+- Setup guide in `specs/phase-3/quickstart.md`
 
 ## License
 

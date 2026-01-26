@@ -18,6 +18,42 @@ const SPECIAL_ROUTES = {
   VERIFY: '/verify',
 };
 
+// Request counter to detect potential loops
+const requestCounts = new Map<string, { count: number; timestamp: number }>();
+
+// Function to increment and check request count for a specific path
+function incrementRequestCount(path: string, maxAttempts: number = 3): boolean {
+  const key = `${path}_${new Date().toISOString().split('T')[0]}`; // Daily count
+  const now = Date.now();
+
+  const current = requestCounts.get(key);
+  if (current) {
+    // Reset count if it's been more than 1 minute since last request
+    if (now - current.timestamp > 60000) {
+      requestCounts.set(key, { count: 1, timestamp: now });
+      return true;
+    }
+
+    if (current.count >= maxAttempts) {
+      console.warn(`[Proxy] Maximum verification attempts (${maxAttempts}) reached for path: ${path}`);
+      return false; // Too many attempts
+    }
+
+    requestCounts.set(key, { count: current.count + 1, timestamp: now });
+  } else {
+    requestCounts.set(key, { count: 1, timestamp: now });
+  }
+
+  return true;
+}
+
+// Function to get current request count
+function getRequestCount(path: string): number {
+  const key = `${path}_${new Date().toISOString().split('T')[0]}`;
+  const current = requestCounts.get(key);
+  return current ? current.count : 0;
+}
+
 /**
  * Extract auth token from cookies or header
  */
@@ -204,7 +240,14 @@ async function handleRequest(
   // Backend verify endpoint expects POST method, but frontend might call it as GET
   if (!apiPath || apiPath === '/' || apiPath === SPECIAL_ROUTES.VERIFY) {
     if (!token) {
+      console.warn(`[Proxy] No auth token found for ${method} ${apiPath}`);
       return createErrorResponse('Unauthorized', 401);
+    }
+
+    // Check if we've exceeded the maximum verification attempts to prevent loops
+    if (!incrementRequestCount(apiPath, 3)) { // Limit to 3 attempts per path
+      console.error(`[Proxy] Blocking potential verification loop for path: ${apiPath}`);
+      return createErrorResponse('Too many verification attempts', 429); // Too Many Requests
     }
 
     try {
@@ -217,12 +260,44 @@ async function handleRequest(
 
       if (backendResponse.ok) {
         const userData = await safeJsonParse(backendResponse);
-        return NextResponse.json(userData);
+        // Reset counter on successful verification
+        requestCounts.delete(`${apiPath}_${new Date().toISOString().split('T')[0]}`);
+
+        // Add headers to help prevent recursive calls
+        const response = NextResponse.json(userData);
+        response.headers.set('X-Auth-Verified', 'true');
+        response.headers.set('X-Auth-Timestamp', new Date().toISOString());
+
+        return response;
       } else {
-        return createErrorResponse('Invalid token', 401);
+        // If the backend returns a 401, it means the token is invalid
+        // Don't retry - just return the 401 to the client
+        if (backendResponse.status === 401) {
+          console.debug(`[Proxy] Token verification failed (401) for path: ${apiPath}`);
+
+          // Add headers to indicate the failure reason
+          const response = NextResponse.json(
+            { error: 'Invalid or expired token', message: 'Token verification failed' },
+            { status: 401 }
+          );
+          response.headers.set('X-Auth-Verified', 'false');
+          response.headers.set('X-Auth-Failure-Reason', 'invalid-token');
+
+          return response;
+        } else {
+          // For other status codes, return the appropriate error
+          const errorData = await safeJsonParse(backendResponse).catch(() => null);
+          const message = errorData?.error || errorData?.detail || 'Token verification failed';
+
+          console.warn(`[Proxy] Token verification error (status: ${backendResponse.status}) for path: ${apiPath}`, message);
+
+          return createErrorResponse(message, backendResponse.status);
+        }
       }
     } catch (error) {
       console.error('[Proxy] Auth verification error:', error);
+
+      // Don't retry on network errors - return appropriate error
       return createErrorResponse(
         'Authentication service unavailable',
         503,
