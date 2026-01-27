@@ -59,8 +59,25 @@ class AuthVerificationService {
     // Check if we should allow verification based on state
     const verificationStatus = authStateManager.getVerificationStatus();
 
-    // Check if we're in verification cooldown
-    if (authStateManager.isInVerificationCooldown()) {
+    // Don't apply rate limiting if the user is not authenticated (it's a normal state)
+    const tokenExists = this.getAuthToken();
+    if (!tokenExists && !forceRefresh) {
+      authLogger.debug('No token exists, allowing verification attempt for login flow');
+      // Continue with verification even if rate limits would normally apply
+    } else if (!forceRefresh && !verificationStatus.canVerify) {
+      authLogger.warn('Verification not allowed due to too many attempts or ongoing verification', {
+        attemptsRemaining: verificationStatus.attemptsRemaining,
+        timeUntilRetry: verificationStatus.timeUntilRetry
+      });
+
+      return {
+        isAuthenticated: authStateManager.isAuthenticated(),
+        error: 'Verification rate limited'
+      };
+    }
+
+    // Check if we're in verification cooldown (only if token exists)
+    if (tokenExists && authStateManager.isInVerificationCooldown()) {
       const timeUntilRetry = authStateManager.getTimeUntilCooldownEnd();
       authLogger.warn('Verification is in cooldown period', {
         attemptsRemaining: 0,
@@ -74,8 +91,8 @@ class AuthVerificationService {
       };
     }
 
-    // Check if we're approaching the verification limit
-    if (authStateManager.isApproachingVerificationLimit()) {
+    // Check if we're approaching the verification limit (only if token exists)
+    if (tokenExists && authStateManager.isApproachingVerificationLimit()) {
       const remaining = authStateManager.getRemainingAttempts();
       authLogger.warn('Approaching verification attempt limit', {
         attemptsRemaining: remaining,
@@ -84,7 +101,10 @@ class AuthVerificationService {
       });
     }
 
-    if (!verificationStatus.canVerify) {
+    if (!tokenExists && !forceRefresh) {
+      // If no token exists, allow verification to confirm unauthenticated state
+      authLogger.debug('No token exists, proceeding with verification to confirm state');
+    } else if (!forceRefresh && !verificationStatus.canVerify) {
       authLogger.warn('Verification not allowed due to too many attempts or ongoing verification', {
         attemptsRemaining: verificationStatus.attemptsRemaining,
         timeUntilRetry: verificationStatus.timeUntilRetry
@@ -277,6 +297,13 @@ class AuthVerificationService {
       }
     }
     return null;
+  }
+
+  /**
+   * Check if a token exists in storage
+   */
+  private tokenExists(): boolean {
+    return this.getAuthToken() !== null;
   }
 
   /**
