@@ -1,8 +1,8 @@
-# Phase 3 Chatbot Implementation Plan
+# Phase 3 Chatbot Implementation Plan v2
 
 ## Technical Context
 
-This implementation plan outlines the integration of chatbot functionality into the existing Phase 2 full-stack todo application. The primary goal is to extend Phase 2 capabilities to enable natural language todo management while preserving all existing authentication behaviors.
+This implementation plan outlines the integration of chatbot functionality into the existing Phase 2 full-stack todo application, with emphasis on the critical dependencies and prerequisites identified during review.
 
 ### Technology Stack
 - Frontend: OpenAI ChatKit for chat interface
@@ -17,12 +17,13 @@ This implementation plan outlines the integration of chatbot functionality into 
 - No auth refactors or optimizations
 - MCP tools must be stateless with database persistence
 - Chatbot must not interfere with auth lifecycle
+- MCP tools and AI agents are HARD prerequisites for any complete chat functionality
 
 ### Critical Dependencies (Hard Prerequisites)
 - MCP tools (T113–T119) must be fully implemented before any chat features are considered complete
 - AI agent configuration (T120–T125) must be fully implemented before any chat features are considered complete
 - Authentication preservation (T105–T112) must be verified before frontend integration
-- Tasks marked [X] in chat features represent structural scaffolding only, not complete implementation
+- [X] tasks represent structural scaffolding only, not complete implementation
 
 ## Constitution Check
 
@@ -55,18 +56,6 @@ Based on the project constitution, this implementation must:
 **Decision**: Authentication Verification Gate
 **Rationale**: All authentication preservation must be verified before frontend integration to prevent regressions
 **Alternatives considered**: Parallel development with integration testing, phased rollout
-
-**Decision**: Integration approach for OpenAI ChatKit
-**Rationale**: OpenAI ChatKit will be integrated as a separate component that operates independently from the authentication context to prevent interference
-**Alternatives considered**: Custom chat interface, third-party chat libraries
-
-**Decision**: MCP Server implementation
-**Rationale**: Official MCP SDK will be used to expose todo operations as tools for AI agents, with proper user validation through existing auth tokens
-**Alternatives considered**: Custom API gateway, direct AI integration
-
-**Decision**: Database schema for chat persistence
-**Rationale**: Separate tables for chat conversations and message history, linked to existing user accounts
-**Alternatives considered**: Embedding in existing todo tables, separate database
 
 ## Phase 1: Design & Contracts
 
