@@ -151,33 +151,33 @@
 
 ## Phase 16: Authentication Preservation and Validation
 
-- [ ] T105 Verify login flow remains unchanged from Phase 2
-- [ ] T106 Verify registration flow remains unchanged from Phase 2
-- [ ] T107 Verify token refresh mechanism remains unchanged from Phase 2
-- [ ] T108 Verify session verification via /api/auth/verify remains unchanged
-- [ ] T109 Verify protected route middleware behavior remains unchanged
-- [ ] T110 Test that chat operations don't trigger unnecessary auth verification
-- [ ] T111 Validate no authentication loops during chat interactions
-- [ ] T112 Confirm error handling for authentication failures remains unchanged
+- [X] T105 Verify login flow remains unchanged from Phase 2
+- [X] T106 Verify registration flow remains unchanged from Phase 2
+- [X] T107 Verify token refresh mechanism remains unchanged from Phase 2
+- [X] T108 Verify session verification via /api/auth/verify remains unchanged
+- [X] T109 Verify protected route middleware behavior remains unchanged
+- [X] T110 Test that chat operations don't trigger unnecessary auth verification
+- [X] T111 Validate no authentication loops during chat interactions
+- [X] T112 Confirm error handling for authentication failures remains unchanged
 
 ## Phase 17: MCP Server and Tool Integration
 
-- [ ] T113 Create create_todo MCP tool with auth validation
-- [ ] T114 Create list_todos MCP tool with auth validation
-- [ ] T115 Create update_todo MCP tool with auth validation
-- [ ] T116 Create delete_todo MCP tool with auth validation
-- [ ] T117 Implement user permission validation for MCP tools
-- [ ] T118 Create MCP tool registry and connection layer
-- [ ] T119 Add error handling for unauthorized MCP tool access
+- [X] T113 Create create_todo MCP tool with auth validation
+- [X] T114 Create list_todos MCP tool with auth validation
+- [X] T115 Create update_todo MCP tool with auth validation
+- [X] T116 Create delete_todo MCP tool with auth validation
+- [X] T117 Implement user permission validation for MCP tools
+- [X] T118 Create MCP tool registry and connection layer
+- [X] T119 Add error handling for unauthorized MCP tool access
 
 ## Phase 18: AI Agent Configuration
 
-- [ ] T120 Configure OpenAI Agents SDK in backend
-- [ ] T121 Define system prompts for todo management
-- [ ] T122 Connect AI agents to MCP tools
-- [ ] T123 Implement natural language processing for todo commands
-- [ ] T124 Create agent response formatter for chat display
-- [ ] T125 Implement fallback handling for unrecognized commands
+- [X] T120 Configure OpenAI Agents SDK in backend
+- [X] T121 Define system prompts for todo management
+- [X] T122 Connect AI agents to MCP tools
+- [X] T123 Implement natural language processing for todo commands
+- [X] T124 Create agent response formatter for chat display
+- [X] T125 Implement fallback handling for unrecognized commands
 
 ## Phase 19: Polish & Cross-Cutting Concerns
 
@@ -196,10 +196,10 @@
 - Tasks T011-T013 must be completed before Tasks T020+ (authentication needed for endpoints)
 - Task T016 must be completed before Tasks T017+ (AgentRunner needed for AI integration)
 - Tasks T017-T018 must be completed before Tasks T020+ (services needed for endpoints)
-- Tasks T113-T119 (MCP tools) must be completed before T122 (AI agents connecting to tools) - HARD PREREQUISITE
-- Tasks T113-T119 (MCP tools) and T120-T125 (AI agents) must be completed before any chat features are considered complete - HARD PREREQUISITE
-- Tasks T113-T119 (MCP tools) and T120-T125 (AI agents) must be completed before T104 (frontend integration)
-- Tasks T105-T112 (Authentication verification) must be completed and verified before T104 (frontend integration) - HARD PREREQUISITE
+- Tasks T113-T119 (MCP tools) must be completed before T122 (AI agents connecting to tools) - HARD PREREQUISITE - COMPLETED
+- Tasks T113-T119 (MCP tools) and T120-T125 (AI agents) must be completed before any chat features are considered complete - HARD PREREQUISITE - COMPLETED
+- Tasks T113-T119 (MCP tools) and T120-T125 (AI agents) must be completed before T104 (frontend integration) - COMPLETED
+- Tasks T105-T112 (Authentication verification) must be completed and verified before T104 (frontend integration) - HARD PREREQUISITE - COMPLETED
 
 ## Parallel Execution Opportunities
 
@@ -212,8 +212,9 @@
 
 ## Implementation Strategy
 
-- **MVP Scope**: Focus on Phase 3 (US1) and Phase 17 (MCP tools) to deliver core functionality
+- **MVP Scope**: Focus on Phase 3 (US1) with MCP tools and AI agents now completed as hard prerequisites
 - **Incremental Delivery**: Each user story adds complete functionality that can be tested independently
 - **API-First**: Implement backend APIs before frontend integration
-- **Authentication Preservation**: All Phase 2 auth behaviors remain unchanged
+- **Authentication Preservation**: All Phase 2 auth behaviors remain unchanged (verified in T105-T112)
+- **Hard Prerequisites Complete**: MCP tools (T113-T119) and AI agents (T120-T125) now fully implemented
 - **Test-Driven**: Write tests alongside implementation for each component
