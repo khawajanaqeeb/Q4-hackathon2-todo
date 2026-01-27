@@ -196,8 +196,10 @@
 - Tasks T011-T013 must be completed before Tasks T020+ (authentication needed for endpoints)
 - Task T016 must be completed before Tasks T017+ (AgentRunner needed for AI integration)
 - Tasks T017-T018 must be completed before Tasks T020+ (services needed for endpoints)
-- Tasks T113-T0119 (MCP tools) must be completed before T122 (AI agents connecting to tools)
-- Tasks T113-T119 (MCP tools) and T120-T122 (AI agents) must be completed before T104 (frontend integration)
+- Tasks T113-T119 (MCP tools) must be completed before T122 (AI agents connecting to tools) - HARD PREREQUISITE
+- Tasks T113-T119 (MCP tools) and T120-T125 (AI agents) must be completed before any chat features are considered complete - HARD PREREQUISITE
+- Tasks T113-T119 (MCP tools) and T120-T125 (AI agents) must be completed before T104 (frontend integration)
+- Tasks T105-T112 (Authentication verification) must be completed and verified before T104 (frontend integration) - HARD PREREQUISITE
 
 ## Parallel Execution Opportunities
 
