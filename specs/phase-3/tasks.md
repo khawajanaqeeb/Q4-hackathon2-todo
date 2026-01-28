@@ -9,23 +9,23 @@ Each phase builds upon the previous work, with backend authentication endpoints 
 ## Phase 1: Setup
 Initialize project structure and install dependencies per implementation plan.
 
-- [ ] T001 Create project structure with backend and frontend directories
-- [ ] T002 Install backend dependencies: FastAPI, SQLModel, Alembic, OpenAI Agents SDK, slowapi
-- [ ] T003 Install frontend dependencies: React, chatkit, axios, react-router-dom
-- [ ] T004 Configure environment variables for backend and frontend
-- [ ] T005 Set up database configuration with PostgreSQL/SQLite
+- [X] T001 Create project structure with backend and frontend directories
+- [X] T002 Install backend dependencies: FastAPI, SQLModel, Alembic, OpenAI Agents SDK, slowapi
+- [X] T003 Install frontend dependencies: React, chatkit, axios, react-router-dom
+- [X] T004 Configure environment variables for backend and frontend
+- [X] T005 Set up database configuration with PostgreSQL/SQLite
 
 ## Phase 2: Foundational
 Implement foundational components that block all user stories.
 
-- [ ] T006 Create single canonical User model to prevent SQLAlchemy "Multiple classes found for path 'User'" error
-- [ ] T007 Set up database models: Todo, Conversation, Message with proper relationships
-- [ ] T008 Configure CORS middleware with credentials support
-- [ ] T009 Set up JWT utilities for token creation and verification
-- [ ] T010 Configure password hashing with bcrypt
-- [ ] T011 Set up Alembic for database migrations
-- [ ] T012 Create authentication service with reusable dependencies
-- [ ] T013 Set up API client configuration with cookie handling
+- [X] T006 Create single canonical User model to prevent SQLAlchemy "Multiple classes found for path 'User'" error
+- [X] T007 Set up database models: Todo, Conversation, Message with proper relationships
+- [X] T008 Configure CORS middleware with credentials support
+- [X] T009 Set up JWT utilities for token creation and verification
+- [X] T010 Configure password hashing with bcrypt
+- [X] T011 Set up Alembic for database migrations
+- [X] T012 Create authentication service with reusable dependencies
+- [X] T013 Set up API client configuration with cookie handling
 
 ## Phase 3: User Registration and Authentication (US1)
 As a new user, I want to register for an account and log in securely so that I can access my todo list and chatbot functionality.
@@ -38,19 +38,19 @@ As a new user, I want to register for an account and log in securely so that I c
 - Invalid credentials are properly rejected
 - Session is maintained via HTTP-only cookies
 
-- [ ] T014 [US1] Create User registration endpoint POST /api/auth/register
-- [ ] T015 [US1] Create User login endpoint POST /api/auth/login with JWT + HTTP-only cookie
-- [ ] T016 [US1] Create session verification endpoint GET /api/auth/verify
-- [ ] T017 [US1] Create logout endpoint POST /api/auth/logout
-- [ ] T018 [US1] Implement input validation for registration and login
-- [ ] T019 [US1] Implement password hashing in user creation
-- [ ] T020 [US1] Configure cookie settings (secure, HttpOnly, SameSite)
-- [ ] T021 [US1] Implement error handling for authentication failures
-- [ ] T022 [US1] Create frontend registration form component
-- [ ] T023 [US1] Create frontend login form component
-- [ ] T024 [US1] Implement frontend authentication state management
-- [ ] T025 [US1] Implement frontend session verification
-- [ ] T026 [US1] Create protected route components
+- [X] T014 [US1] Create User registration endpoint POST /api/auth/register
+- [X] T015 [US1] Create User login endpoint POST /api/auth/login with JWT + HTTP-only cookie
+- [X] T016 [US1] Create session verification endpoint GET /api/auth/verify
+- [X] T017 [US1] Create logout endpoint POST /api/auth/logout
+- [X] T018 [US1] Implement input validation for registration and login
+- [X] T019 [US1] Implement password hashing in user creation
+- [X] T020 [US1] Configure cookie settings (secure, HttpOnly, SameSite)
+- [X] T021 [US1] Implement error handling for authentication failures
+- [X] T022 [US1] Create frontend registration form component
+- [X] T023 [US1] Create frontend login form component
+- [X] T024 [US1] Implement frontend authentication state management
+- [X] T025 [US1] Implement frontend session verification
+- [X] T026 [US1] Create protected route components
 - [ ] T027 [US1] Test user registration flow
 - [ ] T028 [US1] Test user login and session establishment
 - [ ] T029 [US1] Test session verification and protection
@@ -68,19 +68,19 @@ As an authenticated user, I want to manage my todos through the traditional UI s
 - Users can delete their todos
 - Unauthenticated access is properly blocked
 
-- [ ] T031 [US2] Create Todo model with user relationship
-- [ ] T032 [US2] Create GET /api/todos endpoint for retrieving user's todos
-- [ ] T033 [US2] Create POST /api/todos endpoint for creating new todos
-- [ ] T034 [US2] Create PUT /api/todos/{id} endpoint for updating todos
-- [ ] T035 [US2] Create PATCH /api/todos/{id}/complete for marking todos as complete
-- [ ] T036 [US2] Create DELETE /api/todos/{id} endpoint for deleting todos
-- [ ] T037 [US2] Implement user authorization checks for all todo endpoints
-- [ ] T038 [US2] Create TodoService for business logic
-- [ ] T039 [US2] Create frontend TodoList component
-- [ ] T040 [US2] Create frontend TodoItem component
-- [ ] T041 [US2] Create frontend TodoForm component
-- [ ] T042 [US2] Implement frontend API calls for todo operations
-- [ ] T043 [US2] Implement frontend authentication interceptors for todo API calls
+- [X] T031 [US2] Create Todo model with user relationship
+- [X] T032 [US2] Create GET /api/todos endpoint for retrieving user's todos
+- [X] T033 [US2] Create POST /api/todos endpoint for creating new todos
+- [X] T034 [US2] Create PUT /api/todos/{id} endpoint for updating todos
+- [X] T035 [US2] Create PATCH /api/todos/{id}/complete for marking todos as complete
+- [X] T036 [US2] Create DELETE /api/todos/{id} endpoint for deleting todos
+- [X] T037 [US2] Implement user authorization checks for all todo endpoints
+- [X] T038 [US2] Create TodoService for business logic
+- [X] T039 [US2] Create frontend TodoList component
+- [X] T040 [US2] Create frontend TodoItem component
+- [X] T041 [US2] Create frontend TodoForm component
+- [X] T042 [US2] Implement frontend API calls for todo operations
+- [X] T043 [US2] Implement frontend authentication interceptors for todo API calls
 - [ ] T044 [US2] Test authenticated todo creation
 - [ ] T045 [US2] Test authenticated todo retrieval
 - [ ] T046 [US2] Test authenticated todo updates
@@ -98,21 +98,21 @@ As an authenticated user, I want to manage my todos through natural language cha
 - Chatbot maintains conversation context
 - Actions taken via chat are reflected in traditional UI
 
-- [ ] T049 [US3] Integrate OpenAI Agents SDK for chatbot functionality
-- [ ] T050 [US3] Create Conversation model for storing chat history
-- [ ] T051 [US3] Create Message model for individual chat messages
-- [ ] T052 [US3] Create POST /api/chat/messages endpoint for chat interactions
-- [ ] T053 [US3] Create GET /api/chat/conversations endpoint for conversation history
-- [ ] T054 [US3] Implement chatbot service with todo action recognition
-- [ ] T055 [US3] Create chatbot service that integrates with TodoService
-- [ ] T056 [US3] Implement natural language processing for todo commands
-- [ ] T057 [US3] Create ChatService for managing chatbot interactions
-- [ ] T058 [US3] Implement conversation context management
-- [ ] T059 [US3] Create frontend chat interface components using chatkit
-- [ ] T060 [US3] Create MessageList component for displaying chat history
-- [ ] T061 [US3] Create MessageInput component for user input
-- [ ] T062 [US3] Implement chat message API integration with authentication
-- [ ] T063 [US3] Connect chatbot actions to todo management functions
+- [X] T049 [US3] Integrate OpenAI Agents SDK for chatbot functionality
+- [X] T050 [US3] Create Conversation model for storing chat history
+- [X] T051 [US3] Create Message model for individual chat messages
+- [X] T052 [US3] Create POST /api/chat/messages endpoint for chat interactions
+- [X] T053 [US3] Create GET /api/chat/conversations endpoint for conversation history
+- [X] T054 [US3] Implement chatbot service with todo action recognition
+- [X] T055 [US3] Create chatbot service that integrates with TodoService
+- [X] T056 [US3] Implement natural language processing for todo commands
+- [X] T057 [US3] Create ChatService for managing chatbot interactions
+- [X] T058 [US3] Implement conversation context management
+- [X] T059 [US3] Create frontend chat interface components using chatkit
+- [X] T060 [US3] Create MessageList component for displaying chat history
+- [X] T061 [US3] Create MessageInput component for user input
+- [X] T062 [US3] Implement chat message API integration with authentication
+- [X] T063 [US3] Connect chatbot actions to todo management functions
 - [ ] T064 [US3] Test chatbot todo creation command
 - [ ] T065 [US3] Test chatbot todo update command
 - [ ] T066 [US3] Test chatbot todo deletion command
@@ -131,17 +131,17 @@ As a user, I want my session to be managed securely so that my data remains prot
 - User data isolation is maintained
 - API requests are properly rate-limited
 
-- [ ] T070 [US4] Implement JWT token expiration and refresh mechanism
-- [ ] T071 [US4] Configure rate limiting middleware with slowapi
-- [ ] T072 [US4] Set up session expiration handling in backend
-- [ ] T073 [US4] Implement proper error logging for authentication failures
-- [ ] T074 [US4] Create comprehensive error handlers for auth endpoints
-- [ ] T075 [US4] Implement data isolation to prevent cross-user access
-- [ ] T076 [US4] Configure secure cookie attributes (secure, HttpOnly, SameSite)
-- [ ] T077 [US4] Implement frontend session expiration detection
-- [ ] T078 [US4] Create automatic session refresh mechanism
-- [ ] T079 [US4] Implement frontend redirect to login on session expiration
-- [ ] T080 [US4] Create error boundary components for graceful error handling
+- [X] T070 [US4] Implement JWT token expiration and refresh mechanism
+- [X] T071 [US4] Configure rate limiting middleware with slowapi
+- [X] T072 [US4] Set up session expiration handling in backend
+- [X] T073 [US4] Implement proper error logging for authentication failures
+- [X] T074 [US4] Create comprehensive error handlers for auth endpoints
+- [X] T075 [US4] Implement data isolation to prevent cross-user access
+- [X] T076 [US4] Configure secure cookie attributes (secure, HttpOnly, SameSite)
+- [X] T077 [US4] Implement frontend session expiration detection
+- [X] T078 [US4] Create automatic session refresh mechanism
+- [X] T079 [US4] Implement frontend redirect to login on session expiration
+- [X] T080 [US4] Create error boundary components for graceful error handling
 - [ ] T081 [US4] Test session expiration and renewal
 - [ ] T082 [US4] Test rate limiting functionality
 - [ ] T083 [US4] Test data isolation between users
