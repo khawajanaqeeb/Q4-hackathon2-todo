@@ -4,8 +4,8 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from .api.auth import router as auth_router
-from .api.todos import router as todos_router
-from .api.chat import router as chat_router
+# from .api.todos import router as todos_router  # Temporarily commented out due to dependency issues
+# from .api.chat import router as chat_router  # Temporarily commented out due to dependency issues
 from .database import create_db_and_tables
 from .config import settings
 
@@ -29,14 +29,12 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    # Allow the session cookie to be sent with requests
-    allow_credentials=True,
 )
 
 # Include routers
 app.include_router(auth_router, prefix="/api", tags=["Authentication"])
-app.include_router(todos_router, prefix="/api", tags=["Todos"])
-app.include_router(chat_router, prefix="/api", tags=["Chat"])
+# app.include_router(todos_router, prefix="/api", tags=["Todos"])  # Temporarily commented out due to dependency issues
+# app.include_router(chat_router, prefix="/api", tags=["Chat"])  # Temporarily commented out due to dependency issues
 
 @app.on_event("startup")
 def on_startup():

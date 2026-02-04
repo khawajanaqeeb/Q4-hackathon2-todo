@@ -98,9 +98,14 @@ function buildBackendUrl(path: string, searchParams: string): string {
   const isAuthRoute = AUTH_ROUTES.some(route => path === route || path.startsWith(route + '/'));
   const queryString = searchParams ? searchParams : '';
 
+  // Special handling for chat routes - they go to /chat, not /auth/chat
+  if (path.startsWith('/chat/')) {
+    return `${BACKEND_URL}${path}${queryString}`;
+  }
+
   return isAuthRoute
-    ? `${BACKEND_URL}/auth${path}${queryString}`
-    : `${BACKEND_URL}${path}${queryString}`;
+    ? `${BACKEND_URL}/api/auth${path}${queryString}`  // Add /api prefix for auth routes
+    : `${BACKEND_URL}/api${path}${queryString}`;     // Add /api prefix for other routes
 }
 
 /**
@@ -149,7 +154,8 @@ async function handleRequest(
   // Handle public routes: login/register
   if (PUBLIC_ROUTES.includes(apiPath)) {
     try {
-      const backendUrl = buildBackendUrl(apiPath, searchParams);
+      // For public routes, we need to ensure they go to the correct backend endpoint
+      const backendUrl = `${BACKEND_URL}/auth${apiPath}${searchParams}`;
       const contentType = request.headers.get('content-type') || '';
       let body: any = null;
 
@@ -204,7 +210,8 @@ async function handleRequest(
     }
 
     try {
-      const backendUrl = buildBackendUrl('/refresh', searchParams);
+      // For refresh route, use the correct backend endpoint with /api prefix
+      const backendUrl = `${BACKEND_URL}/api/auth/refresh${searchParams}`;
       const contentType = request.headers.get('content-type') || '';
       let body: any = null;
 
@@ -257,7 +264,8 @@ async function handleRequest(
     }
 
     try {
-      const backendUrl = buildBackendUrl('/verify', '');
+      // For verify route, use the correct backend endpoint with /api prefix
+      const backendUrl = `${BACKEND_URL}/api/auth/verify`;
       const backendResponse = await proxyToBackend(
         'POST',  // Always use POST for verify endpoint (backend expects it)
         backendUrl,
@@ -324,7 +332,16 @@ async function handleRequest(
       else if (contentType.includes('application/x-www-form-urlencoded')) body = await request.text();
     }
 
-    const backendUrl = buildBackendUrl(apiPath, searchParams);
+    // For non-auth routes, build the URL normally but ensure /api prefix for backend
+    let backendUrl: string;
+    if (apiPath.startsWith('/chat/')) {
+      // Chat routes go directly to /chat without /api prefix
+      backendUrl = `${BACKEND_URL}${apiPath}${searchParams}`;
+    } else {
+      // All other routes go through /api prefix for the backend
+      backendUrl = `${BACKEND_URL}/api${apiPath}${searchParams}`;
+    }
+
     const backendResponse = await proxyToBackend(method, backendUrl, token, body);
 
     // Handle redirects manually to preserve authorization headers

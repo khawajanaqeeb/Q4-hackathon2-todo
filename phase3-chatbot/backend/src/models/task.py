@@ -19,7 +19,7 @@ class Task(SQLModel, table=True):
     """Extended Task model with chat-related fields."""
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_id: uuid.UUID = Field(foreign_key="user.id")  # Reference to User table
+    user_id: uuid.UUID = Field(foreign_key="user.id")  # Use the default table name
     title: str = Field(min_length=1, max_length=255)
     description: Optional[str] = Field(default=None)
     priority: PriorityLevel = Field(default=PriorityLevel.MEDIUM)

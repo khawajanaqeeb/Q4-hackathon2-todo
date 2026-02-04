@@ -19,5 +19,5 @@ class User(SQLModel, table=True):
     # Relationships
     tasks: List["Task"] = Relationship(back_populates="user")
     conversations: List["Conversation"] = Relationship(back_populates="user")
-    messages: List["Message"] = Relationship(back_populates="user")
+    # messages: List["Message"] = Relationship(back_populates="user")  # Temporarily commented out to avoid conflicts
     api_keys: List["ApiKey"] = Relationship(back_populates="user")

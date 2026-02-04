@@ -77,6 +77,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check for existing token on initial load
   useEffect(() => {
+    // Prevent hydration mismatch by only running on the client
+    if (typeof window === 'undefined') return;
+
     // In the new proxy pattern, tokens are stored in cookies
     // We'll check for authentication status using the unified auth proxy
     const checkAuth = async () => {

@@ -10,13 +10,32 @@ from ..database import get_session
 security = HTTPBearer()
 
 def authenticate_user(session: Session, username: str, password: str) -> Optional[User]:
-    """Authenticate a user by username and password."""
+    """Authenticate a user by username or email and password."""
+    import logging
+    logger = logging.getLogger(__name__)
+
+    logger.debug(f"Attempting to authenticate user: {username}")
+
+    # First, try to find user by username
     statement = select(User).where(User.username == username)
     user = session.exec(statement).first()
 
-    if not user or not verify_password(password, user.hashed_password):
+    # If not found, try to find user by email
+    if not user:
+        statement = select(User).where(User.email == username)
+        user = session.exec(statement).first()
+
+    logger.debug(f"User lookup result: {'Found' if user else 'Not found'}")
+
+    if not user:
+        logger.info(f"User not found: {username}")
         return None
 
+    if not verify_password(password, user.hashed_password):
+        logger.info(f"Password verification failed for user: {username}")
+        return None
+
+    logger.debug(f"User authenticated successfully: {user.username}")
     return user
 
 def create_user(session: Session, user_create: UserCreate) -> User:

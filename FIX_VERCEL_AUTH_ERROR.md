@@ -109,9 +109,9 @@ curl https://your-backend.railway.app/health
 
 If you need more help:
 
-- **Frontend Setup**: `phase2-fullstack/frontend/VERCEL_SETUP.md`
-- **Backend Setup**: `phase2-fullstack/backend/RAILWAY_SETUP.md`
-- **Environment Variables**: `phase2-fullstack/frontend/.env.production.example`
+- **Frontend Setup**: `phase3-chatbot/AUTH_SETUP_INSTRUCTIONS.md`
+- **Backend Setup**: `phase3-chatbot/backend/RAILWAY_SETUP.md`
+- **Environment Variables**: `phase3-chatbot/frontend/.env.production.example`
 
 ---
 

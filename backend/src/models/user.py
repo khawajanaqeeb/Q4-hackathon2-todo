@@ -14,7 +14,8 @@ class User(UserBase, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationships
-    todos: List["Todo"] = Relationship(back_populates="user", cascade_delete=True)
+    todos: List["Todo"] = Relationship(back_populates="user")
+    conversations: List["Conversation"] = Relationship(back_populates="user")
 
 class UserRead(UserBase):
     id: int

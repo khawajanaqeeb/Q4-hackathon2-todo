@@ -21,7 +21,7 @@ if (fs.existsSync(authRoutePath)) {
   const authChecks = [
     { name: 'Request Counter Map', check: authRouteContent.includes('requestCounts = new Map'), file: 'auth route' },
     { name: 'Increment Function', check: authRouteContent.includes('incrementRequestCount'), file: 'auth route' },
-    { name: '3-Attempt Limit', check: authRouteContent.includes('incrementRequestCount(apiPath, 3)'), file: 'auth route' },
+    { name: 'Dynamic Attempt Limits', check: authRouteContent.includes('isVerifyEndpoint ? 20 : 10'), file: 'auth route' },
     { name: '429 Response', check: authRouteContent.includes('Too many verification attempts'), file: 'auth route' },
     { name: 'Loop Blocking', check: authRouteContent.includes('Blocking potential verification loop'), file: 'auth route' },
     { name: 'Counter Reset', check: authRouteContent.includes('requestCounts.delete'), file: 'auth route' },
@@ -68,9 +68,9 @@ if (fs.existsSync(nextConfigPath)) {
     const configContent = fs.readFileSync(nextConfigPath, 'utf8');
 
     const configChecks = [
-      { name: 'Correct Property serverComponentsExternalPackages', check: configContent.includes('serverComponentsExternalPackages'), file: 'next.config.js' },
+      { name: 'Correct Property serverExternalPackages', check: configContent.includes('serverExternalPackages'), file: 'next.config.js' },
       { name: 'optimizePackageImports', check: configContent.includes('optimizePackageImports'), file: 'next.config.js' },
-      { name: 'No Deprecated turbo', check: !configContent.includes('turbo: {'), file: 'next.config.js' },
+      { name: 'No Deprecated serverComponentsExternalPackages', check: !configContent.includes('serverComponentsExternalPackages'), file: 'next.config.js' },
       { name: 'No Conflicting Webpack', check: configContent.includes('webpack:'), file: 'next.config.js' }
     ];
 
@@ -137,7 +137,7 @@ if (passed === total) {
 }
 
 console.log('\n📋 ALL KEY SAFEGUARDS IMPLEMENTED:');
-console.log('   • Request counting (max 3 attempts per path)');
+console.log('   • Request counting (dynamic limits: 20 for verify, 10 for others)');
 console.log('   • Circuit breaker pattern');
 console.log('   • Loop detection and prevention');
 console.log('   • 429 responses for rate limiting');

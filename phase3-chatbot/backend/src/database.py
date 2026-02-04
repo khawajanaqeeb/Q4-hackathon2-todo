@@ -24,9 +24,11 @@ def create_db_and_tables():
     """Create database tables."""
     from sqlmodel import SQLModel
     # Import all models to register them with SQLModel metadata
+    from .models.user import User
     from .models.conversation import Conversation
     from .models.message import Message
     from .models.task import Task
+    from .models.api_key import ApiKey
 
     # Create tables
     SQLModel.metadata.create_all(engine)

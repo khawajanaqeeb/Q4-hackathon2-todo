@@ -15,7 +15,6 @@ class AgentRunner:
 
         # Create or retrieve an assistant for task management
         self.assistant = None
-        self.thread_id = None
 
     async def initialize_assistant(self):
         """Initialize the OpenAI Assistant for task management."""
@@ -89,21 +88,20 @@ class AgentRunner:
             # Initialize the assistant if not already done
             await self.initialize_assistant()
 
-            # Create a thread if one doesn't exist
-            if not self.thread_id:
-                thread = await self.client.beta.threads.create()
-                self.thread_id = thread.id
+            # Create a new thread for this request
+            thread = await self.client.beta.threads.create()
+            thread_id = thread.id
 
             # Add the user message to the thread
             await self.client.beta.threads.messages.create(
-                thread_id=self.thread_id,
+                thread_id=thread_id,
                 role="user",
                 content=user_input
             )
 
             # Run the assistant to process the message
             run = await self.client.beta.threads.runs.create(
-                thread_id=self.thread_id,
+                thread_id=thread_id,
                 assistant_id=self.assistant.id,
                 # Force the assistant to use the parsing function
                 tool_choice={"type": "function", "function": {"name": "parse_todo_command"}}
@@ -113,7 +111,7 @@ class AgentRunner:
             while run.status in ["queued", "in_progress", "requires_action"]:
                 await asyncio.sleep(0.5)
                 run = await self.client.beta.threads.runs.retrieve(
-                    thread_id=self.thread_id,
+                    thread_id=thread_id,
                     run_id=run.id
                 )
 
@@ -130,14 +128,14 @@ class AgentRunner:
                         })
 
                     await self.client.beta.threads.runs.submit_tool_outputs(
-                        thread_id=self.thread_id,
+                        thread_id=thread_id,
                         run_id=run.id,
                         tool_outputs=tool_outputs
                     )
 
             # Get the messages from the thread
             messages = await self.client.beta.threads.messages.list(
-                thread_id=self.thread_id,
+                thread_id=thread_id,
                 limit=1  # Get the latest message
             )
 

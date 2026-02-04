@@ -20,7 +20,7 @@ if (fs.existsSync(authRoutePath)) {
     { name: 'Request Counter', check: authRouteContent.includes('requestCounts = new Map') },
     { name: 'Increment Function', check: authRouteContent.includes('incrementRequestCount') },
     { name: 'Limit Enforcement', check: authRouteContent.includes('maxAttempts') },
-    { name: 'Loop Prevention', check: authRouteContent.includes('blocking potential verification loop') },
+    { name: 'Loop Prevention', check: authRouteContent.includes('Blocking potential verification loop') },
     { name: '429 Response', check: authRouteContent.includes('Too Many Requests') }
   ];
 

@@ -153,6 +153,59 @@ class McpIntegrationService:
             "anthropic": AnthropicProviderAdapter()
         }
 
+        # Load tools from database
+        self._load_tools_from_database()
+
+    def _load_tools_from_database(self):
+        """Load tools from the database into the registry."""
+        from ..models.mcp_tool import McpTool
+        from sqlmodel import select
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        try:
+            # Query active tools from the database
+            # Use raw SQL to avoid the tool_schema column issue
+            from sqlalchemy import text
+
+            # Check if table exists and has the right columns
+            result = self.session.exec(text("SELECT name FROM sqlite_master WHERE type='table' AND name='mcp_tools';")).first()
+
+            if not result:
+                # Table doesn't exist, no tools to load
+                logger.info("mcp_tools table does not exist, skipping tool loading")
+                return
+
+            # Try to query with tool_schema column first
+            try:
+                db_tools = self.session.exec(
+                    select(McpTool).where(McpTool.is_active == True)
+                ).all()
+
+                for db_tool in db_tools:
+                    # For now, we'll create a placeholder handler since the actual handlers
+                    # are not stored in the database, only the registration information
+                    # In a real implementation, we'd need to map to the actual functions
+                    self.tools_registry[db_tool.name] = {
+                        'description': db_tool.description,
+                        'provider': db_tool.provider,
+                        'tool_schema': db_tool.tool_schema
+                    }
+
+            except Exception as e:
+                # If tool_schema column doesn't exist, query without it
+                logger.warning(f"Error querying mcp_tools with tool_schema: {e}")
+
+                # For now, just skip loading from DB if there's an issue
+                # The tools will be handled dynamically in invoke_tool
+                pass
+
+        except Exception as e:
+            logger.error(f"Error loading tools from database: {e}")
+            # Continue without loaded tools
+            pass
+
     def register_tool(self, name: str, handler: callable, description: str = "", provider: str = ""):
         """
         Register an MCP tool with the service.
@@ -213,37 +266,93 @@ class McpIntegrationService:
         """
         start_time = time.time()
 
-        # Check if tool exists
+        # Check if tool exists in registry
         if tool_name not in self.tools_registry:
-            # Log the failure
-            await self.audit_service.log_operation(
-                session=self.session,
-                user_id=user_id,
-                action_type="TOOL_INVOCATION_FAILED",
-                resource_type="MCP_TOOL",
-                resource_id=None,
-                metadata={
-                    "tool_name": tool_name,
-                    "reason": "Tool not found",
-                    "parameters": parameters
-                },
-                success=False
-            )
+            # Check if it exists in the database and load it with a handler
+            from ..models.mcp_tool import McpTool
+            from sqlmodel import select
+            from ..tools.todo_tools import TodoTools
 
-            return {
-                "success": False,
-                "error": f"Tool '{tool_name}' not found",
-                "result": None
-            }
+            db_tool = self.session.exec(
+                select(McpTool).where(
+                    McpTool.name == tool_name,
+                    McpTool.is_active == True
+                )
+            ).first()
+
+            if db_tool:
+                # Create a TodoTools instance and map to the appropriate handler
+                todo_tools = TodoTools(self.session)
+
+                # Map tool name to actual handler
+                handler_map = {
+                    "create_task": todo_tools.create_task_tool,
+                    "list_tasks": todo_tools.list_tasks_tool,
+                    "update_task": todo_tools.update_task_tool,
+                    "complete_task": todo_tools.complete_task_tool,
+                    "delete_task": todo_tools.delete_task_tool,
+                    "search_tasks": todo_tools.search_tasks_tool,
+                    "get_task_details": todo_tools.get_task_details_tool
+                }
+
+                if tool_name in handler_map:
+                    # Add to registry temporarily
+                    self.tools_registry[tool_name] = {
+                        'handler': handler_map[tool_name],
+                        'description': db_tool.description,
+                        'provider': db_tool.provider
+                    }
+                else:
+                    # Log the failure
+                    await self.audit_service.log_operation(
+                        session=self.session,
+                        user_id=user_id,
+                        action_type="TOOL_INVOCATION_FAILED",
+                        resource_type="MCP_TOOL",
+                        resource_id=None,
+                        metadata={
+                            "tool_name": tool_name,
+                            "reason": "Tool not found in registry or database",
+                            "parameters": parameters
+                        },
+                        success=False
+                    )
+
+                    return {
+                        "success": False,
+                        "error": f"Tool '{tool_name}' not found",
+                        "result": None
+                    }
+            else:
+                # Log the failure
+                await self.audit_service.log_operation(
+                    session=self.session,
+                    user_id=user_id,
+                    action_type="TOOL_INVOCATION_FAILED",
+                    resource_type="MCP_TOOL",
+                    resource_id=None,
+                    metadata={
+                        "tool_name": tool_name,
+                        "reason": "Tool not found in registry or database",
+                        "parameters": parameters
+                    },
+                    success=False
+                )
+
+                return {
+                    "success": False,
+                    "error": f"Tool '{tool_name}' not found",
+                    "result": None
+                }
 
         tool_info = self.tools_registry[tool_name]
 
         try:
             # Determine provider - use specified provider or tool's default
-            effective_provider = provider or tool_info['provider']
+            effective_provider = provider or tool_info.get('provider', 'internal')
 
-            # Validate provider if specified
-            if effective_provider != tool_info['provider']:
+            # Validate provider if specified and not internal
+            if effective_provider != 'internal' and effective_provider != tool_info.get('provider'):
                 # Log the failure
                 await self.audit_service.log_operation(
                     session=self.session,
@@ -254,7 +363,7 @@ class McpIntegrationService:
                     metadata={
                         "tool_name": tool_name,
                         "requested_provider": effective_provider,
-                        "expected_provider": tool_info['provider'],
+                        "expected_provider": tool_info.get('provider'),
                         "reason": "Provider mismatch"
                     },
                     success=False
@@ -266,34 +375,38 @@ class McpIntegrationService:
                     "result": None
                 }
 
-            # Get the API key for the provider
-            api_key = self.api_key_manager.retrieve_key(
-                session=self.session,
-                user_id=user_id,
-                provider=effective_provider
-            )
-
-            if not api_key:
-                # Log the failure
-                await self.audit_service.log_operation(
+            # For internal tools, we don't need an API key
+            if effective_provider == 'internal':
+                api_key = ""
+            else:
+                # Get the API key for the provider
+                api_key = self.api_key_manager.retrieve_key(
                     session=self.session,
                     user_id=user_id,
-                    action_type="TOOL_INVOCATION_FAILED",
-                    resource_type="MCP_TOOL",
-                    resource_id=None,
-                    metadata={
-                        "tool_name": tool_name,
-                        "provider": effective_provider,
-                        "reason": "API key not found"
-                    },
-                    success=False
+                    provider=effective_provider
                 )
 
-                return {
-                    "success": False,
-                    "error": f"No API key found for provider '{effective_provider}'",
-                    "result": None
-                }
+                if not api_key:
+                    # Log the failure
+                    await self.audit_service.log_operation(
+                        session=self.session,
+                        user_id=user_id,
+                        action_type="TOOL_INVOCATION_FAILED",
+                        resource_type="MCP_TOOL",
+                        resource_id=None,
+                        metadata={
+                            "tool_name": tool_name,
+                            "provider": effective_provider,
+                            "reason": "API key not found"
+                        },
+                        success=False
+                    )
+
+                    return {
+                        "success": False,
+                        "error": f"No API key found for provider '{effective_provider}'",
+                        "result": None
+                    }
 
             # Execute the tool handler
             handler = tool_info['handler']
@@ -339,7 +452,7 @@ class McpIntegrationService:
                 resource_id=None,
                 metadata={
                     "tool_name": tool_name,
-                    "provider": tool_info['provider'],
+                    "provider": tool_info.get('provider', 'internal'),
                     "parameters": parameters,
                     "error": str(e)
                 },

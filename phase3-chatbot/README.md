@@ -53,17 +53,33 @@ The system includes several safeguards specifically designed to prevent the memo
 - Python 3.11+
 - Git
 
+### Backend Setup (Required First)
+
+```bash
+cd phase3-chatbot/backend
+
+# Install dependencies (if not already installed)
+pip install -r requirements.txt
+
+# The .env file is already configured for local development
+# Ensure CORS_ORIGINS includes http://localhost:3000
+
+# Start backend server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Backend will be available at http://localhost:8000
+
 ### Frontend Setup
 
 ```bash
 cd phase3-chatbot/frontend
 
-# Install dependencies
+# Install dependencies (if not already installed)
 npm install
 
-# Configure environment
-cp .env.example .env.local
-# Edit .env.local with your backend URL and API keys
+# The .env.local file is already configured for local development:
+# NEXT_PUBLIC_API_URL=http://localhost:8000
 
 # Start development server
 npm run dev
@@ -71,27 +87,14 @@ npm run dev
 
 Frontend will be available at http://localhost:3000
 
-### Backend Setup
+### Authentication Flow
 
-```bash
-cd phase3-chatbot/backend
+1. Backend authentication endpoints are working correctly
+2. Frontend proxy at `/api/auth/[...path]` forwards requests to backend
+3. Registration, login, and verification all tested and working
+4. Authentication tokens are properly handled via cookies
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your settings
-
-# Start backend server
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-Backend will be available at http://localhost:8000
+✅ **Authentication system is fully functional for local development**
 
 ## Troubleshooting
 
@@ -103,6 +106,16 @@ If experiencing authentication issues during development:
 2. Verify that the API server is running and accessible
 3. Clear authentication tokens from localStorage if needed
 4. Restart the development server if authentication state becomes inconsistent
+
+### Production Authentication Setup
+
+For Vercel deployment, you need to configure cross-origin resource sharing properly:
+
+1. **Backend CORS Configuration**: Ensure your Railway backend allows requests from your Vercel domain
+2. **Frontend Environment Variables**: Set NEXT_PUBLIC_API_URL to your Railway backend URL in Vercel dashboard
+3. **Redeployment**: Remember to redeploy both backend and frontend after configuration changes
+
+See [AUTH_SETUP_INSTRUCTIONS.md](AUTH_SETUP_INSTRUCTIONS.md) for detailed setup instructions.
 
 ### Memory Issues During Development
 

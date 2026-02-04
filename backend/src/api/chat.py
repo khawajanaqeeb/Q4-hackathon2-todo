@@ -15,7 +15,7 @@ limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
 
-@router.post("/messages")
+@router.post("/messages", response_model=None)
 @limiter.limit("30 per minute")
 def chat_messages(
     request: Request,
@@ -42,7 +42,7 @@ def chat_messages(
         )
 
 
-@router.get("/conversations")
+@router.get("/conversations", response_model=None)
 @limiter.limit("20 per minute")
 def get_user_conversations(
     request: Request,

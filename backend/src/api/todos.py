@@ -19,7 +19,7 @@ limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/todos", tags=["Todos"])
 
 
-@router.get("/", response_model=List[TodoRead])
+@router.get("/", response_model=None)
 @limiter.limit("20 per minute")
 def read_todos(
     request: Request,
@@ -33,7 +33,7 @@ def read_todos(
     return todos
 
 
-@router.post("/", response_model=TodoRead)
+@router.post("/", response_model=None)
 @limiter.limit("10 per minute")
 def create_todo_item(
     request: Request,
@@ -46,7 +46,7 @@ def create_todo_item(
     return db_todo
 
 
-@router.get("/{todo_id}", response_model=TodoRead)
+@router.get("/{todo_id}", response_model=None)
 @limiter.limit("20 per minute")
 def read_todo(
     request: Request,
@@ -66,7 +66,7 @@ def read_todo(
     return db_todo
 
 
-@router.put("/{todo_id}", response_model=TodoRead)
+@router.put("/{todo_id}", response_model=None)
 @limiter.limit("10 per minute")
 def update_todo_item(
     request: Request,
@@ -87,7 +87,7 @@ def update_todo_item(
     return db_todo
 
 
-@router.patch("/{todo_id}/complete")
+@router.patch("/{todo_id}/complete", response_model=None)
 @limiter.limit("10 per minute")
 def complete_todo_item(
     request: Request,
@@ -108,7 +108,7 @@ def complete_todo_item(
     return {"id": db_todo.id, "completed": db_todo.completed}
 
 
-@router.delete("/{todo_id}")
+@router.delete("/{todo_id}", response_model=None)
 @limiter.limit("10 per minute")
 def delete_todo_item(
     request: Request,

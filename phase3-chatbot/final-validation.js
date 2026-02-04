@@ -54,7 +54,7 @@ if (fs.existsSync(configPath)) {
 
   const hasCorrectProperty = content.includes('serverExternalPackages');
   const noDeprecatedProperty = !content.includes('serverComponentsExternalPackages');
-  const hasTurboConfig = content.includes('turbo') && content.includes('rules');
+  const hasTurboConfig = content.includes('turbopack');
   const hasWebpackConfig = content.includes('webpack:');
 
   console.log(`   ✅ Correct Property: ${hasCorrectProperty ? 'IMPLEMENTED' : 'MISSING'}`);
@@ -105,7 +105,7 @@ const authLibComplete = filesFound >= 10;
 console.log(`Authentication Safeguards: ${allAuthSafeguards ? '✅ COMPLETE' : '❌ INCOMPLETE'}`);
 console.log(`Middleware Protection: ${allMiddlewareSafeguards ? '✅ COMPLETE' : '❌ INCOMPLETE'}`);
 console.log(`Configuration: ${configValid ? '✅ VALID' : '❌ INVALID'}`);
-console.log(`Auth Libraries: ${authLibComplete ? `✅ ${filesFound}/11 COMPLETE` : `❌ ${filesFound}/11 INCOMPLETE'}`);
+console.log(`Auth Libraries: ${authLibComplete ? `✅ ${filesFound}/11 COMPLETE` : `❌ ${filesFound}/11 INCOMPLETE`}`);
 
 const overallScore = (allAuthSafeguards ? 1 : 0) +
                     (allMiddlewareSafeguards ? 1 : 0) +

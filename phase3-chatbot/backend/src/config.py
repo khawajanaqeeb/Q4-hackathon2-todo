@@ -58,6 +58,7 @@ class Settings(BaseSettings):
     PROVIDER_TIMEOUT_SECONDS: int = int(os.getenv("PROVIDER_TIMEOUT_SECONDS", "30"))
 
     # Rate Limiting Settings
+    DISABLE_RATE_LIMIT: bool = os.getenv("DISABLE_RATE_LIMIT", "false").lower() == "true"
     LOGIN_RATE_LIMIT: str = "5"  # Added to match original config
     RATE_LIMIT_DEFAULT_MAX_REQUESTS: int = int(os.getenv("RATE_LIMIT_DEFAULT_MAX_REQUESTS", "100"))
     RATE_LIMIT_DEFAULT_WINDOW_SECONDS: int = int(os.getenv("RATE_LIMIT_DEFAULT_WINDOW_SECONDS", "60"))

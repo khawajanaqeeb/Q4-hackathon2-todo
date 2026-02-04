@@ -1,9 +1,10 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional
 from datetime import datetime
+from sqlalchemy import Column, String, ForeignKey
 
 class MessageBase(SQLModel):
-    conversation_id: str
+    conversation_id: str = Field(sa_column=Column(String, ForeignKey("conversation.id")))
     role: str = Field(max_length=20)  # "user" or "assistant"
     content: str
 

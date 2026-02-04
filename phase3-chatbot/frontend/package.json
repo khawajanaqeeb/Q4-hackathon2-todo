@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.1.1",
+    "@openai/chat-components": "^0.2.1",
     "clsx": "^2.1.0",
     "next": "^16.0.0",
     "react": "^19.0.0",

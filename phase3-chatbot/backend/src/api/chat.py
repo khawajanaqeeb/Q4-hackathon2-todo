@@ -63,7 +63,9 @@ async def send_message(
     # Initialize services
     chat_service = ChatService(session)
     agent_runner = AgentRunner()
-    mcp_service = McpIntegrationService(session)
+    api_key_manager = ApiKeyManager()
+    audit_service = AuditService(session)
+    mcp_service = McpIntegrationService(session, api_key_manager, audit_service)
 
     try:
         # Convert conversation_id to UUID if provided

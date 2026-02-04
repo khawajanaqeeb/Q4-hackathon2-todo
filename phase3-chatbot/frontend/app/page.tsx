@@ -174,6 +174,9 @@ export default function HomePage() {
 
               {user ? (
                 <>
+                  <Link href="/chat" className="btn-primary mr-3">
+                    🤖 AI Chat
+                  </Link>
                   <span className="text-white text-sm">
                     👤 <span className="font-medium">{user.name}</span>
                   </span>

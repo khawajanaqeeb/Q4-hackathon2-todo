@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from sqlmodel import Session
+from sqlmodel import Session, select
 from typing import Optional
 from datetime import timedelta
 import os
+import logging
 from jose import jwt
 from jose.exceptions import JWTError
 
@@ -12,6 +13,10 @@ from ..models.user import User, UserCreate, UserRead
 from ..services.auth import authenticate_user, create_user, create_access_token_for_user
 from ..database import get_session
 from ..utils.security import SECRET_KEY, ALGORITHM, verify_token
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Initialize limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -67,18 +72,62 @@ def register_user(request: Request, user_create: UserCreate, session: Session = 
 
 @router.post("/login")
 @limiter.limit("10 per minute")
-def login_user(request: Request, response: Response, username: str, password: str, session: Session = Depends(get_session)):
+async def login_user(request: Request, response: Response, session: Session = Depends(get_session)):
     """Authenticate user and create session."""
+    content_type = request.headers.get("content-type", "").lower()
+    logger.info(f"Login attempt with content-type: {content_type}")
+
+    if "application/json" in content_type:
+        # Handle JSON request
+        try:
+            body = await request.json()
+            username = body.get("username")
+            password = body.get("password")
+            logger.debug(f"Parsed JSON body: username={username}, password={'***' if password else None}")
+        except Exception as e:
+            logger.error(f"Error parsing JSON: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid JSON format"
+            )
+    else:
+        # Handle form data request
+        try:
+            body_bytes = await request.body()
+            from urllib.parse import parse_qs
+            parsed_body = parse_qs(body_bytes.decode())
+            username = parsed_body.get("username", [""])[0]
+            password = parsed_body.get("password", [""])[0]
+            logger.debug(f"Parsed form data: username={username}, password={'***' if password else None}")
+        except Exception as e:
+            logger.error(f"Error parsing form data: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid form data format"
+            )
+
+    if not username or not password:
+        logger.warning(f"Login attempt with missing credentials: username={bool(username)}, password={bool(password)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username and password are required"
+        )
+
+    logger.info(f"Attempting to authenticate user: {username}")
     user = authenticate_user(session, username, password)
 
     if not user:
+        logger.info(f"Authentication failed for user: {username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    logger.info(f"User authenticated successfully: {user.username}")
+
     access_token = create_access_token_for_user(user)
+    logger.debug(f"Access token created for user: {user.username}")
 
     # Set the token in an HTTP-only cookie
     response.set_cookie(
@@ -103,10 +152,28 @@ def login_user(request: Request, response: Response, username: str, password: st
 
 @router.get("/verify")
 @limiter.limit("30 per minute")
-def verify_user(request: Request, session: Session = Depends(get_session)):
-    """Verify current user session."""
-    # Get the session token from cookies
+def verify_user_get(request: Request, session: Session = Depends(get_session)):
+    """Verify current user session via GET."""
+    return verify_user_common(request, session)
+
+
+@router.post("/verify")
+@limiter.limit("30 per minute")
+def verify_user_post(request: Request, session: Session = Depends(get_session)):
+    """Verify current user session via POST."""
+    return verify_user_common(request, session)
+
+
+def verify_user_common(request: Request, session: Session):
+    """Common function for verifying user session."""
+    # Get the session token from cookies or Authorization header
     token = request.cookies.get("session_token")
+
+    # Also check Authorization header for compatibility with proxy
+    if not token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header[len("Bearer "):]
 
     if not token:
         raise HTTPException(
