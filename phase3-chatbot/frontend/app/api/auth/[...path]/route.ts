@@ -104,7 +104,7 @@ function buildBackendUrl(path: string, searchParams: string): string {
   }
 
   return isAuthRoute
-    ? `${BACKEND_URL}/api/auth${path}${queryString}`  // Add /api prefix for auth routes
+    ? `${BACKEND_URL}/auth${path}${queryString}`     // Backend auth routes are at /auth/ (no /api prefix)
     : `${BACKEND_URL}/api${path}${queryString}`;     // Add /api prefix for other routes
 }
 
@@ -162,25 +162,45 @@ async function handleRequest(
       if (contentType.includes('application/json')) body = await request.json().catch(() => null);
       else if (contentType.includes('application/x-www-form-urlencoded')) body = await request.text();
 
-      const backendResponse =
-        apiPath === '/login' && contentType.includes('application/x-www-form-urlencoded')
-          ? await fetch(backendUrl, { method, headers: { 'Content-Type': contentType }, body })
-          : await proxyToBackend(method, backendUrl, null, body);
+      // Handle form data specially for all form endpoints, not just login
+      if (contentType.includes('application/x-www-form-urlencoded')) {
+        const backendResponse = await fetch(backendUrl, {
+          method,
+          headers: { 'Content-Type': contentType },
+          body
+        });
+        if (!backendResponse.ok) {
+          const errorData = await safeJsonParse(backendResponse).catch(() => null);
+          const message = errorData?.error || errorData?.detail || 'Authentication failed';
+          return createErrorResponse(message, backendResponse.status);
+        }
 
-      if (!backendResponse.ok) {
-        const errorData = await safeJsonParse(backendResponse).catch(() => null);
-        const message = errorData?.error || errorData?.detail || 'Authentication failed';
-        return createErrorResponse(message, backendResponse.status);
+        const data = await safeJsonParse(backendResponse);
+        const response = NextResponse.json(data, { status: backendResponse.status });
+
+        // Set cookie if token exists
+        const tokenFromData = data.access_token || data.token;
+        if (tokenFromData) setAuthCookie(response, tokenFromData);
+
+        return response;
+      } else {
+        const backendResponse = await proxyToBackend(method, backendUrl, null, body);
+
+        if (!backendResponse.ok) {
+          const errorData = await safeJsonParse(backendResponse).catch(() => null);
+          const message = errorData?.error || errorData?.detail || 'Authentication failed';
+          return createErrorResponse(message, backendResponse.status);
+        }
+
+        const data = await safeJsonParse(backendResponse);
+        const response = NextResponse.json(data, { status: backendResponse.status });
+
+        // Set cookie if token exists
+        const tokenFromData = data.access_token || data.token;
+        if (tokenFromData) setAuthCookie(response, tokenFromData);
+
+        return response;
       }
-
-      const data = await safeJsonParse(backendResponse);
-      const response = NextResponse.json(data, { status: backendResponse.status });
-
-      // Set cookie if token exists
-      const tokenFromData = data.access_token || data.token;
-      if (tokenFromData) setAuthCookie(response, tokenFromData);
-
-      return response;
     } catch (error) {
       console.error('[Proxy] Public route error:', error);
       return createErrorResponse('Authentication service unavailable', 503);
@@ -210,8 +230,8 @@ async function handleRequest(
     }
 
     try {
-      // For refresh route, use the correct backend endpoint with /api prefix
-      const backendUrl = `${BACKEND_URL}/api/auth/refresh${searchParams}`;
+      // For refresh route, use the correct backend endpoint (backend has /auth/ routes)
+      const backendUrl = `${BACKEND_URL}/auth/refresh${searchParams}`;
       const contentType = request.headers.get('content-type') || '';
       let body: any = null;
 
@@ -264,8 +284,8 @@ async function handleRequest(
     }
 
     try {
-      // For verify route, use the correct backend endpoint with /api prefix
-      const backendUrl = `${BACKEND_URL}/api/auth/verify`;
+      // For verify route, use the correct backend endpoint (backend has /auth/ routes)
+      const backendUrl = `${BACKEND_URL}/auth/verify`;
       const backendResponse = await proxyToBackend(
         'POST',  // Always use POST for verify endpoint (backend expects it)
         backendUrl,
