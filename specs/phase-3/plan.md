@@ -31,6 +31,13 @@ Enhance the existing Phase 2 todo application by adding a conversational chatbot
 - ✅ Incremental enhancement approach (not rewrite)
 - ✅ Technology stack alignment (FastAPI, Next.js, SQLModel, Neon PG)
 
+## HARD GUARDRAILS
+
+- **MCP Server**: Runs in-process within the main FastAPI application
+- **Deployment**: No separate deployment required for MCP server
+- **Authentication**: No new auth, tokens, or middleware - reuse existing cookie-based auth
+- **Frontend Access**: No direct frontend → MCP access - all MCP interactions via backend
+
 ## Project Structure
 
 ### Documentation (this feature)
@@ -147,6 +154,12 @@ frontend/
 5. MCP server receives user context from validated backend
 6. MCP tools enforce authorization using existing auth dependency
 7. All operations are restricted to authenticated user's data only
+
+### Chat Transport Choice
+
+- **Selected Approach**: HTTP streaming (Server-Sent Events)
+- **Rationale**: Simpler implementation with good browser support
+- **Out of Scope**: WebSockets (Phase 3 constraint)
 
 ## 2. Component Breakdown
 

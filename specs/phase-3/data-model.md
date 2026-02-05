@@ -3,6 +3,8 @@
 ## Overview
 This document defines the data entities and relationships for the chatbot enhancement to the todo application.
 
+**Iteration 1 placeholder — to be expanded during /sp.tasks and /sp.implement**
+
 ## Entities
 
 ### Conversation

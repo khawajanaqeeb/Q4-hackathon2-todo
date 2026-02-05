@@ -3,8 +3,10 @@
 ## Overview
 This document captures the research findings for enhancing the existing Phase 2 todo application with a conversational chatbot system.
 
+**Iteration 1 placeholder — to be expanded during /sp.tasks and /sp.implement**
+
 ## Decision: Architecture Pattern
-**Rationale**: Adopt microservices pattern with MCP server to maintain separation of concerns while preserving existing monolithic structure for core functionality.
+**Rationale**: Use logically separated components within a single FastAPI application to maintain separation of concerns while preserving existing monolithic structure for core functionality.
 **Alternatives considered**:
 - Monolithic expansion: Keep all functionality in existing FastAPI app
 - Full service decomposition: Split into multiple services
