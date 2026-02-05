@@ -1,186 +1,225 @@
-# Tasks: Phase 3 Chatbot Authentication & Integration
+# Tasks: Phase 3 Chatbot Enhancement
 
-## Feature Overview
-Implementation of a secure authentication system with JWT tokens and HTTP-only cookies for a chatbot-enabled todo application. The system will include backend authentication endpoints, frontend integration with proper session management, and integration with OpenAI Agents SDK for chatbot functionality.
+**Input**: Design documents from `/specs/phase-3/`
+**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-## Dependencies and Ordering
-Each phase builds upon the previous work, with backend authentication endpoints needing to be functional before frontend integration can begin. The implementation follows a strict dependency order to ensure each component can be validated before moving to the next.
+**Tests**: No explicit test requests in feature specification - tests are NOT included.
 
-## Phase 1: Setup
-Initialize project structure and install dependencies per implementation plan.
+**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
-- [X] T001 Create project structure with backend and frontend directories
-- [X] T002 Install backend dependencies: FastAPI, SQLModel, Alembic, OpenAI Agents SDK, slowapi
-- [X] T003 Install frontend dependencies: React, chatkit, axios, react-router-dom
-- [X] T004 Configure environment variables for backend and frontend
-- [X] T005 Set up database configuration with PostgreSQL/SQLite
+## Format: `[ID] [P?] [Story] Description`
 
-## Phase 2: Foundational
-Implement foundational components that block all user stories.
+- **[P]**: Can run in parallel (different files, no dependencies)
+- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
+- Include exact file paths in descriptions
 
-- [X] T006 Create single canonical User model to prevent SQLAlchemy "Multiple classes found for path 'User'" error
-- [X] T007 Set up database models: Todo, Conversation, Message with proper relationships
-- [X] T008 Configure CORS middleware with credentials support
-- [X] T009 Set up JWT utilities for token creation and verification
-- [X] T010 Configure password hashing with bcrypt
-- [X] T011 Set up Alembic for database migrations
-- [X] T012 Create authentication service with reusable dependencies
-- [X] T013 Set up API client configuration with cookie handling
+## Path Conventions
 
-## Phase 3: User Registration and Authentication (US1)
-As a new user, I want to register for an account and log in securely so that I can access my todo list and chatbot functionality.
+- **Web app**: `backend/src/`, `frontend/src/`
+- Paths adjusted based on plan.md structure
 
-**Goal**: Implement user registration and authentication flows with secure session management.
+## Phase 1: Setup (Shared Infrastructure)
 
-**Independent Test Criteria**:
-- New users can register with username, email, and password
-- Registered users can log in and receive valid session
-- Invalid credentials are properly rejected
-- Session is maintained via HTTP-only cookies
+**Purpose**: Project initialization and basic structure for Phase 3 enhancements
 
-- [X] T014 [US1] Create User registration endpoint POST /api/auth/register
-- [X] T015 [US1] Create User login endpoint POST /api/auth/login with JWT + HTTP-only cookie
-- [X] T016 [US1] Create session verification endpoint GET /api/auth/verify
-- [X] T017 [US1] Create logout endpoint POST /api/auth/logout
-- [X] T018 [US1] Implement input validation for registration and login
-- [X] T019 [US1] Implement password hashing in user creation
-- [X] T020 [US1] Configure cookie settings (secure, HttpOnly, SameSite)
-- [X] T021 [US1] Implement error handling for authentication failures
-- [X] T022 [US1] Create frontend registration form component
-- [X] T023 [US1] Create frontend login form component
-- [X] T024 [US1] Implement frontend authentication state management
-- [X] T025 [US1] Implement frontend session verification
-- [X] T026 [US1] Create protected route components
-- [ ] T027 [US1] Test user registration flow
-- [ ] T028 [US1] Test user login and session establishment
-- [ ] T029 [US1] Test session verification and protection
-- [ ] T030 [US1] Test authentication error handling
+- [ ] T001 Create project structure with MCP tools directory per implementation plan
+- [ ] T002 [P] Install MCP SDK dependency in backend requirements.txt
+- [ ] T003 [P] Install OpenAI Agents SDK dependency in backend requirements.txt
+- [ ] T004 [P] Install frontend ChatKit dependency in frontend package.json
+- [ ] T005 Set up environment variables for OpenAI and MCP server in .env files
 
-## Phase 4: Todo Management Through Traditional UI (US2)
-As an authenticated user, I want to manage my todos through the traditional UI so that I can create, update, complete, and delete todo items.
+---
 
-**Goal**: Implement complete todo management functionality through traditional UI with authenticated access.
+## Phase 2: Foundational (Blocking Prerequisites)
 
-**Independent Test Criteria**:
-- Authenticated users can create new todos
-- Users can view their own todos only
-- Users can update and complete their todos
-- Users can delete their todos
-- Unauthenticated access is properly blocked
+**Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-- [X] T031 [US2] Create Todo model with user relationship
-- [X] T032 [US2] Create GET /api/todos endpoint for retrieving user's todos
-- [X] T033 [US2] Create POST /api/todos endpoint for creating new todos
-- [X] T034 [US2] Create PUT /api/todos/{id} endpoint for updating todos
-- [X] T035 [US2] Create PATCH /api/todos/{id}/complete for marking todos as complete
-- [X] T036 [US2] Create DELETE /api/todos/{id} endpoint for deleting todos
-- [X] T037 [US2] Implement user authorization checks for all todo endpoints
-- [X] T038 [US2] Create TodoService for business logic
-- [X] T039 [US2] Create frontend TodoList component
-- [X] T040 [US2] Create frontend TodoItem component
-- [X] T041 [US2] Create frontend TodoForm component
-- [X] T042 [US2] Implement frontend API calls for todo operations
-- [X] T043 [US2] Implement frontend authentication interceptors for todo API calls
-- [ ] T044 [US2] Test authenticated todo creation
-- [ ] T045 [US2] Test authenticated todo retrieval
-- [ ] T046 [US2] Test authenticated todo updates
-- [ ] T047 [US2] Test authenticated todo deletion
-- [ ] T048 [US2] Test unauthorized access prevention
+**⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-## Phase 5: Todo Management Through Chatbot (US3)
-As an authenticated user, I want to manage my todos through natural language chat so that I can interact with my todo list more naturally.
+- [ ] T006 Setup conversation database schema and migrations
+- [ ] T007 [P] Implement conversation models in backend/src/models/conversation.py
+- [ ] T008 [P] Setup MCP server integration framework in backend/src/services/mcp_integration.py
+- [ ] T009 Create todo tools models that all stories depend on
+- [ ] T010 Configure streaming response middleware for chat endpoints
+- [ ] T011 Setup MCP tool validation and security framework
 
-**Goal**: Implement chatbot functionality that allows users to manage todos through natural language commands.
+**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
-**Independent Test Criteria**:
-- Chatbot understands natural language commands for todo operations
-- Chatbot can create, update, delete, and list user's todos
-- Chatbot maintains conversation context
-- Actions taken via chat are reflected in traditional UI
+---
 
-- [X] T049 [US3] Integrate OpenAI Agents SDK for chatbot functionality
-- [X] T050 [US3] Create Conversation model for storing chat history
-- [X] T051 [US3] Create Message model for individual chat messages
-- [X] T052 [US3] Create POST /api/chat/messages endpoint for chat interactions
-- [X] T053 [US3] Create GET /api/chat/conversations endpoint for conversation history
-- [X] T054 [US3] Implement chatbot service with todo action recognition
-- [X] T055 [US3] Create chatbot service that integrates with TodoService
-- [X] T056 [US3] Implement natural language processing for todo commands
-- [X] T057 [US3] Create ChatService for managing chatbot interactions
-- [X] T058 [US3] Implement conversation context management
-- [X] T059 [US3] Create frontend chat interface components using chatkit
-- [X] T060 [US3] Create MessageList component for displaying chat history
-- [X] T061 [US3] Create MessageInput component for user input
-- [X] T062 [US3] Implement chat message API integration with authentication
-- [X] T063 [US3] Connect chatbot actions to todo management functions
-- [ ] T064 [US3] Test chatbot todo creation command
-- [ ] T065 [US3] Test chatbot todo update command
-- [ ] T066 [US3] Test chatbot todo deletion command
-- [ ] T067 [US3] Test chatbot todo listing command
-- [ ] T068 [US3] Test conversation context maintenance
-- [ ] T069 [US3] Test synchronization between chat and traditional UI
+## Phase 3: User Story 1 - Todo Management Through Chatbot (Priority: P2) 🎯
 
-## Phase 6: Session Management and Security (US4)
-As a user, I want my session to be managed securely so that my data remains protected and my login state is maintained appropriately.
+**Goal**: Enable users to manage todos through natural language chat so that they can interact with their todo list more naturally
 
-**Goal**: Implement comprehensive session management and security features to protect user data.
+**Independent Test**: User can initiate a chat conversation, issue natural language commands (e.g., "Create a new todo called 'Buy groceries'"), and see the todo appear in both chat responses and traditional UI
 
-**Independent Test Criteria**:
-- Sessions expire after defined inactivity period
-- Users are redirected to login when session expires
-- User data isolation is maintained
-- API requests are properly rate-limited
+### Implementation for User Story 1
 
-- [X] T070 [US4] Implement JWT token expiration and refresh mechanism
-- [X] T071 [US4] Configure rate limiting middleware with slowapi
-- [X] T072 [US4] Set up session expiration handling in backend
-- [X] T073 [US4] Implement proper error logging for authentication failures
-- [X] T074 [US4] Create comprehensive error handlers for auth endpoints
-- [X] T075 [US4] Implement data isolation to prevent cross-user access
-- [X] T076 [US4] Configure secure cookie attributes (secure, HttpOnly, SameSite)
-- [X] T077 [US4] Implement frontend session expiration detection
-- [X] T078 [US4] Create automatic session refresh mechanism
-- [X] T079 [US4] Implement frontend redirect to login on session expiration
-- [X] T080 [US4] Create error boundary components for graceful error handling
-- [ ] T081 [US4] Test session expiration and renewal
-- [ ] T082 [US4] Test rate limiting functionality
-- [ ] T083 [US4] Test data isolation between users
-- [ ] T084 [US4] Test error handling for expired sessions
-- [ ] T085 [US4] Test security of HTTP-only cookies
+- [ ] T012 [P] [US3] Create Conversation model in backend/src/models/conversation.py
+- [ ] T013 [P] [US3] Create Message model in backend/src/models/conversation.py
+- [ ] T014 [US3] Implement ConversationService in backend/src/services/conversation_service.py
+- [ ] T015 [US3] Create TodoOperationLog model in backend/src/models/conversation.py
+- [ ] T016 [P] [US3] Implement chat endpoint in backend/src/api/chat.py
+- [ ] T017 [US3] Implement basic OpenAI Agent configuration in backend/src/services/openai_agent.py
+- [ ] T018 [P] [US3] Implement create_todo MCP tool in backend/src/tools/todo_tools.py
+- [ ] T019 [P] [US3] Implement list_todos MCP tool in backend/src/tools/todo_tools.py
+- [ ] T020 [P] [US3] Implement update_todo MCP tool in backend/src/tools/todo_tools.py
+- [ ] T021 [P] [US3] Implement delete_todo MCP tool in backend/src/tools/todo_tools.py
+- [ ] T022 [P] [US3] Implement complete_todo MCP tool in backend/src/tools/todo_tools.py
+- [ ] T023 [US3] Connect MCP tools to existing SQLModel todo models
+- [ ] T024 [US3] Add authentication validation to all MCP tools using existing auth dependency
+- [ ] T025 [US3] Integrate conversation persistence with chat endpoint
+- [ ] T026 [US3] Implement streaming response (SSE) for chat endpoint
+- [ ] T027 [US3] Test chatbot can create todos and they appear in traditional UI
 
-## Phase 7: Polish & Cross-Cutting Concerns
-Final integration, testing, and polish of the complete system.
+**Checkpoint**: At this point, User Story 3 should be fully functional and testable independently
 
-- [ ] T086 Implement comprehensive logging throughout the application
-- [ ] T087 Create health check endpoints for monitoring
-- [ ] T088 Perform security audit of authentication implementation
-- [ ] T089 Conduct integration testing between all components
-- [ ] T090 Perform end-to-end testing of all user stories
-- [ ] T091 Optimize database queries for performance
-- [ ] T092 Conduct cross-browser testing of frontend components
-- [ ] T093 Perform load testing on authentication endpoints
-- [ ] T094 Document API endpoints with examples
-- [ ] T095 Create deployment configuration files
-- [ ] T096 Final validation of all user stories against acceptance criteria
-- [ ] T097 Prepare production environment configuration
-- [ ] T098 Conduct final security review
-- [ ] T099 Final system integration testing
-- [ ] T100 Deploy to staging environment for final validation
+---
 
-## Dependencies Between User Stories
-- US1 (Authentication) must be completed before US2, US3, and US4 can be fully tested
-- US2 (Todo Management) provides foundation for US3 (Chatbot) functionality
-- US4 (Security) affects all other stories and should be validated throughout development
+## Phase 4: User Story 2 - Chat Interface Integration (Priority: P2)
 
-## Parallel Execution Opportunities
-- [P] T014-T017: Authentication endpoints can be developed in parallel
-- [P] T032-T036: Todo management endpoints can be developed in parallel
-- [P] T049-T051: Chatbot models can be created in parallel
-- [P] T059-T061: Frontend chat components can be developed in parallel
-- [P] T039-T041: Frontend todo components can be developed in parallel
+**Goal**: Provide a complete chat UI experience that integrates seamlessly with existing authentication and shows todo management capabilities
+
+**Independent Test**: User can navigate to chat page, authenticate using existing system, start conversations, issue todo commands, and see responses with proper context maintenance
+
+### Implementation for User Story 2
+
+- [ ] T028 [P] [US3] Create ChatInterface component in frontend/components/ChatInterface.tsx
+- [ ] T029 [P] [US3] Create ChatKitInterface component in frontend/components/ChatKitInterface.tsx
+- [ ] T030 [US3] Implement chat API service in frontend/src/services/chatApi.js
+- [ ] T031 [US3] Add chat route/page in frontend/app/chat/page.tsx
+- [ ] T032 [US3] Integrate authentication context with chat components
+- [ ] T033 [US3] Connect frontend to backend chat endpoint with proper auth headers
+- [ ] T034 [US3] Implement conversation history display in chat UI
+- [ ] T035 [US3] Add conversation management (new conversation, switch conversations)
+- [ ] T036 [US3] Test end-to-end chatbot todo management flow with UI
+
+**Checkpoint**: At this point, Chat Interface integration should be fully functional and testable independently
+
+---
+
+## Phase 5: User Story 3 - Session Management and Security for Chat (Priority: P2)
+
+**Goal**: Ensure chat conversations are properly managed with security and maintain user data isolation
+
+**Independent Test**: User sessions are properly maintained in chat, user data is isolated between users, API rate limiting works, and MCP server validates user identity properly
+
+### Implementation for User Story 3
+
+- [ ] T037 [P] [US4] Implement conversation session expiration in backend/src/services/conversation_service.py
+- [ ] T038 [US4] Add rate limiting to chat endpoint in backend/src/api/chat.py
+- [ ] T039 [US4] Implement user data isolation validation in all MCP tools
+- [ ] T040 [US4] Add comprehensive authorization checks to MCP tools using existing auth dependency
+- [ ] T041 [US4] Implement proper conversation cleanup and archiving
+- [ ] T042 [US4] Add security audit logging for chat interactions
+- [ ] T043 [US4] Test user data isolation between different authenticated users
+- [ ] T044 [US4] Verify MCP server properly validates user identity before executing todo operations
+
+**Checkpoint**: All chatbot security and session management should be fully functional
+
+---
+
+## Phase 6: Polish & Cross-Cutting Concerns
+
+**Purpose**: Improvements that affect multiple user stories and final integration
+
+- [ ] T045 [P] Documentation updates for chatbot functionality in docs/
+- [ ] T046 Code cleanup and refactoring across chatbot components
+- [ ] T047 Performance optimization for chat streaming responses
+- [ ] T048 Security hardening and validation across all chat components
+- [ ] T049 Run quickstart.md validation for chatbot features
+- [ ] T050 End-to-end testing of all chatbot features with existing todo functionality
+
+---
+
+## Dependencies & Execution Order
+
+### Phase Dependencies
+
+- **Setup (Phase 1)**: No dependencies - can start immediately
+- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
+- **User Stories (Phase 3+)**: All depend on Foundational phase completion
+  - User stories can then proceed in parallel (if staffed)
+  - Or sequentially in priority order (P2 → P2 → P2)
+- **Polish (Final Phase)**: Depends on all desired user stories being complete
+
+### User Story Dependencies
+
+- **User Story 1 (US3)**: Can start after Foundational (Phase 2) - No dependencies on other stories
+- **User Story 2 (US3)**: Depends on User Story 1 (basic chat functionality)
+- **User Story 3 (US4)**: Can start after Foundational but should integrate with US1/US2 components
+
+### Within Each User Story
+
+- Models before services
+- Services before endpoints
+- Core implementation before integration
+- Story complete before moving to next priority
+
+### Parallel Opportunities
+
+- All Setup tasks marked [P] can run in parallel
+- All Foundational tasks marked [P] can run in parallel (within Phase 2)
+- Once Foundational phase completes, all user stories can start in parallel (if team capacity allows)
+- All models within a story marked [P] can run in parallel
+- Different user stories can be worked on in parallel by different team members
+
+---
+
+## Parallel Example: User Story 1
+
+```bash
+# Launch all models for User Story 1 together:
+Task: "Create Conversation model in backend/src/models/conversation.py"
+Task: "Create Message model in backend/src/models/conversation.py"
+
+# Launch all MCP tools for User Story 1 together:
+Task: "Implement create_todo MCP tool in backend/src/tools/todo_tools.py"
+Task: "Implement list_todos MCP tool in backend/src/tools/todo_tools.py"
+Task: "Implement update_todo MCP tool in backend/src/tools/todo_tools.py"
+Task: "Implement delete_todo MCP tool in backend/src/tools/todo_tools.py"
+Task: "Implement complete_todo MCP tool in backend/src/tools/todo_tools.py"
+```
+
+---
 
 ## Implementation Strategy
-1. **MVP First**: Complete US1 (Authentication) with minimal US2 (basic todo CRUD) for a working system
-2. **Incremental Delivery**: Add chatbot functionality (US3) after core todo management works
-3. **Security Throughout**: Implement security measures (US4) throughout all phases, not just at the end
-4. **Test Continuously**: Validate each user story as it's completed rather than waiting until the end
+
+### MVP First (User Story 1 Only)
+
+1. Complete Phase 1: Setup
+2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
+3. Complete Phase 3: User Story 1 (Basic chatbot with todo operations)
+4. **STOP and VALIDATE**: Test chatbot functionality independently
+5. Deploy/demo if ready
+
+### Incremental Delivery
+
+1. Complete Setup + Foundational → Foundation ready
+2. Add User Story 1 → Test chatbot todo management independently → Deploy/Demo (MVP!)
+3. Add User Story 2 → Test UI integration → Deploy/Demo
+4. Add User Story 3 → Test security and session management → Deploy/Demo
+5. Each story adds value without breaking previous stories
+
+### Parallel Team Strategy
+
+With multiple developers:
+
+1. Team completes Setup + Foundational together
+2. Once Foundational is done:
+   - Developer A: User Story 1 (Backend chat & MCP tools)
+   - Developer B: User Story 2 (Frontend chat UI)
+   - Developer C: User Story 3 (Security & session management)
+3. Stories complete and integrate independently
+
+---
+
+## Notes
+
+- [P] tasks = different files, no dependencies
+- [Story] label maps task to specific user story for traceability
+- Each user story should be independently completable and testable
+- Verify tests fail before implementing
+- Commit after each task or logical group
+- Stop at any checkpoint to validate story independently
+- Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
