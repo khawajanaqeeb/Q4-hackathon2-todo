@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Phase 3 Chatbot API
-  description: API specification for the chatbot enhancement to the todo application
-  version: 1.0.0
+  title: Phase 3 Chatbot API - DRAFT
+  description: DRAFT – Phase 3 Iteration 1 - API specification for the chatbot enhancement to the todo application
+  version: 0.1.0-draft
 servers:
   - url: http://localhost:8000
     description: Development server
@@ -14,7 +14,7 @@ paths:
       tags:
         - Chat
       security:
-        - BearerAuth: []
+        - CookieAuth: []
       requestBody:
         required: true
         content:
@@ -25,235 +25,29 @@ paths:
                 message:
                   type: string
                   description: The user's message
-                  example: "Create a new todo called 'Buy groceries'"
                 conversation_id:
                   type: string
                   format: uuid
-                  description: Optional existing conversation ID, creates new if omitted
-                  example: "123e4567-e89b-12d3-a456-426614174000"
+                  description: Optional existing conversation ID
               required:
                 - message
       responses:
         '200':
-          description: Successful response from the AI
+          description: Streaming response from the AI
           content:
-            application/json:
+            text/event-stream:
               schema:
-                type: object
-                properties:
-                  conversation_id:
-                    type: string
-                    format: uuid
-                    description: The conversation ID (new or existing)
-                    example: "123e4567-e89b-12d3-a456-426614174000"
-                  message:
-                    type: string
-                    description: The AI's response message
-                    example: "I've created a new todo: 'Buy groceries'"
-                  actions:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        type:
-                          type: string
-                          enum: [todo_created, todo_updated, todo_deleted, todo_listed]
-                        data:
-                          type: object
-                    description: Actions performed by MCP tools as a result of the conversation
+                type: string
+                description: Server-sent events stream of AI response
         '401':
-          $ref: '#/components/responses/UnauthorizedError'
+          description: Unauthorized - Invalid session
         '422':
-          $ref: '#/components/responses/ValidationError'
-  /conversations:
-    get:
-      summary: List user's conversations
-      description: Retrieve a list of conversations belonging to the authenticated user
-      tags:
-        - Conversations
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: List of conversations
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ConversationSummary'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-  /conversations/{conversation_id}:
-    get:
-      summary: Get conversation details
-      description: Retrieve a specific conversation with its message history
-      tags:
-        - Conversations
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: conversation_id
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: The ID of the conversation
-      responses:
-        '200':
-          description: Conversation details with message history
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Conversation'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '404':
-          description: Conversation not found
-    delete:
-      summary: Delete a conversation
-      description: Delete a specific conversation
-      tags:
-        - Conversations
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: conversation_id
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: The ID of the conversation
-      responses:
-        '204':
-          description: Conversation deleted successfully
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '404':
-          description: Conversation not found
+          description: Validation error
 
 components:
   securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      description: Bearer token authentication via HttpOnly cookie (automatically included by browser)
-
-  schemas:
-    ConversationSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: The unique identifier for the conversation
-        title:
-          type: string
-          description: Auto-generated or user-edited title
-        created_at:
-          type: string
-          format: date-time
-          description: When the conversation was created
-        updated_at:
-          type: string
-          format: date-time
-          description: When the conversation was last updated
-        message_count:
-          type: integer
-          description: Number of messages in the conversation
-
-    Conversation:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: The unique identifier for the conversation
-        title:
-          type: string
-          description: Auto-generated or user-edited title
-        created_at:
-          type: string
-          format: date-time
-          description: When the conversation was created
-        updated_at:
-          type: string
-          format: date-time
-          description: When the conversation was last updated
-        messages:
-          type: array
-          items:
-            $ref: '#/components/schemas/Message'
-
-    Message:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: The unique identifier for the message
-        role:
-          type: string
-          enum: [user, assistant, tool]
-          description: Who sent the message
-        content:
-          type: string
-          description: The message content
-        timestamp:
-          type: string
-          format: date-time
-          description: When the message was created
-        tool_calls:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-              function:
-                type: object
-                properties:
-                  name:
-                    type: string
-                  arguments:
-                    type: string
-              type:
-                type: string
-                enum: [function]
-
-    ValidationError:
-      type: object
-      properties:
-        detail:
-          type: array
-          items:
-            type: object
-            properties:
-              loc:
-                type: array
-                items:
-                  type: string
-              msg:
-                type: string
-              type:
-                type: string
-
-  responses:
-    UnauthorizedError:
-      description: Unauthorized - Authentication token missing or invalid
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              detail:
-                type: string
-                example: "Not authenticated"
-    ValidationError:
-      description: Validation error in request
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ValidationError'
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: auth_token
+      description: Cookie-based session authentication (HttpOnly cookie automatically included by browser)
