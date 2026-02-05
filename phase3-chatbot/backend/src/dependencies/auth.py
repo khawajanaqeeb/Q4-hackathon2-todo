@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
@@ -11,7 +11,7 @@ from ..models.user import User  # Assuming User model exists from phase 2
 # Import settings
 from ..config import settings
 
-# Security scheme for API docs
+# Security scheme for API docs (for header-based auth)
 security = HTTPBearer()
 
 
@@ -46,12 +46,56 @@ def verify_token(token: str) -> dict:
         raise credentials_exception
 
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+def get_current_user_from_token(token: str):
+    """Helper function to get current user from token string."""
+    token_data = verify_token(token)
+    user_id = token_data.get("sub")
+
+    # Import here to avoid circular imports
+    from ..database import get_session
+    from sqlmodel import Session
+
+    # Create a temporary session to fetch user
+    # This is not ideal but needed for the dependency function
+    # The proper way would be to pass session as a parameter
+    with get_session() as session:
+        user = session.get(User, user_id)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+        return user
+
+
+async def get_current_user(
+    request: Request,
     session: Session = Depends(get_session)
 ):
-    """Get current user from token."""
-    token_data = verify_token(credentials.credentials)
+    """Get current user from token (from either Authorization header or auth_token cookie)."""
+    token = None
+
+    # First, try to get token from Authorization header
+    auth_header = request.headers.get("authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header[len("Bearer "):]
+    elif auth_header and auth_header.startswith("bearer "):  # Case insensitive
+        token = auth_header[len("bearer "):]
+
+    # If not found in header, try to get from auth_token cookie
+    if not token:
+        token = request.cookies.get("auth_token")
+
+    # If still no token, raise unauthorized
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Verify the token and get user data
+    token_data = verify_token(token)
     user_id = token_data.get("sub")
 
     user = session.get(User, user_id)

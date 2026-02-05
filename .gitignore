@@ -89,3 +89,4 @@ next-env.d.ts
 # Alembic
 alembic/versions/*.pyc
 !phase3-chatbot/frontend/src/lib/
+nul

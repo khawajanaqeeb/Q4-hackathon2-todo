@@ -9,10 +9,13 @@ from ..services.chat_service import ChatService
 from ..services.agent_runner import AgentRunner
 from ..services.mcp_integration import McpIntegrationService
 from pydantic import BaseModel
+from typing import List
 from ..models.conversation import Conversation  # Import the Conversation model
+from ..services.api_key_manager import ApiKeyManager
+from ..services.audit_service import AuditService
 
 
-router = APIRouter(prefix="/chat", tags=["Chat"])
+router = APIRouter(tags=["Chat"])
 
 
 class ChatMessageRequest(BaseModel):
@@ -326,3 +329,5 @@ async def delete_conversation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Internal server error: {str(e)}"
         )
+
+

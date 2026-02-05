@@ -1,3 +1,9 @@
+"""ChatKit-compatible chat endpoints with OpenAI-compatible additions.
+
+This module provides API endpoints that maintain compatibility with ChatKit
+while also supporting OpenAI-compatible payloads.
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from typing import Optional, Dict, Any, List
@@ -326,6 +332,126 @@ async def delete_conversation(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid user_id or conversation_id format"
         )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+# Add OpenAI-compatible chat completions endpoint
+from typing import List as TypingList  # Avoid conflict with class name
+
+
+class Message(BaseModel):
+    role: str  # "system", "user", or "assistant"
+    content: str
+
+
+class ChatCompletionRequest(BaseModel):
+    model: str = "gpt-4"  # Default model
+    messages: TypingList[Message]
+    temperature: Optional[float] = 0.7
+    max_tokens: Optional[int] = 1000
+    stream: Optional[bool] = False
+
+
+class Choice(BaseModel):
+    index: int
+    message: Message
+    finish_reason: str = "stop"
+
+
+class Usage(BaseModel):
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+
+class ChatCompletionResponse(BaseModel):
+    id: str
+    object: str = "chat.completion"
+    created: int
+    model: str
+    choices: TypingList[Choice]
+    usage: Usage
+
+
+@router.post("/completions", response_model=ChatCompletionResponse)
+async def chat_completions(
+    request: ChatCompletionRequest,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    OpenAI-compatible chat completions endpoint.
+    Process chat messages through the AI system and return a completion response.
+    """
+    try:
+        import time
+        import uuid as uuid_lib
+
+        # Initialize services
+        chat_service = ChatService(session)
+        agent_runner = AgentRunner()
+
+        # Get the last user message to process
+        user_messages = [msg for msg in request.messages if msg.role == "user"]
+        if not user_messages:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No user message found in request"
+            )
+
+        last_user_message = user_messages[-1]
+
+        # Process the user message through the chat service
+        result = chat_service.process_user_message(
+            user_id=current_user.id,
+            message_content=last_user_message.content,
+            conversation_id=None  # Create new conversation or use default
+        )
+
+        # Create the response in OpenAI format
+        response_id = f"chatcmpl-{uuid_lib.uuid4()}"
+        created_time = int(time.time())
+
+        # Create the assistant message
+        assistant_message = Message(
+            role="assistant",
+            content=result["message"]
+        )
+
+        choice = Choice(
+            index=0,
+            message=assistant_message,
+            finish_reason="stop"
+        )
+
+        # Calculate approximate token usage
+        prompt_tokens = len(last_user_message.content)
+        completion_tokens = len(result["message"])
+        total_tokens = prompt_tokens + completion_tokens
+
+        usage = Usage(
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens
+        )
+
+        response = ChatCompletionResponse(
+            id=response_id,
+            created=created_time,
+            model=request.model,
+            choices=[choice],
+            usage=usage
+        )
+
+        return response
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

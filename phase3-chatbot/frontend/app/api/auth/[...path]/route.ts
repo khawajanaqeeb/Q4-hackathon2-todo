@@ -125,6 +125,7 @@ async function proxyToBackend(
   const options: RequestInit = {
     method,
     headers,
+    credentials: 'include', // Important: Include cookies in requests
     redirect: 'manual' // Prevent automatic redirects to maintain auth headers
   };
   if (body && !['GET', 'DELETE'].includes(method)) options.body = JSON.stringify(body);
@@ -167,7 +168,8 @@ async function handleRequest(
         const backendResponse = await fetch(backendUrl, {
           method,
           headers: { 'Content-Type': contentType },
-          body
+          body,
+          credentials: 'include'  // Include cookies in the request
         });
         if (!backendResponse.ok) {
           const errorData = await safeJsonParse(backendResponse).catch(() => null);

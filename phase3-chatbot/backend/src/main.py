@@ -12,6 +12,7 @@ from .api.compliant_chat import router as chat_router
 from .api.mcp import router as mcp_router
 from .api.api_keys import router as api_keys_router
 from .api.auth import router as auth_router  # Import the auth router
+from .api.todos import router as todos_router  # Import the todos router
 from .database import create_db_and_tables, get_session
 from .services.mcp_integration import McpIntegrationService
 from .services.api_key_manager import ApiKeyManager
@@ -45,9 +46,10 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth_router, tags=["Authentication"])  # Add the auth router
-app.include_router(chat_router, prefix="", tags=["Chat"])
+app.include_router(chat_router, tags=["Chat"])
 app.include_router(mcp_router, prefix="/api", tags=["MCP"])
 app.include_router(api_keys_router, prefix="/api", tags=["API Keys"])
+app.include_router(todos_router, prefix="/api", tags=["Todos"])  # Add the todos router with /api prefix for frontend compatibility
 
 @app.get("/health")
 async def health_check():
