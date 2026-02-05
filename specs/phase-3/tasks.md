@@ -22,11 +22,11 @@
 
 **Purpose**: Project initialization and basic structure for Phase 3 enhancements
 
-- [ ] T001 Create project structure with MCP tools directory per implementation plan
-- [ ] T002 [P] Install MCP SDK dependency in backend requirements.txt
-- [ ] T003 [P] Install OpenAI Agents SDK dependency in backend requirements.txt
-- [ ] T004 [P] Install frontend ChatKit dependency in frontend package.json
-- [ ] T005 Set up environment variables for OpenAI and MCP server in .env files
+- [X] T001 Create project structure with MCP tools directory per implementation plan
+- [X] T002 [P] Install MCP SDK dependency in backend requirements.txt
+- [X] T003 [P] Install OpenAI Agents SDK dependency in backend requirements.txt
+- [X] T004 [P] Install frontend ChatKit dependency in frontend package.json
+- [X] T005 Set up environment variables for OpenAI and MCP server in .env files
 
 ---
 
@@ -36,12 +36,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T006 Setup conversation database schema and migrations
-- [ ] T007 [P] Implement conversation models in backend/src/models/conversation.py
-- [ ] T008 [P] Setup MCP server integration framework in backend/src/services/mcp_integration.py
-- [ ] T009 Create todo tools models that all stories depend on
-- [ ] T010 Configure streaming response middleware for chat endpoints
-- [ ] T011 Setup MCP tool validation and security framework
+- [X] T006 Setup conversation database schema and migrations
+- [X] T007 [P] Implement conversation models in backend/src/models/conversation.py
+- [X] T008 [P] Setup MCP server integration framework in backend/src/services/mcp_integration.py
+- [X] T009 Create todo tools models that all stories depend on
+- [X] T010 Configure streaming response middleware for chat endpoints
+- [X] T011 Setup MCP tool validation and security framework
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -55,22 +55,22 @@
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US3] Create Conversation model in backend/src/models/conversation.py
-- [ ] T013 [P] [US3] Create Message model in backend/src/models/conversation.py
-- [ ] T014 [US3] Implement ConversationService in backend/src/services/conversation_service.py
-- [ ] T015 [US3] Create TodoOperationLog model in backend/src/models/conversation.py
-- [ ] T016 [P] [US3] Implement chat endpoint in backend/src/api/chat.py
-- [ ] T017 [US3] Implement basic OpenAI Agent configuration in backend/src/services/openai_agent.py
-- [ ] T018 [P] [US3] Implement create_todo MCP tool in backend/src/tools/todo_tools.py
-- [ ] T019 [P] [US3] Implement list_todos MCP tool in backend/src/tools/todo_tools.py
-- [ ] T020 [P] [US3] Implement update_todo MCP tool in backend/src/tools/todo_tools.py
-- [ ] T021 [P] [US3] Implement delete_todo MCP tool in backend/src/tools/todo_tools.py
-- [ ] T022 [P] [US3] Implement complete_todo MCP tool in backend/src/tools/todo_tools.py
-- [ ] T023 [US3] Connect MCP tools to existing SQLModel todo models
-- [ ] T024 [US3] Add authentication validation to all MCP tools using existing auth dependency
-- [ ] T025 [US3] Integrate conversation persistence with chat endpoint
-- [ ] T026 [US3] Implement streaming response (SSE) for chat endpoint
-- [ ] T027 [US3] Test chatbot can create todos and they appear in traditional UI
+- [X] T012 [P] [US3] Create Conversation model in backend/src/models/conversation.py
+- [X] T013 [P] [US3] Create Message model in backend/src/models/conversation.py
+- [X] T014 [US3] Implement ConversationService in backend/src/services/conversation_service.py
+- [X] T015 [US3] Create TodoOperationLog model in backend/src/models/conversation.py
+- [X] T016 [P] [US3] Implement chat endpoint in backend/src/api/chat.py
+- [X] T017 [US3] Implement basic OpenAI Agent configuration in backend/src/services/openai_agent.py
+- [X] T018 [P] [US3] Implement create_todo MCP tool in backend/src/tools/todo_tools.py
+- [X] T019 [P] [US3] Implement list_todos MCP tool in backend/src/tools/todo_tools.py
+- [X] T020 [P] [US3] Implement update_todo MCP tool in backend/src/tools/todo_tools.py
+- [X] T021 [P] [US3] Implement delete_todo MCP tool in backend/src/tools/todo_tools.py
+- [X] T022 [P] [US3] Implement complete_todo MCP tool in backend/src/tools/todo_tools.py
+- [X] T023 [US3] Connect MCP tools to existing SQLModel todo models
+- [X] T024 [US3] Add authentication validation to all MCP tools using existing auth dependency
+- [X] T025 [US3] Integrate conversation persistence with chat endpoint
+- [X] T026 [US3] Implement streaming response (SSE) for chat endpoint
+- [X] T027 [US3] Test chatbot can create todos and they appear in traditional UI
 
 **Checkpoint**: At this point, User Story 3 should be fully functional and testable independently
 
@@ -84,15 +84,15 @@
 
 ### Implementation for User Story 2
 
-- [ ] T028 [P] [US3] Create ChatInterface component in frontend/components/ChatInterface.tsx
-- [ ] T029 [P] [US3] Create ChatKitInterface component in frontend/components/ChatKitInterface.tsx
-- [ ] T030 [US3] Implement chat API service in frontend/src/services/chatApi.js
-- [ ] T031 [US3] Add chat route/page in frontend/app/chat/page.tsx
-- [ ] T032 [US3] Integrate authentication context with chat components
-- [ ] T033 [US3] Connect frontend to backend chat endpoint with proper auth headers
-- [ ] T034 [US3] Implement conversation history display in chat UI
-- [ ] T035 [US3] Add conversation management (new conversation, switch conversations)
-- [ ] T036 [US3] Test end-to-end chatbot todo management flow with UI
+- [X] T028 [P] [US3] Create ChatInterface component in frontend/components/ChatInterface.tsx
+- [X] T029 [P] [US3] Create ChatKitInterface component in frontend/components/ChatKitInterface.tsx
+- [X] T030 [US3] Implement chat API service in frontend/src/services/chatApi.js
+- [X] T031 [US3] Add chat route/page in frontend/app/chat/page.tsx
+- [X] T032 [US3] Integrate authentication context with chat components
+- [X] T033 [US3] Connect frontend to backend chat endpoint with proper auth headers
+- [X] T034 [US3] Implement conversation history display in chat UI
+- [X] T035 [US3] Add conversation management (new conversation, switch conversations)
+- [X] T036 [US3] Test end-to-end chatbot todo management flow with UI
 
 **Checkpoint**: At this point, Chat Interface integration should be fully functional and testable independently
 
@@ -106,14 +106,14 @@
 
 ### Implementation for User Story 3
 
-- [ ] T037 [P] [US4] Implement conversation session expiration in backend/src/services/conversation_service.py
-- [ ] T038 [US4] Add rate limiting to chat endpoint in backend/src/api/chat.py
-- [ ] T039 [US4] Implement user data isolation validation in all MCP tools
-- [ ] T040 [US4] Add comprehensive authorization checks to MCP tools using existing auth dependency
-- [ ] T041 [US4] Implement proper conversation cleanup and archiving
-- [ ] T042 [US4] Add security audit logging for chat interactions
-- [ ] T043 [US4] Test user data isolation between different authenticated users
-- [ ] T044 [US4] Verify MCP server properly validates user identity before executing todo operations
+- [X] T037 [P] [US4] Implement conversation session expiration in backend/src/services/conversation_service.py
+- [X] T038 [US4] Add rate limiting to chat endpoint in backend/src/api/chat.py
+- [X] T039 [US4] Implement user data isolation validation in all MCP tools
+- [X] T040 [US4] Add comprehensive authorization checks to MCP tools using existing auth dependency
+- [X] T041 [US4] Implement proper conversation cleanup and archiving
+- [X] T042 [US4] Add security audit logging for chat interactions
+- [X] T043 [US4] Test user data isolation between different authenticated users
+- [X] T044 [US4] Verify MCP server properly validates user identity before executing todo operations
 
 **Checkpoint**: All chatbot security and session management should be fully functional
 
@@ -123,12 +123,22 @@
 
 **Purpose**: Improvements that affect multiple user stories and final integration
 
-- [ ] T045 [P] Documentation updates for chatbot functionality in docs/
-- [ ] T046 Code cleanup and refactoring across chatbot components
-- [ ] T047 Performance optimization for chat streaming responses
-- [ ] T048 Security hardening and validation across all chat components
-- [ ] T049 Run quickstart.md validation for chatbot features
-- [ ] T050 End-to-end testing of all chatbot features with existing todo functionality
+- [X] T045 [P] Documentation updates for chatbot functionality in docs/
+- [X] T046 Code cleanup and refactoring across chatbot components
+- [X] T047 Performance optimization for chat streaming responses
+- [X] T048 Security hardening and validation across all chat components
+- [X] T049 Run quickstart.md validation for chatbot features
+- [X] T050 End-to-end testing of all chatbot features with existing todo functionality
+
+## Phase 7: Authentication Error Resolution
+
+**Purpose**: Fix authentication issues that were identified during testing
+
+- [X] T051 Analysis of 401/422 errors in authentication endpoints
+- [X] T052 Fix HTTP-only cookie setting with proper security attributes
+- [X] T053 Enhance token validation with cookie-header fallback mechanism
+- [X] T054 Update registration endpoint validation to prevent 422 errors
+- [X] T055 Verify authentication flow consistency across all endpoints
 
 ---
 
