@@ -1,156 +1,305 @@
-# Implementation Plan: Phase 3 Chatbot Authentication & Integration
+# Implementation Plan: Phase 3 Chatbot Enhancement
+
+**Branch**: `main` | **Date**: 2026-02-05 | **Spec**: specs/phase-3/spec.md
+**Input**: Feature specification from `/specs/phase-3/spec.md`
+
+**Note**: This template is filled in by the `/sp.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
 ## Summary
-Implementation of a secure authentication system with JWT tokens and HTTP-only cookies for a chatbot-enabled todo application. The system will include backend authentication endpoints, frontend integration with proper session management, and integration with OpenAI Agents SDK for chatbot functionality.
+
+Enhance the existing Phase 2 todo application by adding a conversational chatbot system that allows users to manage todos through natural language, while preserving existing APIs, database schema, and authentication contract. The system will use OpenAI Agents SDK with an MCP server to provide stateless task management tools that integrate seamlessly with the existing todo functionality.
 
 ## Technical Context
-- **Language/Version**: Python 3.11, JavaScript/TypeScript ES2022
-- **Primary Dependencies**: FastAPI, SQLModel, Alembic, OpenAI Agents SDK, React, chatkit
-- **Storage**: SQLModel with PostgreSQL/SQLite backend
-- **Testing**: pytest for backend, Jest for frontend
-- **Target Platform**: Web application with backend API and React frontend
-- **Project Type**: Web application (backend + frontend)
-- **Performance Goals**: Sub-500ms API response times, sub-2s chatbot response times
-- **Constraints**: Secure JWT handling with HTTP-only cookies, proper CORS configuration with credentials, rate limiting implementation
-- **Scale/Scope**: Support for 1000+ concurrent users with proper session management
 
-## Implementation Phases
+**Language/Version**: Python 3.11, TypeScript/JavaScript (Next.js 16.1.1)
+**Primary Dependencies**: FastAPI, Next.js (App Router), OpenAI Agents SDK, SQLModel, MCP SDK
+**Storage**: Neon PostgreSQL database with existing tables preserved
+**Testing**: pytest for backend, Jest for frontend
+**Target Platform**: Web application with SSR and CSR support
+**Project Type**: Web application with frontend and backend components
+**Performance Goals**: <500ms response time for chat interactions, 60fps UI responsiveness
+**Constraints**: Preserve existing Phase 2 functionality, maintain cookie-based auth, stateless API endpoints
+**Scale/Scope**: Individual user chat sessions, concurrent multi-user support, persistent conversation history
 
-### Phase 1: Backend Implementation
-1. **Single Canonical User Model Creation**
-   - Purpose: Prevent SQLAlchemy "Multiple classes found for path 'User'" error
-   - Files/components affected: `backend/src/models/user.py`
-   - Dependencies: SQLModel, database configuration
-   - Failure risks: ORM mapping conflicts, circular imports
+## Constitution Check
 
-2. **Authentication Endpoints Implementation**
-   - Purpose: Implement login, register, verify, and logout functionality per backend-contracts.md
-   - Files/components affected: `backend/src/api/auth.py`, `backend/src/services/auth.py`
-   - Dependencies: User model, JWT utilities
-   - Failure risks: 401/500 auth errors, session management issues
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-3. **ORM Relationship Configuration**
-   - Purpose: Establish proper relationships between User, Todo, Conversation, and Message models
-   - Files/components affected: `backend/src/models/todo.py`, `backend/src/models/conversation.py`, `backend/src/models/message.py`
-   - Dependencies: User model
-   - Failure risks: Data integrity issues, query failures
+- ✅ All Phase 2 functionality remains intact (no breaking changes)
+- ✅ Existing authentication contract preserved (cookie-based model)
+- ✅ Statelessness maintained at API level with DB persistence
+- ✅ Incremental enhancement approach (not rewrite)
+- ✅ Technology stack alignment (FastAPI, Next.js, SQLModel, Neon PG)
 
-4. **CORS and Security Configuration**
-   - Purpose: Configure proper CORS with credentials and security headers per security requirements
-   - Files/components affected: `backend/src/main.py`, `backend/src/config.py`
-   - Dependencies: FastAPI middleware setup
-   - Failure risks: CORS errors, authentication failures
+## Project Structure
 
-5. **Database Migration Setup**
-   - Purpose: Implement Alembic migrations for database schema management
-   - Files/components affected: `backend/alembic/`, `backend/src/database.py`
-   - Dependencies: All models
-   - Failure risks: Migration conflicts, database inconsistencies
+### Documentation (this feature)
 
-6. **OpenAI Agents SDK Integration**
-   - Purpose: Integrate chatbot functionality with proper authentication context
-   - Files/components affected: `backend/src/api/chat.py`, `backend/src/services/chat.py`
-   - Dependencies: Authentication service, User context
-   - Failure risks: API connection failures, context loss
+```text
+specs/phase-3/
+├── plan.md              # This file (/sp.plan command output)
+├── research.md          # Phase 0 output (/sp.plan command)
+├── data-model.md        # Phase 1 output (/sp.plan command)
+├── quickstart.md        # Phase 1 output (/sp.plan command)
+├── contracts/           # Phase 1 output (/sp.plan command)
+└── tasks.md             # Phase 2 output (/sp.tasks command - NOT created by /sp.plan)
+```
 
-### Phase 2: Frontend Implementation
-1. **chatkit Installation and Setup**
-   - Purpose: Install and configure chatkit library as specified in frontend-integration.md
-   - Files/components affected: `frontend/package.json`, `frontend/src/services/api.js`
-   - Dependencies: Node.js, npm
-   - Failure risks: Missing chatkit installation, UI rendering issues
+### Source Code (repository root)
 
-2. **Session Management Implementation**
-   - Purpose: Implement JWT + HTTP-only cookie auth consistency per auth-flow.md
-   - Files/components affected: `frontend/src/services/auth.js`, `frontend/src/services/api.js`
-   - Dependencies: Backend auth endpoints
-   - Failure risks: Unauthenticated requests, session expiration handling
+```text
+backend/
+├── src/
+│   ├── api/
+│   │   ├── chat.py      # Chat endpoint
+│   │   ├── mcp.py       # MCP endpoints
+│   │   └── auth.py      # Auth endpoints (preserved)
+│   ├── models/
+│   │   ├── user.py      # User model (preserved)
+│   │   ├── todo.py      # Todo model (preserved)
+│   │   └── conversation.py  # New conversation model
+│   ├── tools/
+│   │   └── todo_tools.py    # MCP todo operation tools
+│   ├── services/
+│   │   ├── mcp_integration.py  # MCP server integration
+│   │   └── conversation_service.py  # Conversation persistence
+│   ├── dependencies/
+│   │   └── auth.py      # Auth dependency (preserved)
+│   ├── database.py      # DB connection (preserved)
+│   └── main.py          # App entry point
+└── tests/
 
-3. **Authentication UI Components**
-   - Purpose: Create login, register, and verification UI following auth-flow.md
-   - Files/components affected: `frontend/src/components/auth/`, `frontend/src/pages/Login.jsx`, `frontend/src/pages/Register.jsx`
-   - Dependencies: Auth service integration
-   - Failure risks: Improper validation, UI/UX inconsistencies
+frontend/
+├── app/
+│   ├── api/
+│   │   └── auth/
+│   │       └── [...path]/route.ts  # Auth proxy (preserved)
+│   ├── chat/            # Chat UI page
+│   └── middleware.ts    # Auth middleware (preserved)
+├── components/
+│   ├── ChatInterface.tsx  # Chat UI component
+│   └── ChatKitInterface.tsx  # OpenAI ChatKit integration
+├── context/
+│   └── AuthContext.tsx  # Auth context (preserved)
+└── src/
+    └── services/
+        ├── api.js       # API service (preserved)
+        └── auth.js      # Auth service (preserved)
+```
 
-4. **Chat Interface Development**
-   - Purpose: Create chat UI with proper authentication state per frontend-integration.md
-   - Files/components affected: `frontend/src/components/chat/`, `frontend/src/pages/Chat.jsx`
-   - Dependencies: chatkit library, auth service
-   - Failure risks: Context loss during chat, UI rendering issues
+**Structure Decision**: Web application structure chosen to match existing architecture with clear separation of concerns between frontend and backend. All Phase 2 components preserved with new chatbot functionality added incrementally.
 
-5. **API Client Configuration with Credentials**
-   - Purpose: Configure Axios to handle authentication cookies per security requirements
-   - Files/components affected: `frontend/src/services/api.js`
-   - Dependencies: Cookie handling setup
-   - Failure risks: Unauthenticated requests to protected endpoints
+## Complexity Tracking
 
-6. **Error Handling for 401/403/500 Responses**
-   - Purpose: Implement frontend error handling per known-failure-modes.md
-   - Files/components affected: `frontend/src/services/api.js`, `frontend/src/components/ErrorBoundary.jsx`
-   - Dependencies: Backend error responses
-   - Failure risks: Unhandled errors, poor UX during failures
+> **Fill ONLY if Constitution Check has violations that must be justified**
 
-### Phase 3: Integration & Validation
-1. **Frontend ↔ Backend Auth Contract Alignment**
-   - Purpose: Cross-check API contracts from backend-contracts.md with frontend implementation
-   - Files/components affected: All API endpoints and frontend service calls
-   - Dependencies: Completed backend and frontend implementations
-   - Failure risks: API mismatch, integration failures
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| [None] | [All checks passed] | [No violations identified] |
 
-2. **Validation Using curl/Browser/DevTools**
-   - Purpose: Verify authentication flows work as specified in auth-flow.md
-   - Files/components affected: All auth endpoints
-   - Dependencies: Running backend and frontend
-   - Failure risks: Auth flow inconsistencies
+## 1. Architecture Overview
 
-3. **Error Handling Validation**
-   - Purpose: Test 401/403/500 error responses and handling per known-failure-modes.md
-   - Files/components affected: Error handlers in both backend and frontend
-   - Dependencies: Completed auth implementation
-   - Failure risks: Unhandled errors, security bypasses
+### System Architecture Diagram (Text Description)
 
-4. **Security Validation for JWT + HTTP-only Cookie Consistency**
-   - Purpose: Ensure authentication implementation matches security requirements
-   - Files/components affected: Authentication endpoints and frontend auth handling
-   - Dependencies: Proper backend and frontend auth implementation
-   - Failure risks: Security vulnerabilities, session hijacking
+```
+┌─────────────┐    HTTP/HTTPS    ┌─────────────────┐
+│   Frontend  │ ────────────────▶│    Backend      │
+│             │                  │                 │
+│ ChatKit UI  │ ◀─────────────── │ Chat Endpoint   │
+│             │   SSE/WebSocket  │                 │
+└─────────────┘                  ├─────────────────┤
+                                 │   OpenAI Agent  │
+                                 │                 │
+                                 ├─────────────────┤
+                                 │   MCP Server    │
+                                 │                 │
+                                 ├─────────────────┤
+                                 │  Neon PostgreSQL│
+ │                              │                 │
+ │                              └─────────────────┘
+ │                                         │
+ │            ┌─────────────────────────────┘
+ │            ▼
+ │    ┌─────────────────┐
+ │    │   MCP Tools     │
+ │    │ (Todo CRUD ops) │
+ │    └─────────────────┘
+ │            │
+ │            ▼
+ │    ┌─────────────────┐
+ │    │  Existing Todo  │
+ │    │  API Endpoints  │
+ │    └─────────────────┘
+ │            │
+ │            ▼
+ └───► ┌─────────────────┐
+       │  SQLModel ORM   │
+       │  (PostgreSQL)   │
+       └─────────────────┘
+```
 
-5. **Definition of Done Validation for Phase 3**
-   - Purpose: Confirm all Phase 3 requirements are met per architecture.md
-   - Files/components affected: All components and tests
-   - Dependencies: Complete implementation
-   - Failure risks: Incomplete functionality, unmet requirements
+### Auth Context Flow Explanation
 
-## Critical Steps Addressing Known Failure Modes
+1. User authenticates through existing cookie-based system
+2. HttpOnly auth cookie is set and automatically included by browser
+3. Frontend makes requests to chat endpoint with auth cookie
+4. Backend validates auth using existing dependency
+5. MCP server receives user context from validated backend
+6. MCP tools enforce authorization using existing auth dependency
+7. All operations are restricted to authenticated user's data only
 
-### Resolving 401 Unauthorized on /api/auth/verify
-- Implement proper token refresh mechanisms
-- Verify cookie settings (secure, httpOnly, sameSite)
-- Add comprehensive error logging for debugging
-- Implement client-side session validation before making requests
+## 2. Component Breakdown
 
-### Resolving 500 Internal Server Error on /api/auth/login
-- Add proper exception handling in authentication flow
-- Validate input data before processing
-- Implement comprehensive logging for error diagnosis
-- Add database connection health checks
+### Chat UI (frontend)
+- **Responsibility**: User-facing conversational interface using OpenAI ChatKit
+- **Boundaries**:
+  - Accepts user input and displays AI responses
+  - Handles conversation history and state management
+  - Integrates with existing AuthContext for authentication
+  - Makes requests to backend chat endpoint
+- **Preserves**: Existing Next.js structure and authentication context
 
-### Preventing SQLAlchemy "Multiple classes found for path 'User'" Error
-- Ensure exactly one User model is defined and used consistently
-- Use fully qualified model names in relationships
-- Review import statements to eliminate duplicates
-- Implement proper model initialization order
+### Chat API endpoint (backend)
+- **Responsibility**: Handle chat requests and orchestrate with OpenAI Agent
+- **Boundaries**:
+  - Validates user authentication using existing auth dependency
+  - Manages conversation state in database
+  - Coordinates with OpenAI Agent and MCP tools
+  - Returns streaming responses to frontend
+- **Preserves**: Existing authentication contract and FastAPI structure
 
-### Ensuring chatkit Installation and Initialization
-- Install required packages as specified in frontend-integration.md
-- Configure chat UI components with proper authentication state
-- Verify chatkit integration with authenticated state
+### OpenAI Agent configuration
+- **Responsibility**: AI reasoning and conversation management
+- **Boundaries**:
+  - Uses OpenAI Agents SDK for AI logic
+  - Interacts with MCP tools for todo operations
+  - Maintains conversation context
+  - Follows security guidelines for API usage
+- **Preserves**: No custom LLM orchestration outside Agents SDK
 
-### Enforcing JWT + HTTP-only Cookie Auth Consistency
-- Configure backend to set HTTP-only cookies with JWT tokens
-- Implement frontend to properly handle cookie-based sessions
-- Verify CORS configuration allows credentials
-- Ensure all authenticated endpoints require valid session tokens
+### MCP server
+- **Responsibility**: Expose todo operations as standardized tools
+- **Boundaries**:
+  - Uses Official MCP SDK only
+  - Accepts user context from backend, not frontend
+  - Stateless operation with database persistence
+  - No new authentication logic
+- **Preserves**: Existing FastAPI structure with new endpoints
 
-## Dependencies and Ordering
-Each phase builds upon the previous work, with backend authentication endpoints needing to be functional before frontend integration can begin. The implementation follows a strict dependency order to ensure each component can be validated before moving to the next.
+### MCP tools (task CRUD)
+- **Responsibility**: Execute todo operations through standardized interfaces
+- **Boundaries**:
+  - Implement create_todo, list_todos, update_todo, delete_todo, complete_todo
+  - Use existing SQLModel models and database
+  - Enforce authorization via existing auth dependency
+  - Stateless with database persistence
+- **Preserves**: Existing todo model and database schema
+
+### Conversation persistence layer
+- **Responsibility**: Store and retrieve conversation state
+- **Boundaries**:
+  - Manages chat message history
+  - Tracks conversation context
+  - Links conversations to authenticated users
+  - Maintains data isolation between users
+- **Preserves**: Existing database schema with new conversation table
+
+## 3. Conversation State Strategy
+
+### Data to be Persisted
+- **Conversation ID**: Unique identifier for each conversation
+- **Message History**: Complete history of user and AI messages
+- **Tool Calls**: Record of MCP tool invocations and results
+- **User ID**: Associated authenticated user (foreign key reference)
+- **Timestamps**: Created and updated timestamps for each message
+- **Conversation Metadata**: Title, status, and context information
+
+### Storage Location
+- **Database Table**: `conversations` table in existing Neon PostgreSQL database
+- **Schema**: Follow existing SQLModel patterns with relations to user table
+- **Indexing**: Index on user_id for efficient retrieval of user's conversations
+
+### Statelessness Preservation
+- **API Level**: Chat endpoint remains stateless by retrieving state from DB
+- **MCP Tools**: Tools remain stateless by accessing DB directly for operations
+- **User Context**: Maintained via existing auth dependency on each request
+
+### Conversation Resume Strategy
+- **History Retrieval**: Fetch conversation history by ID when resuming
+- **Context Restoration**: Rebuild AI agent context with message history
+- **Active Session**: Establish new connection with restored context
+
+## 4. MCP Tool Design
+
+### create_todo Tool
+- **Function**: Create new todo item for authenticated user
+- **Parameters**: title (string), description (string, optional), priority (enum), due_date (string, optional)
+- **Authorization**: Validates user context via existing auth dependency
+- **Implementation**: Uses existing Todo model and SQLModel for DB operations
+- **Returns**: Created todo object with ID and confirmation
+
+### list_todos Tool
+- **Function**: Retrieve todos for authenticated user with filters
+- **Parameters**: status (enum, optional), priority (enum, optional), limit (int, optional), offset (int, optional)
+- **Authorization**: Validates user context via existing auth dependency
+- **Implementation**: Queries existing Todo table with user_id filter
+- **Returns**: Array of todo objects matching criteria
+
+### update_todo Tool
+- **Function**: Update specific todo item for authenticated user
+- **Parameters**: todo_id (string), title (string, optional), description (string, optional), priority (enum, optional), status (enum, optional), due_date (string, optional)
+- **Authorization**: Validates user owns the todo via existing auth dependency
+- **Implementation**: Updates existing Todo object in database
+- **Returns**: Updated todo object
+
+### delete_todo Tool
+- **Function**: Delete specific todo item for authenticated user
+- **Parameters**: todo_id (string)
+- **Authorization**: Validates user owns the todo via existing auth dependency
+- **Implementation**: Removes Todo object from database
+- **Returns**: Confirmation of deletion
+
+### complete_todo Tool
+- **Function**: Mark specific todo item as complete/incomplete for authenticated user
+- **Parameters**: todo_id (string), completed (boolean)
+- **Authorization**: Validates user owns the todo via existing auth dependency
+- **Implementation**: Updates completed status of Todo object
+- **Returns**: Updated todo object with completion status
+
+## 5. Incremental Delivery Plan
+
+### Milestone 1: Chat endpoint scaffold
+- Create basic chat endpoint in backend
+- Integrate with existing authentication
+- Implement conversation model in database
+- Set up basic response structure
+
+### Milestone 2: OpenAI Agent setup
+- Configure OpenAI Agent SDK
+- Set up basic agent without tools
+- Implement message streaming
+- Connect to chat endpoint
+
+### Milestone 3: MCP server + tools
+- Build MCP server using Official MCP SDK
+- Implement stateless MCP tools for todo operations
+- Connect tools to existing database models
+- Test tools with dummy agent
+
+### Milestone 4: Conversation persistence
+- Implement conversation history storage
+- Add message persistence to database
+- Implement resume functionality
+- Test conversation continuity
+
+### Milestone 5: Frontend ChatKit integration
+- Integrate OpenAI ChatKit in frontend
+- Connect to backend chat endpoint
+- Implement conversation UI
+- Add authentication integration
+
+### Milestone 6: End-to-end verification
+- Test complete chatbot workflow
+- Verify all todo operations work via chat
+- Confirm authentication preservation
+- Validate Phase 2 functionality remains intact
