@@ -17,7 +17,9 @@ class ChatService:
 
     def create_conversation(self, user_id: uuid.UUID, initial_message: Optional[str] = None) -> Conversation:
         """Create a new conversation for a user."""
-        title = initial_message[:50] + "..." if initial_message and len(initial_message) > 50 else initial_message
+        title = None
+        if initial_message:
+            title = initial_message[:50] + "..." if len(initial_message) > 50 else initial_message
         conversation = Conversation(
             user_id=user_id,
             title=title,

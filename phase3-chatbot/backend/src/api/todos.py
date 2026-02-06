@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 from typing import List, Optional
 from datetime import datetime
 import uuid
+import json
 
 from ..database import get_session
 from ..models.task import Task, PriorityLevel
@@ -19,26 +20,56 @@ from ..dependencies.auth import get_current_user
 router = APIRouter(prefix="/todos")
 
 # Schemas for API compatibility
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 class TodoBase(BaseModel):
     title: str
     description: Optional[str] = None
     completed: bool = False
     priority: str = "medium"  # low, medium, high
-    tags: Optional[str] = None
+    tags: Optional[List[str]] = None
     due_date: Optional[str] = None
 
 class TodoCreate(TodoBase):
-    pass
+    @field_validator('tags', mode='before')
+    @classmethod
+    def validate_tags(cls, v):
+        if isinstance(v, str):
+            try:
+                # If it's a string representation of an array, parse it
+                if v.startswith('[') and v.endswith(']'):
+                    return json.loads(v)
+                else:
+                    # If it's a single tag as string, convert to array
+                    return [v] if v else None
+            except (json.JSONDecodeError, TypeError):
+                # If parsing fails, return as single item array
+                return [v] if v else None
+        return v
 
 class TodoUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     completed: Optional[bool] = None
     priority: Optional[str] = None
-    tags: Optional[str] = None
+    tags: Optional[List[str]] = None
     due_date: Optional[str] = None
+
+    @field_validator('tags', mode='before')
+    @classmethod
+    def validate_tags_update(cls, v):
+        if isinstance(v, str):
+            try:
+                # If it's a string representation of an array, parse it
+                if v.startswith('[') and v.endswith(']'):
+                    return json.loads(v)
+                else:
+                    # If it's a single tag as string, convert to array
+                    return [v] if v else None
+            except (json.JSONDecodeError, TypeError):
+                # If parsing fails, return as single item array
+                return [v] if v else None
+        return v
 
 class TodoResponse(TodoBase):
     id: str
@@ -71,13 +102,34 @@ def string_to_priority_level(priority_str: str) -> PriorityLevel:
 
 def task_to_todo_response(task: Task) -> TodoResponse:
     """Convert Task model to TodoResponse for API compatibility."""
+    # Convert tags from JSON string back to array for frontend compatibility
+    # The frontend expects tags as an array to call .join(',')
+    tags_value = task.tags
+    if task.tags and isinstance(task.tags, str):
+        try:
+            # If tags is a JSON string (like "[\"urgent\", \"work\"]"), parse it to an array
+            if task.tags.startswith('"[') and task.tags.endswith(']"'):
+                # This handles cases where the JSON string is double-encoded like "[\"urgent\"]"
+                cleaned_string = task.tags[1:-1]  # Remove outer quotes
+                tags_value = json.loads(cleaned_string)
+            elif task.tags.startswith('[') and task.tags.endswith(']'):
+                tags_value = json.loads(task.tags)
+            else:
+                # If it's not a JSON array, treat as a single tag or leave as is
+                tags_value = [task.tags] if task.tags else None
+        except (json.JSONDecodeError, TypeError):
+            # If parsing fails, treat as a single tag in an array
+            tags_value = [task.tags] if task.tags else None
+    elif task.tags is None:
+        tags_value = None
+
     return TodoResponse(
         id=str(task.id),
         title=task.title,
         description=task.description,
         completed=task.completed,
         priority=priority_level_to_string(task.priority),
-        tags=task.tags,
+        tags=tags_value,  # Array if it was a JSON string, otherwise as a single-item array
         due_date=task.due_date.isoformat() if task.due_date else None,
         created_at=task.created_at.isoformat(),
         updated_at=task.updated_at.isoformat()
@@ -130,6 +182,15 @@ def create_todo(
     Create a new task for the current user.
     Maps to the Task model for Phase 3 compatibility.
     """
+    # Convert tags from array to JSON string for storage
+    tags_string = None
+    if todo.tags is not None:
+        try:
+            tags_string = json.dumps(todo.tags)
+        except (TypeError, ValueError):
+            # If conversion fails, store as is
+            tags_string = todo.tags
+
     # Convert todo to task
     task = Task(
         user_id=current_user.id,
@@ -137,7 +198,7 @@ def create_todo(
         description=todo.description,
         completed=todo.completed,
         priority=string_to_priority_level(todo.priority),
-        tags=todo.tags,
+        tags=tags_string,
         due_date=datetime.fromisoformat(todo.due_date) if todo.due_date else None,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow()
@@ -190,6 +251,14 @@ def update_todo(
                 setattr(db_task, field, string_to_priority_level(value))
             elif field == "due_date" and value:
                 setattr(db_task, field, datetime.fromisoformat(value))
+            elif field == "tags":
+                # Convert tags from array to JSON string for storage
+                try:
+                    tags_string = json.dumps(value) if value is not None else None
+                    setattr(db_task, field, tags_string)
+                except (TypeError, ValueError):
+                    # If conversion fails, set as is
+                    setattr(db_task, field, value)
             else:
                 setattr(db_task, field, value)
 

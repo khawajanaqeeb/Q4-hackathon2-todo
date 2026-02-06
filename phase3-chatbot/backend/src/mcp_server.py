@@ -353,10 +353,11 @@ class TodoMcpServer:
             # Build query with search
             query = select(Task).where(Task.user_id == UUID(validated_params.user_id))
 
-            # Add search condition
-            search_condition = (Task.title.contains(validated_params.query) |
-                              (Task.description.contains(validated_params.query) if Task.description else False))
-            query = query.where(search_condition)
+            # Add search condition - check both title and description
+            query = query.where(
+                (Task.title.contains(validated_params.query)) |
+                ((Task.description.is_not(None)) & (Task.description.contains(validated_params.query)))
+            )
 
             if validated_params.status != "all":
                 query = query.where(Task.completed == (validated_params.status == "completed"))

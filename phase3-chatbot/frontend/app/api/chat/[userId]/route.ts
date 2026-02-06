@@ -9,19 +9,41 @@ export async function POST(
     const { userId } = await params;
     const { message, conversation_id } = await request.json();
 
-    // In a real implementation, this would call your backend's chat endpoint
-    // For now, we'll simulate a response
-    
-    // Simulated response based on the expected interface
-    const simulatedResponse = {
-      message: `I received your message: "${message}". This is a simulated response from the chat API.`,
-      conversation_id: conversation_id || `conv_${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      action_taken: 'message_received',
-      confirmation_message: `Thanks for your message: "${message}". In a real implementation, this would connect to your backend chat service.`
-    };
+    // Verify authentication token exists
+    const authToken = request.cookies.get('auth_token')?.value;
 
-    return NextResponse.json(simulatedResponse);
+    if (!authToken) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Forward the request to the backend chat API
+    const backendResponse = await fetch(`${process.env.BACKEND_URL || 'http://localhost:8000'}/chat/${userId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: message }],
+        conversation: conversation_id ? { id: conversation_id } : null
+      })
+    });
+
+    if (!backendResponse.ok) {
+      const errorData = await backendResponse.json().catch(() => ({ error: `HTTP error! status: ${backendResponse.status}` }));
+      console.error('Backend API Error:', backendResponse.status, errorData);
+      return NextResponse.json(
+        { error: `Backend API Error: ${backendResponse.status}`, details: errorData },
+        { status: backendResponse.status }
+      );
+    }
+
+    const data = await backendResponse.json();
+    return NextResponse.json(data);
+
   } catch (error) {
     console.error('Error in chat API:', error);
     return NextResponse.json(

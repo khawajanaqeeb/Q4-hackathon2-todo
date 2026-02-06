@@ -105,7 +105,7 @@ class TodoTools:
                     "id": str(task.id),
                     "title": task.title,
                     "description": task.description,
-                    "priority": task.priority.value if hasattr(task.priority, 'value') else task.priority,
+                    "priority": task.priority.value if hasattr(task.priority, 'value') else str(task.priority),
                     "completed": task.completed,
                     "created_at": task.created_at.isoformat(),
                     "updated_at": task.updated_at.isoformat()
@@ -282,7 +282,7 @@ class TodoTools:
                 (Task.user_id == user_id) &
                 (
                     (Task.title.contains(query_param)) |
-                    (Task.description.contains(query_param) if Task.description else False)
+                    ((Task.description != None) & (Task.description.contains(query_param)))
                 )
             )
 
@@ -305,7 +305,7 @@ class TodoTools:
                     "id": str(task.id),
                     "title": task.title,
                     "description": task.description,
-                    "priority": task.priority.value if hasattr(task.priority, 'value') else task.priority,
+                    "priority": task.priority.value if hasattr(task.priority, 'value') else str(task.priority),
                     "completed": task.completed,
                     "created_at": task.created_at.isoformat(),
                     "updated_at": task.updated_at.isoformat()

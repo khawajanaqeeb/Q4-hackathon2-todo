@@ -13,10 +13,10 @@ class Conversation(SQLModel, table=True):
     """Conversation model for storing chat conversation data."""
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_id: uuid.UUID = Field(foreign_key="user.id")  # Use the default table name
+    user_id: uuid.UUID = Field(foreign_key="user.id")
     title: Optional[str] = Field(max_length=255, nullable=True)  # Auto-generated from first message
-    created_at: datetime = Field(default=datetime.utcnow())
-    updated_at: datetime = Field(default=datetime.utcnow())
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
     is_active: bool = Field(default=True)
 
     # Relationships

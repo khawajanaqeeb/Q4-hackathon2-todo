@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 interface Message {
   id: string;
@@ -21,6 +22,7 @@ interface ChatApiResponse {
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
+  const { user } = useAuth();
   const [inputValue, setInputValue] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -36,6 +38,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(user?.token && { Authorization: `Bearer ${user.token}` })
         },
         body: JSON.stringify({
           message: message,

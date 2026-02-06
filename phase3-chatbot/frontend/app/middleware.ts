@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authLogger, logAuthVerification } from '../src/lib/auth/logging';
-import { isDevMode, getDevSafeguards } from '../src/lib/auth/config';
-import { originTracker } from '../src/lib/auth/origin-tracker';
-import { authStateManager } from '../src/lib/auth/state-manager';
-import { handleAuthError } from '../src/lib/auth/error-handler';
+import { authLogger, logAuthVerification } from '../lib/auth/logging';
+import { isDevMode, getDevSafeguards } from '../lib/auth/config';
+import { originTracker } from '../lib/auth/origin-tracker';
+import { authStateManager } from '../lib/auth/state-manager';
+import { handleAuthError } from '../lib/auth/error-handler';
 
 // Define protected routes that require authentication
 const protectedRoutes = ['/dashboard', '/profile', '/settings', '/api/chat'];

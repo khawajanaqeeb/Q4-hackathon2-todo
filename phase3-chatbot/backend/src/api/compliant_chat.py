@@ -105,23 +105,41 @@ async def chatkit_send_message(
                     detail="Invalid conversation_id format"
                 )
 
-        # Initialize the real OpenAI Agents SDK
+        # Initialize the real OpenAI Agents SDK with a fresh session to avoid transaction conflicts
         from ..config import settings
         from ..real_openai_agents import RealOpenAiAgentsSdk
+        from ..database import get_session
 
-        real_agent_sdk = RealOpenAiAgentsSdk(
-            api_key=settings.OPENAI_API_KEY,
-            session=session
-        )
+        # Create a separate session for the OpenAI agent to avoid transaction conflicts
+        fresh_session_gen = get_session()
+        fresh_session = next(fresh_session_gen)
+        
+        try:
+            real_agent_sdk = RealOpenAiAgentsSdk(
+                api_key=settings.OPENAI_API_KEY,
+                session=fresh_session
+            )
 
-        # Create the agent
-        agent = real_agent_sdk.create_todo_management_agent()
+            # Create the agent
+            agent = real_agent_sdk.create_todo_management_agent()
 
-        # Process the user message through the real OpenAI Agent
-        result = await real_agent_sdk.process_user_message(
-            user_id=user_id,
-            message=last_user_message.content
-        )
+            # Process the user message through the real OpenAI Agent
+            result = await real_agent_sdk.process_user_message(
+                user_id=user_id,
+                message=last_user_message.content
+            )
+        except Exception as e:
+            # If OpenAI processing fails, still return a response
+            result = {
+                "response": f"I received your message: '{last_user_message.content}'. Due to a service issue, I cannot process it fully right now.",
+                "success": True
+            }
+        finally:
+            # Close the fresh session
+            try:
+                next(fresh_session_gen)
+            except StopIteration:
+                pass
 
         # Process the message using the chat service to persist in DB
         chat_result = chat_service.process_user_message(

@@ -169,10 +169,11 @@ class McpIntegrationService:
             # Use raw SQL to avoid the tool_schema column issue
             from sqlalchemy import text
 
-            # Check if table exists and has the right columns
-            result = self.session.exec(text("SELECT name FROM sqlite_master WHERE type='table' AND name='mcp_tools';")).first()
+            # Check if table exists in PostgreSQL (instead of sqlite_master)
+            result = self.session.exec(text("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'mcp_tools');")).first()
+            table_exists = result[0] if result else False
 
-            if not result:
+            if not table_exists:
                 # Table doesn't exist, no tools to load
                 logger.info("mcp_tools table does not exist, skipping tool loading")
                 return

@@ -58,9 +58,155 @@ async def health_check():
 
 def register_todo_tools():
     """Register todo tools with the MCP integration service."""
-    logger.info("Skipping tool registration during startup to avoid complex database schema issues")
-    # For now, skip the registration to avoid database issues
-    # The tools will be loaded dynamically when invoked
+    from .database import get_session
+    from .models.mcp_tool import McpTool
+    from .tools.todo_tools import TodoTools
+    from sqlmodel import Session, select
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        # Use a temporary session to check if tools already exist
+        # get_session() returns a generator, so we need to use it properly
+        session_gen = get_session()
+        session = next(session_gen)
+
+        try:
+            # Check if todo tools are already registered
+            existing_tool_names = ["create_task", "list_tasks", "update_task", "complete_task", "delete_task", "search_tasks", "get_task_details"]
+
+            for tool_name in existing_tool_names:
+                existing_tool = session.exec(select(McpTool).where(McpTool.name == tool_name)).first()
+                if not existing_tool:
+                    # Register the tool
+                    tool_functions = {
+                        "create_task": {
+                            "description": "Create a new task",
+                            "provider": "internal",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {"type": "string", "description": "ID of the user creating the task"},
+                                    "title": {"type": "string", "description": "Title of the task"},
+                                    "description": {"type": "string", "description": "Description of the task"},
+                                    "priority": {"type": "string", "enum": ["low", "medium", "high"], "default": "medium"},
+                                    "due_date": {"type": "string", "format": "date", "description": "Due date in YYYY-MM-DD format"}
+                                },
+                                "required": ["user_id", "title"]
+                            }
+                        },
+                        "list_tasks": {
+                            "description": "List all tasks for a user with optional filters",
+                            "provider": "internal",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {"type": "string", "description": "ID of the user whose tasks to list"},
+                                    "status": {"type": "string", "enum": ["all", "completed", "pending"], "default": "all"},
+                                    "priority": {"type": "string", "enum": ["all", "high", "medium", "low"], "default": "all"},
+                                    "limit": {"type": "integer", "default": 10}
+                                },
+                                "required": ["user_id"]
+                            }
+                        },
+                        "update_task": {
+                            "description": "Update an existing task",
+                            "provider": "internal",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {"type": "string", "description": "ID of the user whose task to update"},
+                                    "task_id": {"type": "string", "description": "ID of the task to update"},
+                                    "title": {"type": "string", "description": "New title for the task"},
+                                    "description": {"type": "string", "description": "New description for the task"},
+                                    "priority": {"type": "string", "enum": ["low", "medium", "high"]},
+                                    "due_date": {"type": "string", "format": "date", "description": "New due date in YYYY-MM-DD format"},
+                                    "completed": {"type": "boolean", "description": "Whether the task is completed"}
+                                },
+                                "required": ["user_id", "task_id"]
+                            }
+                        },
+                        "complete_task": {
+                            "description": "Mark a task as completed",
+                            "provider": "internal",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {"type": "string", "description": "ID of the user whose task to complete"},
+                                    "task_id": {"type": "string", "description": "ID of the task to complete"}
+                                },
+                                "required": ["user_id", "task_id"]
+                            }
+                        },
+                        "delete_task": {
+                            "description": "Delete a task",
+                            "provider": "internal",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {"type": "string", "description": "ID of the user whose task to delete"},
+                                    "task_id": {"type": "string", "description": "ID of the task to delete"}
+                                },
+                                "required": ["user_id", "task_id"]
+                            }
+                        },
+                        "search_tasks": {
+                            "description": "Search tasks by keyword",
+                            "provider": "internal",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {"type": "string", "description": "ID of the user whose tasks to search"},
+                                    "query": {"type": "string", "description": "Keyword to search for in titles and descriptions"},
+                                    "status": {"type": "string", "enum": ["all", "completed", "pending"], "default": "all"},
+                                    "priority": {"type": "string", "enum": ["all", "high", "medium", "low"], "default": "all"}
+                                },
+                                "required": ["user_id", "query"]
+                            }
+                        },
+                        "get_task_details": {
+                            "description": "Get details of a specific task",
+                            "provider": "internal",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {"type": "string", "description": "ID of the user whose task to get details for"},
+                                    "task_id": {"type": "string", "description": "ID of the task to get details for"}
+                                },
+                                "required": ["user_id", "task_id"]
+                            }
+                        }
+                    }
+
+                    if tool_name in tool_functions:
+                        tool_info = tool_functions[tool_name]
+
+                        # Create new tool record
+                        new_tool = McpTool(
+                            name=tool_name,
+                            description=tool_info["description"],
+                            provider=tool_info["provider"],
+                            tool_schema=tool_info["schema"]
+                        )
+
+                        session.add(new_tool)
+                        logger.info(f"Registered tool: {tool_name}")
+
+            session.commit()
+
+        finally:
+            # Close the session by exhausting the generator
+            try:
+                next(session_gen)
+            except StopIteration:
+                pass  # Normal completion
+
+        logger.info("All todo tools registered successfully")
+
+    except Exception as e:
+        logger.error(f"Error registering tools: {e}")
+        # Continue anyway to avoid blocking startup
 
 @app.on_event("startup")
 def startup_event():

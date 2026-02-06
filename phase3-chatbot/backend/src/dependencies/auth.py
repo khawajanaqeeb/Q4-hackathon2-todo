@@ -95,14 +95,25 @@ async def get_current_user(
         )
 
     # Verify the token and get user data
-    token_data = verify_token(token)
-    user_id = token_data.get("sub")
+    try:
+        token_data = verify_token(token)
+        user_id = token_data.get("sub")
 
-    user = session.get(User, user_id)
-    if user is None:
+        user = session.get(User, user_id)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+
+        return user
+    except HTTPException:
+        # Re-raise HTTP exceptions (like invalid token)
+        raise
+    except Exception:
+        # For any other error during token verification, return 401
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found"
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-
-    return user

@@ -26,8 +26,8 @@ class Task(SQLModel, table=True):
     due_date: Optional[datetime] = Field(default=None)
     completed: bool = Field(default=False)
     tags: Optional[str] = Field(default=None)  # Store as JSON string instead of array
-    created_at: datetime = Field(default=datetime.utcnow())
-    updated_at: datetime = Field(default=datetime.utcnow())
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationship to user
     user: "User" = Relationship(back_populates="tasks")

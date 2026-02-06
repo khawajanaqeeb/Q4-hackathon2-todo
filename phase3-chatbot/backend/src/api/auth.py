@@ -102,7 +102,7 @@ class TokenResponse:
         self.token_type = token_type
 
 
-@router.post("/auth/register", response_model=dict)  # Using dict since we don't have UserResponse in src
+@router.post("/register", response_model=dict)  # Using dict since we don't have UserResponse in src
 async def register(
     response: Response,
     request: Request,  # Added for rate limiting compatibility
@@ -234,7 +234,7 @@ from fastapi import Form
 from fastapi.security import OAuth2PasswordRequestForm
 
 
-@router.post("/auth/login", response_model=dict)
+@router.post("/login", response_model=dict)
 @conditional_rate_limit("5/minute")  # Rate limit login attempts to 5 per minute per IP
 async def login(
     response: Response,
@@ -326,7 +326,7 @@ async def login(
     }
 
 
-@router.post("/auth/refresh", response_model=dict)
+@router.post("/refresh", response_model=dict)
 @conditional_rate_limit("10/minute")  # Rate limit refresh attempts to 10 per minute per IP
 async def refresh_token(
     response: Response,
@@ -417,7 +417,7 @@ async def refresh_token(
         )
 
 
-@router.post("/auth/logout")
+@router.post("/logout")
 async def logout(response: Response):
     """Logout user by clearing the authentication cookie.
 
@@ -446,7 +446,7 @@ async def logout(response: Response):
     return {"message": "Successfully logged out"}
 
 
-@router.post("/auth/verify", response_model=dict)
+@router.post("/verify", response_model=dict)
 async def verify_token_endpoint(
     request: Request,
     session: Session = Depends(get_session),

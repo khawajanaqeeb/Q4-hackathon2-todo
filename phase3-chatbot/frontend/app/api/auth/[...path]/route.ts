@@ -30,13 +30,21 @@ function incrementRequestCount(path: string, maxAttempts: number = 5): boolean {
   if (current) {
     // Reset count if it's been more than 10 minutes since last request (for development)
     // This allows more flexibility during development when pages are reloaded frequently
-    if (now - current.timestamp > 600000) { // 10 minutes instead of 5 minutes
+    if (now - current.timestamp > 600000) { // 10 minutes
       requestCounts.set(key, { count: 1, timestamp: now });
       return true;
     }
 
-    if (current.count >= maxAttempts) {
-      console.warn(`[Proxy] Maximum verification attempts (${maxAttempts}) reached for path: ${path}`);
+    // For verify endpoint, we need more sophisticated detection to prevent infinite loops
+    // during page loads, so we'll use a higher threshold
+    if (path === '/verify' && current.count >= 20) {
+      // For verify endpoint specifically, allow more attempts since it's used during page load
+      if (current.count >= 30) { // Even higher limit for verify specifically
+        console.warn(`[Proxy] Maximum verification attempts (${current.count}) reached for verify path: ${path}`);
+        return false; // Too many attempts
+      }
+    } else if (current.count >= maxAttempts) {
+      console.warn(`[Proxy] Maximum attempts (${maxAttempts}) reached for path: ${path}`);
       return false; // Too many attempts
     }
 
@@ -103,8 +111,9 @@ function buildBackendUrl(path: string, searchParams: string): string {
     return `${BACKEND_URL}${path}${queryString}`;
   }
 
+  // Auth routes now go to root level (e.g., /login, /register) not /auth/login
   return isAuthRoute
-    ? `${BACKEND_URL}/auth${path}${queryString}`     // Backend auth routes are at /auth/ (no /api prefix)
+    ? `${BACKEND_URL}${path}${queryString}`     // Backend auth routes are now at root level (no /auth prefix)
     : `${BACKEND_URL}/api${path}${queryString}`;     // Add /api prefix for other routes
 }
 
@@ -115,10 +124,15 @@ async function proxyToBackend(
   method: string,
   url: string,
   token: string | null,
-  body?: any
+  body?: any,
+  contentType?: string
 ): Promise<Response> {
+  // Determine if this is an auth endpoint that requires form data
+  const isAuthEndpoint = url.includes('/auth/');
+
+  // Set content type based on whether it's an auth endpoint or if content type is specified
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    ...(contentType ? { 'Content-Type': contentType } : (isAuthEndpoint ? {} : { 'Content-Type': 'application/json' })),
     ...(token && { 'Authorization': `Bearer ${token}` })
   };
 
@@ -128,7 +142,16 @@ async function proxyToBackend(
     credentials: 'include', // Important: Include cookies in requests
     redirect: 'manual' // Prevent automatic redirects to maintain auth headers
   };
-  if (body && !['GET', 'DELETE'].includes(method)) options.body = JSON.stringify(body);
+
+  if (body && !['GET', 'DELETE'].includes(method)) {
+    if (contentType?.includes('application/x-www-form-urlencoded') || isAuthEndpoint) {
+      // Send form data as-is (it's already a string for form data)
+      options.body = body;
+    } else {
+      // Send JSON data
+      options.body = JSON.stringify(body);
+    }
+  }
 
   return fetch(url, options);
 }
@@ -156,14 +179,18 @@ async function handleRequest(
   if (PUBLIC_ROUTES.includes(apiPath)) {
     try {
       // For public routes, we need to ensure they go to the correct backend endpoint
-      const backendUrl = `${BACKEND_URL}/auth${apiPath}${searchParams}`;
+      // Backend auth routes are now at root level (e.g., /login, /register) not /auth/login
+      const backendUrl = `${BACKEND_URL}${apiPath}${searchParams}`;
       const contentType = request.headers.get('content-type') || '';
       let body: any = null;
 
-      if (contentType.includes('application/json')) body = await request.json().catch(() => null);
-      else if (contentType.includes('application/x-www-form-urlencoded')) body = await request.text();
+      if (contentType.includes('application/json')) {
+        body = await request.json().catch(() => null);
+      } else if (contentType.includes('application/x-www-form-urlencoded')) {
+        body = await request.text();
+      }
 
-      // Handle form data specially for all form endpoints, not just login
+      // Handle form data specially for authentication endpoints to preserve content type
       if (contentType.includes('application/x-www-form-urlencoded')) {
         const backendResponse = await fetch(backendUrl, {
           method,
@@ -171,6 +198,7 @@ async function handleRequest(
           body,
           credentials: 'include'  // Include cookies in the request
         });
+
         if (!backendResponse.ok) {
           const errorData = await safeJsonParse(backendResponse).catch(() => null);
           const message = errorData?.error || errorData?.detail || 'Authentication failed';
@@ -180,13 +208,19 @@ async function handleRequest(
         const data = await safeJsonParse(backendResponse);
         const response = NextResponse.json(data, { status: backendResponse.status });
 
-        // Set cookie if token exists
-        const tokenFromData = data.access_token || data.token;
-        if (tokenFromData) setAuthCookie(response, tokenFromData);
+        // Set cookie if token exists - look for auth_token in various possible fields
+        const tokenFromData = data.access_token || data.token || data.refresh_token ||
+                             (data.auth_token ? data.auth_token : null);
+        if (tokenFromData) {
+          setAuthCookie(response, typeof tokenFromData === 'object'
+            ? (tokenFromData.value || tokenFromData.access_token || tokenFromData).toString()
+            : tokenFromData.toString());
+        }
 
         return response;
       } else {
-        const backendResponse = await proxyToBackend(method, backendUrl, null, body);
+        // For non-form data, use the standard proxy method
+        const backendResponse = await proxyToBackend(method, backendUrl, null, body, contentType);
 
         if (!backendResponse.ok) {
           const errorData = await safeJsonParse(backendResponse).catch(() => null);
@@ -199,7 +233,7 @@ async function handleRequest(
 
         // Set cookie if token exists
         const tokenFromData = data.access_token || data.token;
-        if (tokenFromData) setAuthCookie(response, tokenFromData);
+        if (tokenFromData) setAuthCookie(response, tokenFromData.toString());
 
         return response;
       }
@@ -232,15 +266,15 @@ async function handleRequest(
     }
 
     try {
-      // For refresh route, use the correct backend endpoint (backend has /auth/ routes)
-      const backendUrl = `${BACKEND_URL}/auth/refresh${searchParams}`;
+      // For refresh route, use the correct backend endpoint (backend has root level routes now)
+      const backendUrl = `${BACKEND_URL}/refresh${searchParams}`;
       const contentType = request.headers.get('content-type') || '';
       let body: any = null;
 
       if (contentType.includes('application/json')) body = await request.json().catch(() => null);
       else if (contentType.includes('application/x-www-form-urlencoded')) body = await request.text();
 
-      const backendResponse = await proxyToBackend('POST', backendUrl, token, body);
+      const backendResponse = await proxyToBackend('POST', backendUrl, token, body, contentType);
 
       if (backendResponse.ok) {
         const refreshData = await safeJsonParse(backendResponse);
@@ -248,7 +282,7 @@ async function handleRequest(
 
         if (newToken) {
           const response = NextResponse.json(refreshData);
-          setAuthCookie(response, newToken);
+          setAuthCookie(response, newToken.toString());
           return response;
         }
 
@@ -286,12 +320,15 @@ async function handleRequest(
     }
 
     try {
-      // For verify route, use the correct backend endpoint (backend has /auth/ routes)
-      const backendUrl = `${BACKEND_URL}/auth/verify`;
+      // For verify route, use the correct backend endpoint (backend has root level routes now)
+      const backendUrl = `${BACKEND_URL}/verify`;
+
+      // Always use POST for verify endpoint (backend expects it) regardless of the frontend method
       const backendResponse = await proxyToBackend(
         'POST',  // Always use POST for verify endpoint (backend expects it)
         backendUrl,
-        token
+        token,
+        undefined  // No body for verify endpoint
       );
 
       if (backendResponse.ok) {
@@ -364,20 +401,20 @@ async function handleRequest(
       backendUrl = `${BACKEND_URL}/api${apiPath}${searchParams}`;
     }
 
-    const backendResponse = await proxyToBackend(method, backendUrl, token, body);
+    const backendResponse = await proxyToBackend(method, backendUrl, token, body, contentType);
 
     // Handle redirects manually to preserve authorization headers
     if (backendResponse.status >= 300 && backendResponse.status < 400) {
       const redirectUrl = backendResponse.headers.get('Location');
       if (redirectUrl) {
         // Follow the redirect with the same authorization token
-        const redirectedResponse = await proxyToBackend(method, redirectUrl, token, body);
+        const redirectedResponse = await proxyToBackend(method, redirectUrl, token, body, contentType);
 
         // Check if the redirected response is also a redirect (avoid infinite loops)
         if (redirectedResponse.status >= 300 && redirectedResponse.status < 400) {
           const secondRedirectUrl = redirectedResponse.headers.get('Location');
           if (secondRedirectUrl && secondRedirectUrl !== redirectUrl) {
-            const finalResponse = await proxyToBackend(method, secondRedirectUrl, token, body);
+            const finalResponse = await proxyToBackend(method, secondRedirectUrl, token, body, contentType);
             if (!finalResponse.ok) {
               const errorData = await safeJsonParse(finalResponse).catch(() => null);
               const message = errorData?.error || errorData?.detail || 'API request failed';

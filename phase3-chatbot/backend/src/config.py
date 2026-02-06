@@ -6,8 +6,8 @@ import os
 class Settings(BaseSettings):
     """Unified application settings loaded from environment variables."""
 
-    # Database
-    DATABASE_URL: str = "postgresql://user:password@localhost:5432/chatbot_todo_db"
+    # Database - Use Neon DB connection string
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/chatbot_todo_db")
 
     # Security
     SECRET_KEY: str = "your-super-secret-key-change-this"
@@ -108,7 +108,7 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> List[str]:
         """Convert comma-separated CORS origins to a list."""
-        return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+        return self.CORS_ALLOW_ORIGINS
 
 
 # Create settings instance

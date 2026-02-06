@@ -114,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          username: email,  // OAuth2 standard uses 'username' field
+          username: email,  // OAuth2 standard uses 'username' field (can be email or username)
           password,
         }),
       });
@@ -160,13 +160,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       // Use the unified auth proxy for registration
+      // Backend expects form data with username, email, password
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify({
-          name,
+        body: new URLSearchParams({
+          username: name,
           email,
           password,
         }),

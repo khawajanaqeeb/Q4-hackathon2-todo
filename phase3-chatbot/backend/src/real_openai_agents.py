@@ -1,280 +1,200 @@
-"""
-Real OpenAI Agents SDK Implementation for Todo Management
-"""
-from openai import OpenAI
-from sqlmodel import Session
-from typing import Dict, Any, Optional
-import uuid
+"""Real OpenAI Agents SDK implementation for todo management."""
+
 import asyncio
-from .tools.todo_tools import TodoTools
-import json
+import uuid
+from typing import Dict, Any, Optional
+from sqlmodel import Session
+from .services.mcp_integration import McpIntegrationService
+from .services.api_key_manager import ApiKeyManager
+from .services.audit_service import AuditService
+
+# Try to import OpenAI, but handle gracefully if not available
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    OpenAI = None
 
 
 class RealOpenAiAgentsSdk:
-    """Proper implementation using the official OpenAI Agents SDK"""
-
     def __init__(self, api_key: str, session: Session):
-        """
-        Initialize with OpenAI API key and database session
-
-        Args:
-            api_key: OpenAI API key
-            session: Database session for MCP tools
-        """
-        self.client = OpenAI(api_key=api_key)
         self.session = session
-        self.todo_tools = TodoTools(session)
-
+        self.api_key_manager = ApiKeyManager()
+        self.audit_service = AuditService(session)
+        self.mcp_service = McpIntegrationService(session, self.api_key_manager, self.audit_service)
+        self.agent = None
+        
+        # Check if OpenAI is available
+        if not OPENAI_AVAILABLE:
+            self.client = None
+            print("Warning: OpenAI module not available. Chatbot functionality will use fallback responses.")
+            return
+        
+        # Check if API key is provided
+        if not api_key or api_key.strip() == "":
+            # If no API key, try to get it from the API key manager
+            from .config import settings
+            api_key = settings.OPENAI_API_KEY
+        
+        if not api_key or api_key.strip() == "":
+            # If still no API key, set client to None
+            self.client = None
+            print("Warning: OpenAI API key not configured. Chatbot functionality will use fallback responses.")
+            return
+        
+        self.client = OpenAI(api_key=api_key)
+        
     def create_todo_management_agent(self):
-        """Create a proper OpenAI Agent for todo management using the SDK"""
-        # The agent is just represented by the tools configuration
-        # We don't need to create a persistent agent object anymore
-        return {
-            "name": "Todo Management Assistant",
+        """Create an OpenAI agent for todo management."""
+        # For now, we'll use the chat completions API as a simpler approach
+        # In a real implementation, this would create an actual OpenAI Assistant
+        self.agent = {
             "instructions": """
-            You are a helpful assistant that manages todo lists for users.
-            You can create, list, update, complete, and delete tasks.
-            Always use the provided functions to perform these operations.
-            Only interact with tasks that belong to the current user.
+            You are a helpful todo management assistant. You can help users create, list, update, complete, and delete tasks.
+            Use the available tools to perform these operations.
+            
+            Available tools:
+            1. create_task: Create a new task
+            2. list_tasks: List all tasks for a user
+            3. update_task: Update an existing task
+            4. complete_task: Mark a task as completed
+            5. delete_task: Delete a task
+            6. search_tasks: Search tasks by keyword
+            7. get_task_details: Get details of a specific task
             """,
-            "tools": [
-                {"type": "function", "function": {
-                    "name": "create_task",
-                    "description": "Create a new task",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "user_id": {"type": "string", "description": "ID of the user creating the task"},
-                            "title": {"type": "string", "description": "Title of the task"},
-                            "description": {"type": "string", "description": "Description of the task"},
-                            "priority": {"type": "string", "enum": ["low", "medium", "high"], "default": "medium"},
-                            "due_date": {"type": "string", "format": "date", "description": "Due date in YYYY-MM-DD format"}
-                        },
-                        "required": ["user_id", "title"]
-                    }
-                }},
-                {"type": "function", "function": {
-                    "name": "list_tasks",
-                    "description": "List all tasks for a user with optional filters",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "user_id": {"type": "string", "description": "ID of the user whose tasks to list"},
-                            "status": {"type": "string", "enum": ["all", "completed", "pending"], "default": "all"},
-                            "priority": {"type": "string", "enum": ["all", "high", "medium", "low"], "default": "all"},
-                            "limit": {"type": "integer", "default": 10}
-                        },
-                        "required": ["user_id"]
-                    }
-                }},
-                {"type": "function", "function": {
-                    "name": "update_task",
-                    "description": "Update an existing task",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "user_id": {"type": "string", "description": "ID of the user whose task to update"},
-                            "task_id": {"type": "string", "description": "ID of the task to update"},
-                            "title": {"type": "string", "description": "New title for the task"},
-                            "description": {"type": "string", "description": "New description for the task"},
-                            "priority": {"type": "string", "enum": ["low", "medium", "high"]},
-                            "due_date": {"type": "string", "format": "date", "description": "New due date in YYYY-MM-DD format"},
-                            "completed": {"type": "boolean", "description": "Whether the task is completed"}
-                        },
-                        "required": ["user_id", "task_id"]
-                    }
-                }},
-                {"type": "function", "function": {
-                    "name": "complete_task",
-                    "description": "Mark a task as completed",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "user_id": {"type": "string", "description": "ID of the user whose task to complete"},
-                            "task_id": {"type": "string", "description": "ID of the task to complete"}
-                        },
-                        "required": ["user_id", "task_id"]
-                    }
-                }},
-                {"type": "function", "function": {
-                    "name": "delete_task",
-                    "description": "Delete a task",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "user_id": {"type": "string", "description": "ID of the user whose task to delete"},
-                            "task_id": {"type": "string", "description": "ID of the task to delete"}
-                        },
-                        "required": ["user_id", "task_id"]
-                    }
-                }}
-            ]
+            "model": "gpt-4-turbo-preview"
         }
-
-    async def process_user_message(self, user_id: str, message: str, thread_id: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Process a user message using the OpenAI Agent
-
-        Args:
-            user_id: ID of the user
-            message: User's message
-            thread_id: Thread ID to continue conversation (optional)
-
-        Returns:
-            Response from the agent
-        """
-        # Prepare messages for the OpenAI API
-        messages = [
-            {
-                "role": "system",
-                "content": """
-                You are a helpful assistant that manages todo lists for users.
-                You can create, list, update, complete, and delete tasks.
-                Always use the provided functions to perform these operations.
-                Only interact with tasks that belong to the current user.
-                """
-            },
-            {
-                "role": "user",
-                "content": message
-            }
-        ]
-
-        # Define the available functions
-        tools = [
-            {"type": "function", "function": {
-                "name": "create_task",
-                "description": "Create a new task",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "user_id": {"type": "string", "description": "ID of the user creating the task"},
-                        "title": {"type": "string", "description": "Title of the task"},
-                        "description": {"type": "string", "description": "Description of the task"},
-                        "priority": {"type": "string", "enum": ["low", "medium", "high"], "default": "medium"},
-                        "due_date": {"type": "string", "format": "date", "description": "Due date in YYYY-MM-DD format"}
-                    },
-                    "required": ["user_id", "title"]
-                }
-            }},
-            {"type": "function", "function": {
-                "name": "list_tasks",
-                "description": "List all tasks for a user with optional filters",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "user_id": {"type": "string", "description": "ID of the user whose tasks to list"},
-                        "status": {"type": "string", "enum": ["all", "completed", "pending"], "default": "all"},
-                        "priority": {"type": "string", "enum": ["all", "high", "medium", "low"], "default": "all"},
-                        "limit": {"type": "integer", "default": 10}
-                    },
-                    "required": ["user_id"]
-                }
-            }},
-            {"type": "function", "function": {
-                "name": "update_task",
-                "description": "Update an existing task",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "user_id": {"type": "string", "description": "ID of the user whose task to update"},
-                        "task_id": {"type": "string", "description": "ID of the task to update"},
-                        "title": {"type": "string", "description": "New title for the task"},
-                        "description": {"type": "string", "description": "New description for the task"},
-                        "priority": {"type": "string", "enum": ["low", "medium", "high"]},
-                        "due_date": {"type": "string", "format": "date", "description": "New due date in YYYY-MM-DD format"},
-                        "completed": {"type": "boolean", "description": "Whether the task is completed"}
-                    },
-                    "required": ["user_id", "task_id"]
-                }
-            }},
-            {"type": "function", "function": {
-                "name": "complete_task",
-                "description": "Mark a task as completed",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "user_id": {"type": "string", "description": "ID of the user whose task to complete"},
-                        "task_id": {"type": "string", "description": "ID of the task to complete"}
-                    },
-                    "required": ["user_id", "task_id"]
-                }
-            }},
-            {"type": "function", "function": {
-                "name": "delete_task",
-                "description": "Delete a task",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "user_id": {"type": "string", "description": "ID of the user whose task to delete"},
-                        "task_id": {"type": "string", "description": "ID of the task to delete"}
-                    },
-                    "required": ["user_id", "task_id"]
-                }
-            }}
-        ]
-
-        # Call the OpenAI API with function calling
-        response = self.client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-            tools=tools,
-            tool_choice="auto"
-        )
-
-        response_message = response.choices[0].message
-
-        # Process any tool calls
-        if response_message.tool_calls:
-            # Handle tool calls
-            for tool_call in response_message.tool_calls:
-                function_name = tool_call.function.name
-                function_args = json.loads(tool_call.function.arguments)
-
-                # Add user_id to function args for authorization if not present
-                if "user_id" not in function_args:
-                    function_args["user_id"] = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
-
-                # Call the appropriate function based on the todo tools
-                if function_name == "create_task":
-                    result = await self.todo_tools.create_task_tool(function_args, "", function_args["user_id"])
-                elif function_name == "list_tasks":
-                    result = await self.todo_tools.list_tasks_tool(function_args, "", function_args["user_id"])
-                elif function_name == "update_task":
-                    result = await self.todo_tools.update_task_tool(function_args, "", function_args["user_id"])
-                elif function_name == "complete_task":
-                    result = await self.todo_tools.complete_task_tool(function_args, "", function_args["user_id"])
-                elif function_name == "delete_task":
-                    result = await self.todo_tools.delete_task_tool(function_args, "", function_args["user_id"])
-                else:
-                    result = {"error": f"Unknown function: {function_name}"}
-
-                # After tool execution, get a final response from the model
-                messages.append({
-                    "role": "assistant",
-                    "content": f"Tool {function_name} executed: {str(result)}"
-                })
-
-                # Get final response from the model
-                final_response = self.client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=messages
-                )
-
+        return self.agent
+    
+    async def process_user_message(self, user_id: str, message: str) -> Dict[str, Any]:
+        """Process a user message through the OpenAI agent."""
+        try:
+            # Check if OpenAI is available and configured
+            if not self.client:
+                # Fallback response when OpenAI is not available
                 return {
-                    "response": final_response.choices[0].message.content or "Operation completed successfully",
-                    "thread_id": thread_id,
+                    "response": f"I received your message: '{message}'. However, the OpenAI service is not properly configured. Please ensure the OpenAI API key is set in the environment.",
                     "success": True
                 }
 
-        # If no tool calls, return the model's response
-        return {
-            "response": response_message.content or "I processed your request.",
-            "thread_id": thread_id,
-            "success": True
-        }
+            # Get available tools from the MCP service
+            tools = self.mcp_service.get_available_tools(uuid.UUID(user_id))
 
+            # Prepare tools in OpenAI format
+            openai_tools = []
+            for tool in tools:
+                # Get the tool schema from the database
+                from ..models.mcp_tool import McpTool
+                from sqlmodel import select
+                db_tool = self.session.exec(
+                    select(McpTool).where(McpTool.name == tool['name'])
+                ).first()
+                
+                if db_tool:
+                    openai_tools.append({
+                        "type": "function",
+                        "function": {
+                            "name": tool['name'],
+                            "description": tool['description'],
+                            "parameters": db_tool.tool_schema
+                        }
+                    })
+
+            # Call OpenAI API with tools
+            response = self.client.chat.completions.create(
+                model="gpt-4-turbo-preview",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a helpful todo management assistant. Use the available tools to help users manage their tasks."
+                    },
+                    {
+                        "role": "user",
+                        "content": message
+                    }
+                ],
+                tools=openai_tools,
+                tool_choice="auto"
+            )
+
+            response_message = response.choices[0].message
+            tool_calls = response_message.tool_calls
+
+            if tool_calls:
+                # Process tool calls
+                tool_results = []
+                for tool_call in tool_calls:
+                    import ast
+                    try:
+                        function_args = ast.literal_eval(tool_call.function.arguments)
+                    except (ValueError, SyntaxError):
+                        # If literal_eval fails, try json.loads as fallback
+                        import json
+                        try:
+                            function_args = json.loads(tool_call.function.arguments)
+                        except json.JSONDecodeError:
+                            # If both fail, return an error
+                            return {
+                                "response": "Error parsing function arguments",
+                                "success": False,
+                                "error": "Could not parse function arguments"
+                            }
+
+                    function_name = tool_call.function.name
+                    
+                    # Add user_id to function args if not present
+                    if 'user_id' not in function_args:
+                        function_args['user_id'] = user_id
+
+                    # Call the MCP service to execute the tool
+                    result = await self.mcp_service.invoke_tool(
+                        tool_name=function_name,
+                        parameters=function_args,
+                        user_id=uuid.UUID(user_id)
+                    )
+
+                    tool_results.append({
+                        "tool_call_id": tool_call.id,
+                        "role": "tool",
+                        "name": function_name,
+                        "content": str(result)
+                    })
+
+                # Get final response from OpenAI with tool results
+                final_response = self.client.chat.completions.create(
+                    model="gpt-4-turbo-preview",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are a helpful todo management assistant. Use the available tools to help users manage their tasks."
+                        },
+                        {
+                            "role": "user",
+                            "content": message
+                        },
+                        response_message,
+                    ] + tool_results,
+                )
+
+                return {
+                    "response": final_response.choices[0].message.content,
+                    "success": True
+                }
+            else:
+                # No tool calls, return the assistant's response directly
+                return {
+                    "response": response_message.content,
+                    "success": True
+                }
+
+        except Exception as e:
+            return {
+                "response": f"Sorry, I encountered an error processing your request: {str(e)}",
+                "success": False,
+                "error": str(e)
+            }
+    
     def cleanup_agent(self):
-        """Clean up the agent resources"""
-        # Nothing to clean up in this implementation
-        pass
+        """Clean up agent resources."""
+        self.agent = None
