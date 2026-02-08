@@ -72,7 +72,7 @@ class ChatService:
         ).all()
         return conversations
 
-    def process_user_message(self, user_id: uuid.UUID, message_content: str, conversation_id: Optional[uuid.UUID] = None) -> Dict[str, Any]:
+    def process_user_message(self, user_id: uuid.UUID, message_content: str, conversation_id: Optional[uuid.UUID] = None, agent_response: Optional[str] = None, action_taken: Optional[str] = None) -> Dict[str, Any]:
         """Process a user message and return response."""
         # Get or create conversation
         conversation = self.get_or_create_conversation(user_id, conversation_id)
@@ -80,9 +80,8 @@ class ChatService:
         # Add user message to conversation
         user_message = self.add_message(conversation.id, MessageRole.USER, message_content)
 
-        # This is where the AI processing would happen
-        # For now, return a placeholder response
-        response_content = f"I received your message: '{message_content}'. This is a placeholder response."
+        # Use the agent response if provided, otherwise use a fallback message
+        response_content = agent_response if agent_response else f"I understand you said: '{message_content}'. How can I help you with your tasks?"
 
         # Add AI response to conversation
         ai_message = self.add_message(conversation.id, MessageRole.ASSISTANT, response_content)
@@ -91,8 +90,8 @@ class ChatService:
             "message": response_content,
             "conversation_id": conversation.id,
             "timestamp": ai_message.timestamp,
-            "action_taken": "message_processed",
-            "confirmation_message": f"Message processed in conversation {conversation.id}"
+            "action_taken": action_taken or "message_processed",
+            "confirmation_message": response_content
         }
 
     def delete_conversation(self, conversation_id: uuid.UUID, user_id: uuid.UUID) -> bool:

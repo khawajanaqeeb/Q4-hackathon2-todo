@@ -2,17 +2,11 @@ from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone
 import uuid
-from enum import Enum
+from .conversation import MessageRole
 
 
 if TYPE_CHECKING:
     from .conversation import Conversation
-
-
-class MessageRole(str, Enum):
-    USER = "user"
-    ASSISTANT = "assistant"
-    SYSTEM = "system"
 
 
 class Message(SQLModel, table=True):

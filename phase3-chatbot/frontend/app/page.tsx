@@ -82,14 +82,14 @@ export default function HomePage() {
       } else if (sortBy === 'title') {
         return a.title.localeCompare(b.title);
       } else {
-        return b.id - a.id;
+        return b.created_at.localeCompare(a.created_at);
       }
     });
 
     return filtered;
   };
 
-  const handleToggle = async (id: number) => {
+  const handleToggle = async (id: string) => {
     try {
       const updated = await todoAPI.toggleTodoCompletion(id);
       setTodos(todos.map(t => t.id === id ? updated : t));
@@ -98,7 +98,7 @@ export default function HomePage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Delete this task?')) return;
     try {
       await todoAPI.deleteTodo(id);
@@ -177,7 +177,7 @@ export default function HomePage() {
                     🤖 AI Chat
                   </Link>
                   <span className="text-white text-sm">
-                    👤 <span className="font-medium">{user.name}</span>
+                    👤 <span className="font-medium">{user.username}</span>
                   </span>
                   <button
                     onClick={handleLogout}

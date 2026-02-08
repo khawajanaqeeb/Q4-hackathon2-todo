@@ -4,6 +4,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
 import os
+import uuid as _uuid
 from sqlmodel import Session
 from ..database import get_session
 from ..models.user import User  # Assuming User model exists from phase 2
@@ -52,14 +53,12 @@ def get_current_user_from_token(token: str):
     user_id = token_data.get("sub")
 
     # Import here to avoid circular imports
-    from ..database import get_session
+    from ..database import engine
     from sqlmodel import Session
 
     # Create a temporary session to fetch user
-    # This is not ideal but needed for the dependency function
-    # The proper way would be to pass session as a parameter
-    with get_session() as session:
-        user = session.get(User, user_id)
+    with Session(engine) as session:
+        user = session.get(User, _uuid.UUID(user_id))
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -99,7 +98,7 @@ async def get_current_user(
         token_data = verify_token(token)
         user_id = token_data.get("sub")
 
-        user = session.get(User, user_id)
+        user = session.get(User, _uuid.UUID(user_id))
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

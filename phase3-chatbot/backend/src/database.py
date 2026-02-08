@@ -30,6 +30,7 @@ def create_db_and_tables():
     from .models.task import Task
     from .models.api_key import ApiKey
     from .models.mcp_tool import McpTool
+    from .models.audit_log import AuditLog
 
     # Create tables
     SQLModel.metadata.create_all(engine)

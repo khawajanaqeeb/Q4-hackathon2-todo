@@ -213,7 +213,16 @@ class AgentRunner:
         }
 
     async def _fallback_process_natural_language(self, user_input: str, conversation_context: list = None) -> Dict[str, Any]:
-        """Fallback implementation using standard OpenAI API when assistants API fails."""
+        """Fallback implementation using standard OpenAI API when assistants API fails, or pure keyword parsing if OpenAI unavailable."""
+        # If OpenAI client is not available, use pure keyword-based parsing
+        if not self.client:
+            parsed_response = await self._parse_intent_from_input(user_input)
+            return {
+                "success": True,
+                "parsed_command": parsed_response,
+                "raw_response": user_input
+            }
+
         # Build the system prompt to guide the AI on how to interpret commands
         system_prompt = """
         You are a task management assistant. Your job is to interpret user commands related to task management.
@@ -270,19 +279,21 @@ class AgentRunner:
             }
 
         except json.JSONDecodeError:
-            # Handle case where AI didn't return valid JSON
+            # Handle case where AI didn't return valid JSON — use keyword fallback
+            parsed_response = await self._parse_intent_from_input(user_input)
             return {
-                "success": False,
-                "error": "AI response was not valid JSON",
-                "raw_response": ai_response if 'ai_response' in locals() else None
+                "success": True,
+                "parsed_command": parsed_response,
+                "raw_response": user_input
             }
 
         except Exception as e:
-            # Handle other errors
+            # Handle other errors — use keyword fallback
+            parsed_response = await self._parse_intent_from_input(user_input)
             return {
-                "success": False,
-                "error": f"Error processing natural language: {str(e)}",
-                "raw_response": None
+                "success": True,
+                "parsed_command": parsed_response,
+                "raw_response": user_input
             }
 
     async def generate_response(self, user_input: str, intent_result: Dict[str, Any]) -> str:
@@ -296,7 +307,7 @@ class AgentRunner:
         Returns:
             Natural language response for the user
         """
-        if not intent_result["success"]:
+        if not intent_result.get("success"):
             return "I'm sorry, I couldn't understand your request. Could you please rephrase it?"
 
         intent = intent_result["parsed_command"]["intent"]

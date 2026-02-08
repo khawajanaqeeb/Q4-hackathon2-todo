@@ -55,7 +55,7 @@ class AuditService:
             action_type=action_type,
             resource_type=resource_type,
             resource_id=resource_id,
-            metadata=metadata or {},
+            log_metadata=metadata or {},
             success=success,
             response_time_ms=response_time_ms,
             ip_address=ip_address,

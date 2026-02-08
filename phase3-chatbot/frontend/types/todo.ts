@@ -1,11 +1,11 @@
 export interface Todo {
-  id: number;
+  id: string;
   title: string;
   description?: string;
   priority: 'low' | 'medium' | 'high';
   completed: boolean;
   tags?: string[];
-  user_id: number;
+  user_id: string;
   created_at: string;
   updated_at: string;
 }

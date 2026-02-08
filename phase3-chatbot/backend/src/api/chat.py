@@ -4,13 +4,13 @@ from typing import Optional
 import uuid
 from ..database import get_session
 from ..dependencies.auth import get_current_user
-from ..models.user import User  # Assuming User model exists from phase 2
+from ..models.user import User
+from ..models.conversation import Conversation
 from ..services.chat_service import ChatService
 from ..services.agent_runner import AgentRunner
 from ..services.mcp_integration import McpIntegrationService
 from pydantic import BaseModel
 from typing import List
-from ..models.conversation import Conversation  # Import the Conversation model
 from ..services.api_key_manager import ApiKeyManager
 from ..services.audit_service import AuditService
 
@@ -88,7 +88,7 @@ async def send_message(
 
         # Get conversation messages for context
         if conversation_id:
-            conversation = session.get(chat_service.Conversation, conversation_id)
+            conversation = session.get(Conversation, conversation_id)
             if not conversation or conversation.user_id != conversation_uuid:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -137,11 +137,13 @@ async def send_message(
                     detail=f"MCP operation failed: {mcp_result.get('error', 'Unknown error')}"
                 )
 
-        # Process the message using the chat service
+        # Process the message using the chat service, passing the agent's AI response
         result = chat_service.process_user_message(
             user_id=conversation_uuid,
             message_content=request.message,
-            conversation_id=conversation_id
+            conversation_id=conversation_id,
+            agent_response=agent_result.get("response"),
+            action_taken=agent_result.get("action_taken")
         )
 
         return ChatMessageResponse(
@@ -245,7 +247,7 @@ async def get_conversation_messages(
         chat_service = ChatService(session)
 
         # Get the conversation to verify it belongs to the user
-        conversation = session.get(chat_service.Conversation, conv_uuid)
+        conversation = session.get(Conversation, conv_uuid)
         if not conversation or conversation.user_id != user_uuid:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
