@@ -53,7 +53,7 @@ def test_user(db_session):
 @pytest.fixture(scope="function")
 def auth_headers(test_user):
     """Create authentication headers for test user."""
-    from src.utils.security import create_access_token
+    from src.dependencies.auth import create_access_token
     access_token = create_access_token(data={"sub": str(test_user.id)})
     return {"Authorization": f"Bearer {access_token}"}
 
@@ -290,7 +290,7 @@ def test_register_tool_unauthorized(client: TestClient, db_session: Session):
     db_session.commit()
     
     # Create auth headers for regular user
-    from src.utils.security import create_access_token
+    from src.dependencies.auth import create_access_token
     access_token = create_access_token(data={"sub": str(regular_user.id)})
     headers = {"Authorization": f"Bearer {access_token}"}
     

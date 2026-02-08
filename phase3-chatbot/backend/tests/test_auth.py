@@ -9,9 +9,8 @@ import uuid
 from src.main import app
 from src.database import get_session, engine
 from src.models.user import User
-from src.dependencies.auth import get_current_user
+from src.dependencies.auth import get_current_user, create_access_token
 from src.config import settings
-from src.utils.security import create_access_token
 
 
 @pytest.fixture(scope="module")

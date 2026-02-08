@@ -11,9 +11,8 @@ from src.main import app
 from src.database import get_session, engine
 from src.models.user import User
 from src.models.api_key import ApiKey
-from src.dependencies.auth import get_current_user
+from src.dependencies.auth import get_current_user, create_access_token
 from src.config import settings
-from src.utils.security import create_access_token
 
 
 @pytest.fixture(scope="module")
@@ -660,4 +659,3 @@ def test_api_key_length_validation(client: TestClient, test_user, auth_headers: 
     )
     
     assert response.status_code in [400, 422]  # Should fail validation
-</content>

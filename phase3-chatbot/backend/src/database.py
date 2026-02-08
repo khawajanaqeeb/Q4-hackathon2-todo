@@ -13,10 +13,10 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5
 # Create engine with connection pooling settings
 engine = create_engine(
     DATABASE_URL,
-    pool_size=10,  # Number of connections to maintain
-    max_overflow=20,  # Additional connections beyond pool_size
-    pool_pre_ping=True,  # Verify connections before use
-    pool_recycle=300,  # Recycle connections after 5 minutes
+    pool_size=10,
+    max_overflow=20,
+    pool_pre_ping=True,
+    pool_recycle=300,
 )
 
 

@@ -1,138 +1,88 @@
-"""Pytest configuration and shared fixtures."""
+"""Pytest configuration and shared fixtures — uses Neon DB (real PostgreSQL)."""
 import pytest
-import os
-from unittest.mock import patch
+import uuid
 from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
-from sqlmodel.pool import StaticPool
+from sqlmodel import Session
+from passlib.context import CryptContext
 
-# Mock environment variables before importing the app
-os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-os.environ["SECRET_KEY"] = "test_secret_key_for_testing_purposes_only"
-os.environ["ALGORITHM"] = "HS256"
-os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
-os.environ["REFRESH_TOKEN_EXPIRE_DAYS"] = "7"
-os.environ["ENVIRONMENT"] = "testing"
-os.environ["DISABLE_RATE_LIMIT"] = "True"  # Explicitly disable rate limiting for tests
+from src.main import app
+from src.database import get_session, engine
+from src.models.user import User
+from src.dependencies.auth import create_access_token
 
-from app.main import app
-from app.database import get_session
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 @pytest.fixture(name="session")
 def session_fixture():
-    """
-    Create an in-memory SQLite database for testing.
-
-    Yields a database session with all tables created.
-    """
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    SQLModel.metadata.create_all(engine)
-
+    """Yield a database session connected to Neon DB."""
     with Session(engine) as session:
         yield session
-
-    SQLModel.metadata.drop_all(engine)
 
 
 @pytest.fixture(name="client")
 def client_fixture(session: Session):
-    """
-    Create a test client with overridden database session.
-
-    Args:
-        session: Test database session fixture
-
-    Returns:
-        FastAPI TestClient
-    """
+    """Create a FastAPI TestClient with the Neon DB session injected."""
     def get_session_override():
         return session
 
     app.dependency_overrides[get_session] = get_session_override
-
-    client = TestClient(app)
-    yield client
-
+    with TestClient(app) as test_client:
+        yield test_client
     app.dependency_overrides.clear()
 
 
-@pytest.fixture
-def auth_headers(client: TestClient, session: Session):
-    """
-    Create a test user and return authentication headers.
-
-    Args:
-        client: Test client fixture
-        session: Test database session
-
-    Returns:
-        Dictionary with Authorization header containing JWT token
-    """
-    # Register a test user
-    register_response = client.post(
-        "/auth/register",
-        json={
-            "email": "testuser@example.com",
-            "name": "Test User",
-            "password": "SecureTestPass123!"
-        }
+@pytest.fixture(name="test_user")
+def test_user_fixture(session: Session):
+    """Create a unique test user in Neon DB, clean up after test."""
+    user_id = uuid.uuid4()
+    user = User(
+        id=user_id,
+        email=f"test_{user_id}@example.com",
+        username=f"testuser_{user_id.hex[:8]}",
+        hashed_password=pwd_context.hash("SecureTestPass123!"),
+        is_active=True,
+        is_superuser=False,
     )
-    assert register_response.status_code == 201
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    yield user
+    # Cleanup
+    session.delete(user)
+    session.commit()
 
-    # Login to get JWT token
-    login_response = client.post(
-        "/auth/login",
-        data={
-            "username": "testuser@example.com",
-            "password": "SecureTestPass123!"
-        }
+
+@pytest.fixture(name="test_user2")
+def test_user2_fixture(session: Session):
+    """Create a second unique test user for isolation tests."""
+    user_id = uuid.uuid4()
+    user = User(
+        id=user_id,
+        email=f"test2_{user_id}@example.com",
+        username=f"testuser2_{user_id.hex[:8]}",
+        hashed_password=pwd_context.hash("SecureTestPass456!"),
+        is_active=True,
+        is_superuser=False,
     )
-    assert login_response.status_code == 200
-    token_data = login_response.json()
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    yield user
+    # Cleanup
+    session.delete(user)
+    session.commit()
 
-    # Return authorization headers
-    return {"Authorization": f"Bearer {token_data['access_token']}"}
+
+@pytest.fixture(name="auth_headers")
+def auth_headers_fixture(test_user: User):
+    """Return Authorization headers for the first test user."""
+    token = create_access_token(data={"sub": str(test_user.id)})
+    return {"Authorization": f"Bearer {token}"}
 
 
-@pytest.fixture
-def auth_headers_user2(client: TestClient, session: Session):
-    """
-    Create a second test user and return authentication headers.
-    Used for testing user isolation (ensuring users can't access each other's data).
-
-    Args:
-        client: Test client fixture
-        session: Test database session
-
-    Returns:
-        Dictionary with Authorization header containing JWT token for second user
-    """
-    # Register a second test user
-    register_response = client.post(
-        "/auth/register",
-        json={
-            "email": "testuser2@example.com",
-            "name": "Test User 2",
-            "password": "SecureTestPass456!"
-        }
-    )
-    assert register_response.status_code == 201
-
-    # Login to get JWT token
-    login_response = client.post(
-        "/auth/login",
-        data={
-            "username": "testuser2@example.com",
-            "password": "SecureTestPass456!"
-        }
-    )
-    assert login_response.status_code == 200
-    token_data = login_response.json()
-
-    # Return authorization headers
-    return {"Authorization": f"Bearer {token_data['access_token']}"}
+@pytest.fixture(name="auth_headers2")
+def auth_headers2_fixture(test_user2: User):
+    """Return Authorization headers for the second test user."""
+    token = create_access_token(data={"sub": str(test_user2.id)})
+    return {"Authorization": f"Bearer {token}"}

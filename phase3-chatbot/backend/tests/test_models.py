@@ -270,7 +270,7 @@ def test_mcp_tool_model_defaults(db_session: Session):
 
 def test_api_key_model_creation(db_session: Session, test_user: User):
     """Test creating an API key model instance."""
-    from src.utils.encryption import encrypt_api_key
+    # encrypt_api_key removed - use crypto_utils instead
     
     api_key_id = uuid.uuid4()
     encrypted_key = encrypt_api_key("test_api_key_12345")
@@ -300,7 +300,7 @@ def test_api_key_model_creation(db_session: Session, test_user: User):
 
 def test_api_key_model_defaults(db_session: Session, test_user: User):
     """Test default values for API key model."""
-    from src.utils.encryption import encrypt_api_key
+    # encrypt_api_key removed - use crypto_utils instead
     
     api_key_id = uuid.uuid4()
     encrypted_key = encrypt_api_key("defaults_test_key")
