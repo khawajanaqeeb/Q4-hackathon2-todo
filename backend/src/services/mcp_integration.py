@@ -5,6 +5,7 @@ from fastapi import Depends, HTTPException, status
 from sqlmodel import Session
 from uuid import uuid4
 import json
+from datetime import datetime
 
 from ..models.user import User
 from ..dependencies.auth import get_current_user
@@ -136,7 +137,7 @@ class McpIntegrationService:
             "assistant_response": {
                 "id": str(assistant_message.id),
                 "content": response_content,
-                "timestamp": assistant_message.timestamp.isoformat()
+                "timestamp": assistant_message.timestamp.isoformat() if hasattr(assistant_message, 'timestamp') and assistant_message.timestamp else ""
             },
             "status": agent_response.get("status", "success")
         }
@@ -221,5 +222,3 @@ async def get_mcp_service(
     return McpIntegrationService(db_session=db_session, current_user=current_user)
 
 
-# Import datetime for use in the log_tool_execution method
-from datetime import datetime

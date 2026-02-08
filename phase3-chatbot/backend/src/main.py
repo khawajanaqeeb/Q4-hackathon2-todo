@@ -8,7 +8,7 @@ import asyncio
 import logging
 
 from .config import settings
-from .api.compliant_chat import router as chat_router
+from .api.chat import router as chat_router
 from .api.mcp import router as mcp_router
 from .api.api_keys import router as api_keys_router
 from .api.auth import router as auth_router  # Import the auth router
@@ -45,8 +45,8 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(auth_router, tags=["Authentication"])  # Add the auth router
-app.include_router(chat_router, tags=["Chat"])
+app.include_router(auth_router, tags=["Authentication"])  # Add the auth router without prefix for frontend compatibility
+app.include_router(chat_router, prefix="/api/chat", tags=["Chat"])  # Mount chat at /api/chat to match frontend expectations
 app.include_router(mcp_router, prefix="/api", tags=["MCP"])
 app.include_router(api_keys_router, prefix="/api", tags=["API Keys"])
 app.include_router(todos_router, prefix="/api", tags=["Todos"])  # Add the todos router with /api prefix for frontend compatibility

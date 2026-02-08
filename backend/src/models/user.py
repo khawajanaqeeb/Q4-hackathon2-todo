@@ -8,6 +8,7 @@ class UserBase(SQLModel):
     email: str = Field(unique=True, nullable=False)
 
 class User(UserBase, table=True):
+    __tablename__ = "users"
     id: Optional[int] = Field(default=None, primary_key=True)
     hashed_password: str = Field(nullable=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)

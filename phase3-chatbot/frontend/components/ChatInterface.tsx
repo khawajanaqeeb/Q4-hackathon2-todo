@@ -30,6 +30,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Helper function to safely parse dates from backend
+  const parseSafeDate = (dateString: string): Date => {
+    try {
+      // First try to parse as ISO string
+      const parsedDate = new Date(dateString);
+      // Check if the date is valid
+      if (isNaN(parsedDate.getTime())) {
+        // If invalid, fall back to current time
+        return new Date();
+      }
+      return parsedDate;
+    } catch (error) {
+      // If any error occurs, fall back to current time
+      return new Date();
+    }
+  };
+
   // Function to send message to backend API
   const sendMessageToBackend = async (message: string): Promise<ChatApiResponse> => {
     try {
@@ -94,7 +111,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
         id: Date.now().toString(),
         role: 'assistant',
         content: response.confirmation_message || response.message,
-        timestamp: new Date(response.timestamp),
+        timestamp: parseSafeDate(response.timestamp),
       };
 
       setMessages(prev => [...prev, aiMessage]);

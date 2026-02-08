@@ -20,15 +20,15 @@ export async function POST(
     }
 
     // Forward the request to the backend chat API
-    const backendResponse = await fetch(`${process.env.BACKEND_URL || 'http://localhost:8000'}/chat/${userId}`, {
+    const backendResponse = await fetch(`${process.env.BACKEND_URL || 'http://localhost:8000'}/api/chat/${userId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${authToken}`,
       },
       body: JSON.stringify({
-        messages: [{ role: 'user', content: message }],
-        conversation: conversation_id ? { id: conversation_id } : null
+        message: message,
+        conversation_id: conversation_id
       })
     });
 

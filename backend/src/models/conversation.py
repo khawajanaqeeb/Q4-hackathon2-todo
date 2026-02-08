@@ -6,10 +6,11 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 
 class ConversationBase(SQLModel):
     title: str
-    user_id: int = Field(sa_column=Column(Integer, ForeignKey("user.id")))
+    user_id: int = Field(sa_column=Column(Integer, ForeignKey("users.id")))
     status: str = Field(default="active")  # active, archived, deleted
 
 class Conversation(ConversationBase, table=True):
+    __tablename__ = "conversations"
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -35,7 +36,7 @@ class ConversationUpdate(SQLModel):
 
 # TodoOperationLog model as specified in task T015
 class TodoOperationLogBase(SQLModel):
-    conversation_id: str = Field(sa_column=Column(String, ForeignKey("conversation.id")))
+    conversation_id: str = Field(sa_column=Column(String, ForeignKey("conversations.id")))
     message_id: str  # Reference to message that triggered the operation
     operation: str = Field(max_length=20)  # create, update, delete, complete
     todo_id: str  # ID of the affected todo item
@@ -43,6 +44,7 @@ class TodoOperationLogBase(SQLModel):
     new_state: Optional[str] = Field(default=None)  # JSON string of state after operation
 
 class TodoOperationLog(TodoOperationLogBase, table=True):
+    __tablename__ = "todo_operation_logs"
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 

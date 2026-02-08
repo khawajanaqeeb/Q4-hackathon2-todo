@@ -4,11 +4,12 @@ from datetime import datetime
 from sqlalchemy import Column, String, ForeignKey
 
 class MessageBase(SQLModel):
-    conversation_id: str = Field(sa_column=Column(String, ForeignKey("conversation.id")))
+    conversation_id: str = Field(sa_column=Column(String, ForeignKey("conversations.id")))
     role: str = Field(max_length=20)  # "user" or "assistant"
     content: str
 
 class Message(MessageBase, table=True):
+    __tablename__ = "messages"
     id: Optional[int] = Field(default=None, primary_key=True)
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 

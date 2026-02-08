@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 
@@ -13,8 +13,8 @@ class User(SQLModel, table=True):
     hashed_password: str = Field(min_length=8)
     is_active: bool = Field(default=True)
     is_superuser: bool = Field(default=False)
-    created_at: datetime = Field(default=datetime.utcnow())
-    updated_at: datetime = Field(default=datetime.utcnow())
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Relationships
     tasks: List["Task"] = Relationship(back_populates="user")

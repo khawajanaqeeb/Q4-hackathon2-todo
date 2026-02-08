@@ -31,11 +31,11 @@ interface AuthContextType {
   updateUser: (userData: Partial<User>) => void;
 }
 
-// Initial state
+// Initial state - start with loading true, but handle hydration properly
 const initialState: AuthState = {
   user: null,
   token: null,
-  loading: true,
+  loading: true, // Start with loading true for both server and client
 };
 
 // Auth context
@@ -75,30 +75,36 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Check for existing token on initial load
+  // Check for existing auth status on initial load
   useEffect(() => {
     // Prevent hydration mismatch by only running on the client
     if (typeof window === 'undefined') return;
 
-    // In the new proxy pattern, tokens are stored in cookies
-    // We'll check for authentication status using the unified auth proxy
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/verify', {
-          method: 'GET',
-        });
-        if (response.ok) {
-          const userData = await response.json();
-          dispatch({ type: 'SET_USER', payload: userData });
-        } else {
+    // Delay setting loading to false to allow hydration to complete
+    const timer = setTimeout(() => {
+      // In the new proxy pattern, tokens are stored in cookies
+      // We'll check for authentication status using the unified auth proxy
+      const checkAuth = async () => {
+        try {
+          const response = await fetch('/api/auth/verify', {
+            method: 'GET',
+          });
+          if (response.ok) {
+            const userData = await response.json();
+            dispatch({ type: 'SET_USER', payload: userData });
+          } else {
+            dispatch({ type: 'LOGOUT' });
+          }
+        } catch (error) {
           dispatch({ type: 'LOGOUT' });
         }
-      } catch (error) {
-        dispatch({ type: 'LOGOUT' });
-      }
-    };
+      };
 
-    checkAuth();
+      checkAuth();
+    }, 0); // Small delay to ensure hydration completes
+
+    // Cleanup function
+    return () => clearTimeout(timer);
   }, []);
 
   // Login function
@@ -119,9 +125,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }),
       });
 
+      const tokenData = await response.json();
+      
       if (response.ok) {
         // Token is now automatically set in httpOnly cookie by the proxy
-        const tokenData = await response.json();
 
         // Verify the user with the token in the cookie
         const userDataResponse = await fetch('/api/auth/verify', {
@@ -139,9 +146,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw new Error('Failed to verify user after login');
         }
       } else {
-        const errorData = await response.json();
         dispatch({ type: 'ERROR' });
-        throw new Error(errorData.error || errorData.detail || 'Login failed');
+        throw new Error(tokenData.error || tokenData.detail || 'Login failed');
       }
     } catch (error) {
       dispatch({ type: 'ERROR' });
@@ -173,6 +179,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }),
       });
 
+      const registerData = await response.json();
+      
       if (response.ok) {
         // After successful registration, log the user in through the proxy
         // OAuth2PasswordRequestForm expects 'username' field (we pass email as username)
@@ -187,9 +195,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }),
         });
 
+        const loginData = await loginResponse.json();
+        
         if (loginResponse.ok) {
           // Token is now automatically set in httpOnly cookie by the proxy
-          const tokenData = await loginResponse.json();
 
           // Verify the user with the token in the cookie
           const userDataResponse = await fetch('/api/auth/verify', {
@@ -207,14 +216,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             throw new Error('Failed to verify user after registration');
           }
         } else {
-          const errorData = await loginResponse.json();
           dispatch({ type: 'ERROR' });
-          throw new Error(errorData.error || errorData.detail || 'Registration successful but login failed');
+          throw new Error(loginData.error || loginData.detail || 'Registration successful but login failed');
         }
       } else {
-        const errorData = await response.json();
         dispatch({ type: 'ERROR' });
-        throw new Error(errorData.error || errorData.detail || 'Registration failed');
+        throw new Error(registerData.error || registerData.detail || 'Registration failed');
       }
     } catch (error) {
       dispatch({ type: 'ERROR' });

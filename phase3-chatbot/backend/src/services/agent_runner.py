@@ -1,9 +1,16 @@
 import asyncio
 from typing import Dict, Any, Optional
-from openai import AsyncOpenAI
 from ..config import settings
 import json
 import uuid
+
+# Import OpenAI conditionally to avoid crashes when it's not available
+try:
+    from openai import AsyncOpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    AsyncOpenAI = None
 
 
 class AgentRunner:
@@ -11,14 +18,21 @@ class AgentRunner:
 
     def __init__(self):
         """Initialize AgentRunner with OpenAI client."""
-        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        if OPENAI_AVAILABLE:
+            self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        else:
+            self.client = None
 
         # Create or retrieve an assistant for task management
         self.assistant = None
 
     async def initialize_assistant(self):
         """Initialize the OpenAI Assistant for task management."""
-        if not self.assistant:
+        if not OPENAI_AVAILABLE:
+            print("OpenAI module not available, skipping assistant initialization")
+            return None
+            
+        if not self.assistant and self.client:
             try:
                 # Check if we already have an assistant with our description
                 assistants = await self.client.beta.assistants.list(limit=20)
@@ -84,9 +98,14 @@ class AgentRunner:
         Returns:
             Dictionary with parsed command and parameters
         """
+        if not OPENAI_AVAILABLE:
+            print("OpenAI module not available, using fallback implementation")
+            return await self._fallback_process_natural_language(user_input, conversation_context)
+            
         try:
             # Initialize the assistant if not already done
-            await self.initialize_assistant()
+            if not self.assistant:
+                await self.initialize_assistant()
 
             # Create a new thread for this request
             thread = await self.client.beta.threads.create()

@@ -8,7 +8,7 @@ import json
 import asyncio
 
 from ..models.user import User
-from ..dependencies.auth import get_current_user
+from ..services.auth import get_current_user
 from ..database import get_session
 from ..services.conversation_service import ConversationService
 from ..services.mcp_integration import McpIntegrationService
@@ -58,7 +58,25 @@ async def process_chat_message(
             conversation_id=conversation_id
         )
 
-        return response
+        # Format response to match frontend expectations
+        formatted_response = {
+            "message": response.get("assistant_response", {}).get("content", ""),
+            "confirmation_message": response.get("assistant_response", {}).get("content", ""),
+            "conversation_id": response.get("conversation_id"),
+            "timestamp": response.get("assistant_response", {}).get("timestamp", ""),
+            "action_taken": "processed",
+            "status": response.get("status", "success")
+        }
+
+        # Include any tool calls executed if present
+        if "tool_calls_executed" in response:
+            formatted_response["tool_calls_executed"] = response["tool_calls_executed"]
+
+        # Include error information if there was an error
+        if "error" in response:
+            formatted_response["error"] = response["error"]
+
+        return formatted_response
 
     except HTTPException:
         # Re-raise HTTP exceptions

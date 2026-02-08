@@ -41,21 +41,31 @@ const ChatInterface = () => {
     setIsLoading(true);
 
     try {
-      // Send the message to the backend
-      const response = await apiClient.post('/chat/messages', {
-        message: message,
-        conversation_id: currentConversationId || null
+      // Get current user ID from localStorage
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        throw new Error('User not authenticated');
+      }
+      
+      const user = JSON.parse(userStr);
+      const userId = user.id;
+
+      // Send the message to the backend using the correct endpoint
+      // Since the API client already has /api as base URL, the endpoint is /api/chat/{userId}
+      const response = await apiClient.post(`/chat/${userId}`, {
+        messages: [{ role: "user", content: message }],
+        conversation: currentConversationId ? { id: currentConversationId } : null
       });
 
       // Update conversation ID if it's the first message
-      if (!currentConversationId) {
-        setCurrentConversationId(response.data.conversation_id);
+      if (!currentConversationId && response.data.conversation) {
+        setCurrentConversationId(response.data.conversation.id);
       }
 
       // Add bot response to the chat
       const botMessage = {
         id: Date.now() + 1,
-        message: response.data.response,
+        message: response.data.messages[0]?.content || "I received your message.",
         sender: "Todo Assistant",
         type: "received"
       };

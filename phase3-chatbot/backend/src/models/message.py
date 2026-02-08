@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from enum import Enum
 
@@ -24,7 +24,7 @@ class Message(SQLModel, table=True):
     # user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="user.id")  # Make optional
     role: MessageRole = Field(sa_column_kwargs={"default": "user"})
     content: str = Field(min_length=1, max_length=10000)
-    timestamp: datetime = Field(default=datetime.utcnow())
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     message_metadata: Optional[str] = Field(default=None)  # Renamed from metadata to avoid conflict
 
     # Relationships

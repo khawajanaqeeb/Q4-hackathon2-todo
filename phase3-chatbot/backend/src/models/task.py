@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from enum import Enum
 
@@ -26,8 +26,8 @@ class Task(SQLModel, table=True):
     due_date: Optional[datetime] = Field(default=None)
     completed: bool = Field(default=False)
     tags: Optional[str] = Field(default=None)  # Store as JSON string instead of array
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Relationship to user
     user: "User" = Relationship(back_populates="tasks")

@@ -11,12 +11,13 @@ class TodoBase(SQLModel):
     tags: Optional[str] = None  # JSON string of tags array
 
 class Todo(TodoBase, table=True):
+    __tablename__ = "todos"
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Foreign key
-    user_id: int = Field(foreign_key="user.id")
+    user_id: int = Field(foreign_key="users.id")
 
     # Relationships
     user: "User" = Relationship(back_populates="todos")

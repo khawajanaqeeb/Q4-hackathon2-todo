@@ -1,9 +1,9 @@
 """MCP tools for todo operations in the Phase 3 chatbot system."""
 from typing import Dict, Any, List, Optional
 from sqlmodel import Session, select
-from uuid import UUID
 from datetime import datetime
 from sqlalchemy import func
+from ..models.todo import Todo
 
 
 class TodoTools:
@@ -47,7 +47,7 @@ class TodoTools:
         self.db_session.refresh(new_todo)
 
         return {
-            "id": str(new_todo.id),
+            "id": int(new_todo.id),
             "title": new_todo.title,
             "description": new_todo.description,
             "priority": new_todo.priority,
@@ -103,7 +103,7 @@ class TodoTools:
         # Convert to dictionary format
         return [
             {
-                "id": str(todo.id),
+                "id": int(todo.id),
                 "title": todo.title,
                 "description": todo.description,
                 "priority": todo.priority,
@@ -132,7 +132,7 @@ class TodoTools:
             Dictionary with updated todo information
         """
         # Fetch the existing todo
-        todo = self.db_session.get(Todo, UUID(todo_id))
+        todo = self.db_session.get(Todo, int(todo_id))
 
         if not todo:
             raise ValueError(f"Todo with ID {todo_id} not found")
@@ -143,7 +143,7 @@ class TodoTools:
 
         # Track previous state for logging
         previous_state = {
-            "id": str(todo.id),
+            "id": int(todo.id),
             "title": todo.title,
             "description": todo.description,
             "priority": todo.priority,
@@ -164,7 +164,6 @@ class TodoTools:
             todo.due_date = due_date
 
         # Update timestamp
-        from datetime import datetime
         todo.updated_at = datetime.utcnow()
 
         # Commit changes
@@ -174,7 +173,7 @@ class TodoTools:
 
         # Return updated todo info
         updated_state = {
-            "id": str(todo.id),
+            "id": int(todo.id),
             "title": todo.title,
             "description": todo.description,
             "priority": todo.priority,
@@ -197,7 +196,7 @@ class TodoTools:
             Confirmation dictionary of the deletion
         """
         # Fetch the existing todo
-        todo = self.db_session.get(Todo, UUID(todo_id))
+        todo = self.db_session.get(Todo, int(todo_id))
 
         if not todo:
             raise ValueError(f"Todo with ID {todo_id} not found")
@@ -211,7 +210,7 @@ class TodoTools:
         self.db_session.commit()
 
         return {
-            "id": todo_id,
+            "id": int(todo_id),
             "status": "success",
             "message": f"Todo with ID {todo_id} deleted successfully"
         }
@@ -228,7 +227,7 @@ class TodoTools:
             Dictionary with updated todo information
         """
         # Fetch the existing todo
-        todo = self.db_session.get(Todo, UUID(todo_id))
+        todo = self.db_session.get(Todo, int(todo_id))
 
         if not todo:
             raise ValueError(f"Todo with ID {todo_id} not found")
@@ -251,7 +250,7 @@ class TodoTools:
 
         status_text = "completed" if completed else "marked as active"
         return {
-            "id": str(todo.id),
+            "id": int(todo.id),
             "title": todo.title,
             "completed": todo.completed,
             "status": "success",

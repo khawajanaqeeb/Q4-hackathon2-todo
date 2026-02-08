@@ -67,16 +67,25 @@ const ChatKitInterface: React.FC<ChatKitInterfaceProps> = ({
     setIsLoading(true);
 
     try {
-      // Call backend API to process the message
-      const response = await fetch('/api/chat/messages', {
+      // Get current user ID from localStorage
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        throw new Error('User not authenticated');
+      }
+      
+      const user = JSON.parse(userStr);
+      const userId = user.id;
+
+      // Call backend API to process the message using the correct endpoint
+      const response = await fetch(`/api/chat/${userId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({
-          message: newInputValue,
-          conversation_id: conversationId || null
+          messages: [{ role: 'user', content: newInputValue }],
+          conversation: conversationId ? { id: conversationId } : null
         })
       });
 
@@ -87,14 +96,14 @@ const ChatKitInterface: React.FC<ChatKitInterfaceProps> = ({
       const data = await response.json();
 
       // Update conversation ID if it's a new conversation
-      if (data.conversation_id && !conversationId) {
-        onConversationChange?.(data.conversation_id);
+      if (data.conversation?.id && !conversationId) {
+        onConversationChange?.(data.conversation.id);
       }
 
       // Add assistant response to UI
       const assistantMessage: Message = {
         id: `msg-${Date.now() + 1}`,
-        content: data.assistant_response.content || data.response || "I processed your request.",
+        content: data.messages[0]?.content || "I processed your request.",
         role: 'assistant',
         timestamp: new Date()
       };

@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from sqlmodel import Session, select
 from ..models.conversation import Conversation, MessageRole
@@ -23,8 +23,8 @@ class ChatService:
         conversation = Conversation(
             user_id=user_id,
             title=title,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             is_active=True
         )
         self.session.add(conversation)
@@ -51,7 +51,7 @@ class ChatService:
             conversation_id=conversation_id,
             role=role,
             content=content,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.now(timezone.utc)
         )
         self.session.add(message)
         self.session.commit()

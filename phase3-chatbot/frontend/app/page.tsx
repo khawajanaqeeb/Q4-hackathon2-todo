@@ -17,11 +17,10 @@ export default function HomePage() {
   const [newDescription, setNewDescription] = useState('');
   const [newPriority, setNewPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [selectedTag, setSelectedTag] = useState('');
+  const availableTags = ['work', 'personal', 'urgent', 'shopping', 'health', 'finance'];
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed'>('all');
   const [filterPriority, setFilterPriority] = useState<'all' | 'low' | 'medium' | 'high'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'priority' | 'title'>('date');
-
-  const availableTags = ['work', 'personal', 'urgent', 'shopping', 'health', 'finance'];
 
   useEffect(() => {
     if (user) {

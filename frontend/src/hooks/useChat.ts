@@ -118,7 +118,12 @@ const useChat = ({ userId, conversationId }: UseChatProps): UseChatResult => {
         )
       );
 
-      // The AI response will come through WebSocket, handled by the effect above
+      // Update conversation ID if it's a new conversation
+      if (response.conversation?.id && !conversationId) {
+        // Update conversation ID in the store if needed
+      }
+
+      // The AI response will come through WebSocket or in the response, handled by the effect above
     } catch (err) {
       setError((err as Error).message);
       console.error('Failed to send message:', err);

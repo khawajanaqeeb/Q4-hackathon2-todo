@@ -58,11 +58,21 @@ export interface UIState {
 
 // API Response types
 export interface ChatMessageResponse {
-  message: string;
-  conversation_id: string;
-  timestamp: string;
-  action_taken: string;
-  confirmation_message: string;
+  messages: Array<{
+    id?: string;
+    role: string;
+    content: string;
+    createdAt?: string;
+    updatedAt?: string;
+    metadata?: object;
+  }>;
+  conversation: {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    metadata?: object;
+  };
+  metadata?: object;
 }
 
 export interface ConversationSummary {

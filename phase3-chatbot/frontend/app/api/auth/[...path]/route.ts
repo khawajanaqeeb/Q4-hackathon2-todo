@@ -194,7 +194,10 @@ async function handleRequest(
       if (contentType.includes('application/x-www-form-urlencoded')) {
         const backendResponse = await fetch(backendUrl, {
           method,
-          headers: { 'Content-Type': contentType },
+          headers: { 
+            'Content-Type': contentType,
+            'Origin': BACKEND_URL  // Explicitly set origin for CORS
+          },
           body,
           credentials: 'include'  // Include cookies in the request
         });
@@ -202,6 +205,7 @@ async function handleRequest(
         if (!backendResponse.ok) {
           const errorData = await safeJsonParse(backendResponse).catch(() => null);
           const message = errorData?.error || errorData?.detail || 'Authentication failed';
+          console.error(`[Proxy] Public route error: ${message}`, { status: backendResponse.status, url: backendUrl });
           return createErrorResponse(message, backendResponse.status);
         }
 
@@ -225,6 +229,7 @@ async function handleRequest(
         if (!backendResponse.ok) {
           const errorData = await safeJsonParse(backendResponse).catch(() => null);
           const message = errorData?.error || errorData?.detail || 'Authentication failed';
+          console.error(`[Proxy] Public route error: ${message}`, { status: backendResponse.status, url: backendUrl });
           return createErrorResponse(message, backendResponse.status);
         }
 
@@ -381,7 +386,10 @@ async function handleRequest(
   }
 
   // Require token for other non-public routes
-  if (!token) return createErrorResponse('Unauthorized', 401);
+  if (!token) {
+    console.warn(`[Proxy] No auth token found for protected route: ${method} ${apiPath}`);
+    return createErrorResponse('Unauthorized', 401);
+  }
 
   try {
     let body: any = null;
@@ -394,8 +402,8 @@ async function handleRequest(
     // For non-auth routes, build the URL normally but ensure /api prefix for backend
     let backendUrl: string;
     if (apiPath.startsWith('/chat/')) {
-      // Chat routes go directly to /chat without /api prefix
-      backendUrl = `${BACKEND_URL}${apiPath}${searchParams}`;
+      // Chat routes go to /api/chat on the backend (add /api prefix to match backend mount point)
+      backendUrl = `${BACKEND_URL}/api${apiPath}${searchParams}`;
     } else {
       // All other routes go through /api prefix for the backend
       backendUrl = `${BACKEND_URL}/api${apiPath}${searchParams}`;
@@ -403,41 +411,10 @@ async function handleRequest(
 
     const backendResponse = await proxyToBackend(method, backendUrl, token, body, contentType);
 
-    // Handle redirects manually to preserve authorization headers
-    if (backendResponse.status >= 300 && backendResponse.status < 400) {
-      const redirectUrl = backendResponse.headers.get('Location');
-      if (redirectUrl) {
-        // Follow the redirect with the same authorization token
-        const redirectedResponse = await proxyToBackend(method, redirectUrl, token, body, contentType);
-
-        // Check if the redirected response is also a redirect (avoid infinite loops)
-        if (redirectedResponse.status >= 300 && redirectedResponse.status < 400) {
-          const secondRedirectUrl = redirectedResponse.headers.get('Location');
-          if (secondRedirectUrl && secondRedirectUrl !== redirectUrl) {
-            const finalResponse = await proxyToBackend(method, secondRedirectUrl, token, body, contentType);
-            if (!finalResponse.ok) {
-              const errorData = await safeJsonParse(finalResponse).catch(() => null);
-              const message = errorData?.error || errorData?.detail || 'API request failed';
-              return createErrorResponse(message, finalResponse.status);
-            }
-            const data = await safeJsonParse(finalResponse);
-            return NextResponse.json(data, { status: finalResponse.status });
-          }
-        }
-
-        if (!redirectedResponse.ok) {
-          const errorData = await safeJsonParse(redirectedResponse).catch(() => null);
-          const message = errorData?.error || errorData?.detail || 'API request failed';
-          return createErrorResponse(message, redirectedResponse.status);
-        }
-        const data = await safeJsonParse(redirectedResponse);
-        return NextResponse.json(data, { status: redirectedResponse.status });
-      }
-    }
-
     if (!backendResponse.ok) {
       const errorData = await safeJsonParse(backendResponse).catch(() => null);
       const message = errorData?.error || errorData?.detail || 'API request failed';
+      console.error(`[Proxy] API request failed: ${message}`, { status: backendResponse.status, url: backendUrl });
       return createErrorResponse(message, backendResponse.status);
     }
 

@@ -6,7 +6,7 @@ import {
   ConversationSummary,
 } from '@/types';
 
-const API_BASE_URL = process.env.REACT_APP_CHAT_API_URL || '/chat';
+const API_BASE_URL = process.env.REACT_APP_CHAT_API_URL || '/api/chat';
 
 class ChatApiService {
   private client: AxiosInstance;
@@ -50,8 +50,8 @@ class ChatApiService {
   async sendMessage(userId: string, message: string, conversationId?: string): Promise<ChatMessageResponse> {
     try {
       const response = await this.client.post<ChatMessageResponse>(`/${userId}`, {
-        message,
-        conversation_id: conversationId,
+        messages: [{ role: "user", content: message }],
+        conversation: conversationId ? { id: conversationId } : null
       });
       return response.data;
     } catch (error) {
