@@ -6,7 +6,7 @@ import { safeJsonParse, createErrorResponse } from '../../../../lib/api-utils';
  * Handles all auth and backend API proxying.
  */
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL!;
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const COOKIE_NAME = 'auth_token';
 const COOKIE_MAX_AGE = 60 * 30; // 30 minutes
 
@@ -140,7 +140,7 @@ async function proxyToBackend(
     method,
     headers,
     credentials: 'include', // Important: Include cookies in requests
-    redirect: 'manual' // Prevent automatic redirects to maintain auth headers
+    redirect: 'follow' // Follow same-origin redirects (e.g. FastAPI trailing-slash 307)
   };
 
   if (body && !['GET', 'DELETE'].includes(method)) {

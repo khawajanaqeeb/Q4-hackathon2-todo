@@ -10,6 +10,7 @@ interface Message {
 
 interface ChatInterfaceProps {
   userId: string;
+  onTaskChange?: () => void;
 }
 
 // Define the response type from the backend API
@@ -21,7 +22,9 @@ interface ChatApiResponse {
   confirmation_message: string;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
+const NON_TASK_ACTIONS = ['greeting', 'help', 'other', 'none', 'message_processed'];
+
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId, onTaskChange }) => {
   const { user } = useAuth();
   const [inputValue, setInputValue] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -115,6 +118,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
       };
 
       setMessages(prev => [...prev, aiMessage]);
+
+      // Refresh task list after any task-modifying action
+      // Use a small delay to ensure backend has committed the transaction
+      if (onTaskChange && !NON_TASK_ACTIONS.includes(response.action_taken)) {
+        setTimeout(() => onTaskChange(), 300);
+      }
     } catch (err) {
       setError('Failed to send message. Please try again.');
       console.error('Error sending message:', err);
@@ -129,15 +138,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto border rounded-lg shadow-sm bg-gray-800 text-white">
-      {/* Chat Header */}
-      <div className="bg-gray-900 px-4 py-3 border-b border-gray-700">
-        <h2 className="text-lg font-semibold text-white">AI Todo Assistant</h2>
-        <p className="text-sm text-gray-400">Manage your tasks with natural language</p>
-      </div>
-
+    <div className="flex flex-col h-full bg-gray-800 text-white">
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[400px] bg-gray-900">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-900">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-400">
             <div className="mb-4">
@@ -155,7 +158,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                className={`max-w-[90%] rounded-lg px-4 py-2 ${
                   message.role === 'user'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-700 text-white'
@@ -172,7 +175,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
 
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-gray-700 text-white rounded-lg px-4 py-2 max-w-[80%]">
+            <div className="bg-gray-700 text-white rounded-lg px-4 py-2 max-w-[90%]">
               <div className="flex items-center">
                 <span>Thinking</span>
                 <span className="ml-1 dots">
@@ -201,27 +204,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
       )}
 
       {/* Input Form */}
-      <form onSubmit={handleSubmit} className="border-t p-4 bg-gray-800">
+      <form onSubmit={handleSubmit} className="border-t border-gray-700 p-3 bg-gray-800">
         <div className="flex gap-2">
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Type your message here..."
-            className="flex-1 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white bg-gray-700 placeholder-gray-400"
+            placeholder="Type a message..."
+            className="flex-1 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white bg-gray-700 placeholder-gray-400"
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={isLoading || !inputValue.trim()}
-            className="bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-blue-600 text-white rounded-lg px-3 py-2 text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Send
           </button>
         </div>
-        <p className="text-xs text-gray-400 mt-2">
-          Examples: "Add a task to buy groceries", "Show me my tasks", "Mark task 1 as complete"
-        </p>
       </form>
     </div>
   );

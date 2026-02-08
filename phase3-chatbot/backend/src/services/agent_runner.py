@@ -176,13 +176,21 @@ class AgentRunner:
 
     async def _parse_intent_from_input(self, user_input: str) -> Dict[str, Any]:
         """Helper method to parse intent from input when assistants API fails."""
-        # Simplified intent parsing based on keywords
-        user_lower = user_input.lower()
+        user_lower = user_input.lower().strip()
+
+        # Detect greetings first
+        greeting_words = ["hi", "hello", "hey", "greetings", "howdy", "sup", "yo", "good morning", "good afternoon", "good evening"]
+        if any(user_lower == g or user_lower.startswith(g + " ") or user_lower.startswith(g + "!") or user_lower.startswith(g + ",") for g in greeting_words):
+            return {"intent": "greeting", "parameters": {}, "confidence": 0.95}
+
+        # Detect help/info requests
+        if any(word in user_lower for word in ["help", "what can you do", "how do i", "how to"]):
+            return {"intent": "help", "parameters": {}, "confidence": 0.9}
 
         intent = "other"
         if any(word in user_lower for word in ["create", "add", "new", "make"]):
             intent = "task_creation"
-        elif any(word in user_lower for word in ["list", "show", "view", "get"]):
+        elif any(word in user_lower for word in ["list", "show", "view", "get", "my task", "all task"]):
             intent = "task_listing"
         elif any(word in user_lower for word in ["complete", "done", "finish", "mark"]):
             intent = "task_completion"
@@ -190,26 +198,40 @@ class AgentRunner:
             intent = "task_update"
         elif any(word in user_lower for word in ["delete", "remove", "cancel"]):
             intent = "task_deletion"
+        elif any(word in user_lower for word in ["sort", "order", "arrange"]):
+            intent = "task_listing"
 
-        # Extract parameters using basic parsing
-        parameters = {"title": "", "description": "", "priority": "", "due_date": "", "task_id": ""}
-
-        # Extract title (simple approach - take the first noun phrase after action)
+        # Only include parameters that are actually extracted (no empty strings)
+        parameters = {}
         words = user_input.split()
-        if len(words) > 1:
-            # Simple heuristic to extract potential title
-            if intent == "task_creation":
-                # Look for words after action words
-                for i, word in enumerate(words):
-                    if word.lower() in ["create", "add", "make", "new"]:
-                        if i + 1 < len(words):
-                            parameters["title"] = " ".join(words[i+1:i+3])  # Take next 2 words
-                            break
+
+        if intent == "task_creation":
+            # Extract title: skip filler words after the action verb
+            filler_words = {"a", "an", "the", "new", "task", "todo", "to", "called", "named", "titled"}
+            action_words = {"create", "add", "make", "new"}
+            found_action = False
+            title_words = []
+            for word in words:
+                if not found_action:
+                    if word.lower() in action_words:
+                        found_action = True
+                    continue
+                if word.lower() in filler_words and not title_words:
+                    continue  # skip filler only before title starts
+                title_words.append(word)
+            if title_words:
+                parameters["title"] = " ".join(title_words)
+
+            # Extract priority if mentioned
+            if "high" in user_lower:
+                parameters["priority"] = "high"
+            elif "low" in user_lower:
+                parameters["priority"] = "low"
 
         return {
             "intent": intent,
             "parameters": parameters,
-            "confidence": 0.8  # Default confidence
+            "confidence": 0.8
         }
 
     async def _fallback_process_natural_language(self, user_input: str, conversation_context: list = None) -> Dict[str, Any]:
@@ -296,13 +318,14 @@ class AgentRunner:
                 "raw_response": user_input
             }
 
-    async def generate_response(self, user_input: str, intent_result: Dict[str, Any]) -> str:
+    async def generate_response(self, user_input: str, intent_result: Dict[str, Any], mcp_result: Dict[str, Any] = None) -> str:
         """
         Generate a natural language response based on the processed intent.
 
         Args:
             user_input: Original user input
             intent_result: Result from process_natural_language
+            mcp_result: Result from MCP tool invocation (if any)
 
         Returns:
             Natural language response for the user
@@ -311,27 +334,58 @@ class AgentRunner:
             return "I'm sorry, I couldn't understand your request. Could you please rephrase it?"
 
         intent = intent_result["parsed_command"]["intent"]
-        params = intent_result["parsed_command"]["parameters"]
+        params = intent_result["parsed_command"].get("parameters", {})
 
-        # Generate appropriate response based on intent
+        if intent == "greeting":
+            return "Hello! I'm your AI Todo Assistant. I can help you manage your tasks. Try saying things like:\n- \"Add a task to buy groceries\"\n- \"Show my tasks\"\n- \"Delete task <id>\"\n- \"Mark task <id> as complete\""
+
+        if intent == "help":
+            return "I can help you with the following:\n- Create tasks: \"Add a task to buy groceries\"\n- List tasks: \"Show my tasks\"\n- Complete tasks: \"Mark task <id> as done\"\n- Delete tasks: \"Delete task <id>\"\n- Update tasks: \"Update task <id> title to new title\""
+
         if intent == "task_creation":
-            if params.get("title"):
+            if mcp_result and mcp_result.get("success"):
+                result_data = mcp_result.get("result", {})
+                return result_data.get("message", f"Task '{params.get('title', '')}' created successfully!")
+            elif params.get("title"):
                 return f"I've created a task titled '{params['title']}'."
             else:
-                return "I understood you wanted to create a task, but I need a title for it."
+                return "I understood you wanted to create a task, but I need a title for it. Try: \"Add a task to buy groceries\""
+
         elif intent == "task_listing":
-            filter_by = params.get("filter", "all")
-            return f"Here are your {filter_by} tasks."
+            if mcp_result and mcp_result.get("success"):
+                result_data = mcp_result.get("result", {})
+                tasks = result_data.get("tasks", [])
+                count = result_data.get("count", len(tasks))
+                if count == 0:
+                    return "You don't have any tasks yet. Try adding one: \"Add a task to buy groceries\""
+                lines = [f"Here are your tasks ({count} total):\n"]
+                for i, task in enumerate(tasks, 1):
+                    status = "Done" if task.get("completed") else "Pending"
+                    priority = task.get("priority", "medium").capitalize()
+                    lines.append(f"{i}. [{status}] {task['title']} (Priority: {priority}, ID: {task['id'][:8]}...)")
+                return "\n".join(lines)
+            return "Here are your tasks."
+
         elif intent == "task_completion":
-            task_id = params.get("task_id", "specified")
-            return f"I've marked task {task_id} as complete."
+            if mcp_result and mcp_result.get("success"):
+                result_data = mcp_result.get("result", {})
+                return result_data.get("message", "Task marked as complete!")
+            return "I need a task ID to mark as complete. Try: \"Show my tasks\" first to see IDs."
+
         elif intent == "task_update":
+            if mcp_result and mcp_result.get("success"):
+                result_data = mcp_result.get("result", {})
+                return result_data.get("message", "Task updated successfully!")
             return "I've updated your task as requested."
+
         elif intent == "task_deletion":
-            task_id = params.get("task_id", "specified")
-            return f"I've deleted task {task_id}."
+            if mcp_result and mcp_result.get("success"):
+                result_data = mcp_result.get("result", {})
+                return result_data.get("message", "Task deleted successfully!")
+            return "I need a task ID to delete. Try: \"Show my tasks\" first to see IDs."
+
         else:
-            return "I processed your request, but I'm not sure what action was taken."
+            return f"I'm not sure what you mean by \"{user_input}\". I can help you manage tasks — try \"Add a task\", \"Show my tasks\", or say \"help\" for more options."
 
     async def run_agent(self, user_input: str, conversation_context: list = None) -> Dict[str, Any]:
         """
@@ -347,7 +401,7 @@ class AgentRunner:
         # Process the natural language
         intent_result = await self.process_natural_language(user_input, conversation_context)
 
-        # Generate a response
+        # Generate a response (mcp_result will be injected later by chat.py)
         response_text = await self.generate_response(user_input, intent_result)
 
         return {
@@ -356,3 +410,7 @@ class AgentRunner:
             "intent_result": intent_result,
             "action_taken": intent_result["parsed_command"]["intent"] if intent_result["success"] else "none"
         }
+
+    async def generate_response_with_mcp(self, user_input: str, intent_result: Dict[str, Any], mcp_result: Dict[str, Any]) -> str:
+        """Generate response including MCP tool results."""
+        return await self.generate_response(user_input, intent_result, mcp_result)

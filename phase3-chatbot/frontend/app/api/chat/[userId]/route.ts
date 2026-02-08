@@ -29,7 +29,8 @@ export async function POST(
       body: JSON.stringify({
         message: message,
         conversation_id: conversation_id
-      })
+      }),
+      redirect: 'follow'
     });
 
     if (!backendResponse.ok) {

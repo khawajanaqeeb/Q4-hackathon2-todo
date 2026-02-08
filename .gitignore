@@ -29,6 +29,7 @@ venv/
 ENV/
 env/
 .venv
+phase3-chatbot/backend/venv_linux/
 
 # Testing
 .pytest_cache/

@@ -15,207 +15,193 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  /* Dark mode (default) - Glassmorphic gradient background */
+  /* Dark mode (default) */
   body {
-    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 50%, #16213e 100%);
-    color: #ffffff;
-    position: relative;
+    background: #0f172a;
+    color: #e2e8f0;
   }
 
-  /* Animated gradient overlay for depth */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* Light mode - Beautiful gradient with glassmorphism */
+  /* Light mode */
   :root:not(.dark) body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-    color: #1f2937;
-  }
-
-  :root:not(.dark) body::before {
-    background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    background: #f1f5f9;
+    color: #1e293b;
   }
 }
 
 @layer components {
-  /* Premium card - Glassmorphism effect */
+  /* ── Cards ───────────────────────────────────────── */
   .premium-card {
-    @apply rounded-2xl shadow-2xl p-6 transition-all duration-300;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    @apply rounded-xl shadow-sm p-6 transition-all duration-200;
+    background: #1e293b;
+    border: 1px solid #334155;
   }
 
   :root:not(.dark) .premium-card {
-    background: rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   }
 
-  /* Blue accent button with glassmorphism */
-  .btn-primary {
-    @apply px-6 py-2.5 text-white font-medium rounded-xl transition-all duration-300 text-sm;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.8) 0%, rgba(139, 92, 246, 0.8) 100%);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
-  }
-
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(99, 102, 241, 0.4);
-  }
-
-  .btn-secondary {
-    @apply px-6 py-2.5 font-medium rounded-xl transition-all duration-300 text-sm;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: white;
-  }
-
-  .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.12);
-    transform: translateY(-2px);
-  }
-
-  :root:not(.dark) .btn-secondary {
-    background: rgba(255, 255, 255, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    color: #1f2937;
-  }
-
-  :root:not(.dark) .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.6);
-  }
-
-  .btn-danger {
-    @apply px-4 py-2 text-white font-medium rounded-xl transition-all duration-300 text-xs;
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.8) 0%, rgba(220, 38, 38, 0.8) 100%);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  .btn-danger:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
-  }
-
-  /* Input field with glassmorphism */
-  .input-dark {
-    @apply w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-300;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
-  }
-
-  .input-dark::placeholder {
-    color: rgba(255, 255, 255, 0.4);
-  }
-
-  .input-dark:focus {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.5);
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
-  }
-
-  :root:not(.dark) .input-dark {
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    color: #1f2937;
-  }
-
-  :root:not(.dark) .input-dark::placeholder {
-    color: rgba(31, 41, 55, 0.5);
-  }
-
-  :root:not(.dark) .input-dark:focus {
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(139, 92, 246, 0.6);
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
-  }
-
-  /* Stats card with glassmorphism */
+  /* ── Stat Cards ──────────────────────────────────── */
   .stat-card {
-    @apply rounded-xl p-5 transition-all duration-300;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    @apply rounded-xl p-5 transition-all duration-200;
+    background: #1e293b;
+    border: 1px solid #334155;
   }
 
   .stat-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.4);
-    transform: translateY(-4px);
-    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px #3b82f6;
   }
 
   :root:not(.dark) .stat-card {
-    background: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   }
 
   :root:not(.dark) .stat-card:hover {
-    background: rgba(255, 255, 255, 0.45);
-    border: 1px solid rgba(139, 92, 246, 0.5);
-    box-shadow: 0 8px 30px rgba(139, 92, 246, 0.2);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px #3b82f6;
   }
 
-  /* Task card with glassmorphism */
+  /* ── Task Cards ──────────────────────────────────── */
   .task-card {
-    @apply rounded-xl p-5 transition-all duration-300;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    @apply rounded-xl p-5 transition-all duration-200;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-left: 3px solid #3b82f6;
   }
 
   .task-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.4);
-    transform: translateY(-4px);
-    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+    border-color: #475569;
+    border-left-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   :root:not(.dark) .task-card {
-    background: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #3b82f6;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   }
 
   :root:not(.dark) .task-card:hover {
-    background: rgba(255, 255, 255, 0.45);
-    border: 1px solid rgba(139, 92, 246, 0.5);
-    box-shadow: 0 8px 30px rgba(139, 92, 246, 0.2);
+    border-color: #cbd5e1;
+    border-left-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Completed task card */
+  .task-card-completed {
+    @apply rounded-xl p-5 transition-all duration-200 opacity-60;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-left: 3px solid #22c55e;
+  }
+
+  :root:not(.dark) .task-card-completed {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #22c55e;
+    box-shadow: none;
+    opacity: 0.7;
+  }
+
+  /* ── Buttons ─────────────────────────────────────── */
+  .btn-primary {
+    @apply px-5 py-2 text-white font-medium rounded-lg transition-all duration-200 text-sm;
+    background: #3b82f6;
+    border: none;
+  }
+
+  .btn-primary:hover {
+    background: #2563eb;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+  }
+
+  :root:not(.dark) .btn-primary {
+    background: #3b82f6;
+    color: #ffffff;
+  }
+
+  :root:not(.dark) .btn-primary:hover {
+    background: #2563eb;
+  }
+
+  .btn-secondary {
+    @apply px-5 py-2 font-medium rounded-lg transition-all duration-200 text-sm;
+    background: #334155;
+    border: 1px solid #475569;
+    color: #e2e8f0;
+  }
+
+  .btn-secondary:hover {
+    background: #475569;
+  }
+
+  :root:not(.dark) .btn-secondary {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+  }
+
+  :root:not(.dark) .btn-secondary:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+  }
+
+  .btn-danger {
+    @apply px-4 py-2 text-white font-medium rounded-lg transition-all duration-200 text-xs;
+    background: #ef4444;
+    border: none;
+  }
+
+  .btn-danger:hover {
+    background: #dc2626;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  }
+
+  /* ── Inputs ──────────────────────────────────────── */
+  .input-dark {
+    @apply w-full px-4 py-2.5 rounded-lg text-sm outline-none transition-all duration-200;
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+  }
+
+  .input-dark::placeholder {
+    color: #64748b;
+  }
+
+  .input-dark:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+
+  :root:not(.dark) .input-dark {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+  }
+
+  :root:not(.dark) .input-dark::placeholder {
+    color: #94a3b8;
+  }
+
+  :root:not(.dark) .input-dark:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  }
+
+  /* Select dropdown fix for dark mode */
+  .input-dark option {
+    background: #1e293b;
+    color: #e2e8f0;
+  }
+
+  :root:not(.dark) .input-dark option {
+    background: #ffffff;
+    color: #1e293b;
   }
 }

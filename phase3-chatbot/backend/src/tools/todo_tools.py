@@ -40,13 +40,17 @@ class TodoTools:
             if not user:
                 return {"success": False, "error": "User not found"}
 
-            # Create new task
+            # Create new task — guard against empty strings from chatbot
+            priority_str = params.get("priority") or "medium"
+            description = params.get("description") or None
+            due_date_str = params.get("due_date") or None
+
             task = Task(
                 user_id=user_id,
                 title=params.get("title"),
-                description=params.get("description"),
-                priority=params.get("priority", "medium"),
-                due_date=params.get("due_date")
+                description=description,
+                priority=PriorityLevel(priority_str) if priority_str in ("low", "medium", "high") else PriorityLevel.MEDIUM,
+                due_date=due_date_str,
             )
 
             self.session.add(task)
@@ -82,16 +86,16 @@ class TodoTools:
             # Build query
             query = select(Task).where(Task.user_id == user_id)
 
-            # Apply status filter
-            status_filter = params.get("status", "all")
+            # Apply status filter (guard against empty strings)
+            status_filter = params.get("status") or "all"
             if status_filter != "all":
                 completed = status_filter == "completed"
                 query = query.where(Task.completed == completed)
 
-            # Apply priority filter
-            priority_filter = params.get("priority", "all")
-            if priority_filter != "all":
-                query = query.where(Task.priority == priority_filter)
+            # Apply priority filter (guard against empty strings)
+            priority_filter = params.get("priority") or "all"
+            if priority_filter != "all" and priority_filter in ("low", "medium", "high"):
+                query = query.where(Task.priority == PriorityLevel(priority_filter))
 
             # Apply limit
             limit = params.get("limit", 10)
@@ -151,14 +155,14 @@ class TodoTools:
             if not task or task.user_id != user_id:
                 return {"success": False, "error": "Task not found or does not belong to user"}
 
-            # Update fields if provided
-            if "title" in params and params["title"] is not None:
+            # Update fields if provided (guard against empty strings)
+            if params.get("title"):
                 task.title = params["title"]
-            if "description" in params and params["description"] is not None:
+            if params.get("description"):
                 task.description = params["description"]
-            if "priority" in params and params["priority"] is not None:
-                task.priority = params["priority"]
-            if "due_date" in params and params["due_date"] is not None:
+            if params.get("priority") and params["priority"] in ("low", "medium", "high"):
+                task.priority = PriorityLevel(params["priority"])
+            if params.get("due_date"):
                 task.due_date = params["due_date"]
             if "completed" in params and params["completed"] is not None:
                 task.completed = params["completed"]
@@ -286,16 +290,16 @@ class TodoTools:
                 )
             )
 
-            # Apply status filter
-            status_filter = params.get("status", "all")
+            # Apply status filter (guard against empty strings)
+            status_filter = params.get("status") or "all"
             if status_filter != "all":
                 completed = status_filter == "completed"
                 search_query = search_query.where(Task.completed == completed)
 
-            # Apply priority filter
-            priority_filter = params.get("priority", "all")
-            if priority_filter != "all":
-                search_query = search_query.where(Task.priority == priority_filter)
+            # Apply priority filter (guard against empty strings)
+            priority_filter = params.get("priority") or "all"
+            if priority_filter != "all" and priority_filter in ("low", "medium", "high"):
+                search_query = search_query.where(Task.priority == PriorityLevel(priority_filter))
 
             tasks = self.session.exec(search_query).all()
 

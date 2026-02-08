@@ -112,6 +112,8 @@ async def send_message(
 
         # If the agent identified a task operation, process it via MCP
         intent = agent_result["action_taken"]
+        mcp_result = None
+
         if intent in ["task_creation", "task_listing", "task_update", "task_deletion", "task_completion"]:
             # Map the intent to an appropriate MCP tool
             tool_mapping = {
@@ -123,7 +125,9 @@ async def send_message(
             }
 
             tool_name = tool_mapping.get(intent, "todo_operation")
-            params = agent_result["intent_result"]["parsed_command"]["parameters"] if "intent_result" in agent_result and "parsed_command" in agent_result["intent_result"] else {}
+            params = {}
+            if "intent_result" in agent_result and "parsed_command" in agent_result["intent_result"]:
+                params = agent_result["intent_result"]["parsed_command"].get("parameters", {})
 
             mcp_result = await mcp_service.invoke_tool(
                 tool_name=tool_name,
@@ -131,10 +135,16 @@ async def send_message(
                 user_id=conversation_uuid
             )
 
-            if not mcp_result["success"]:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"MCP operation failed: {mcp_result.get('error', 'Unknown error')}"
+            if not mcp_result.get("success"):
+                # Don't crash — include error in the response instead
+                error_msg = mcp_result.get("error", "Unknown error")
+                agent_result["response"] = f"Sorry, I couldn't complete the operation: {error_msg}"
+            else:
+                # Regenerate response with MCP results included
+                agent_result["response"] = await agent_runner.generate_response_with_mcp(
+                    request.message,
+                    agent_result["intent_result"],
+                    mcp_result
                 )
 
         # Process the message using the chat service, passing the agent's AI response

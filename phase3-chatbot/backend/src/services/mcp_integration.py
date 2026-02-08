@@ -184,15 +184,27 @@ class McpIntegrationService:
                     select(McpTool).where(McpTool.is_active == True)
                 ).all()
 
+                from ..tools.todo_tools import TodoTools
+                todo_tools = TodoTools(self.session)
+                handler_map = {
+                    "create_task": todo_tools.create_task_tool,
+                    "list_tasks": todo_tools.list_tasks_tool,
+                    "update_task": todo_tools.update_task_tool,
+                    "complete_task": todo_tools.complete_task_tool,
+                    "delete_task": todo_tools.delete_task_tool,
+                    "search_tasks": todo_tools.search_tasks_tool,
+                    "get_task_details": todo_tools.get_task_details_tool,
+                }
+
                 for db_tool in db_tools:
-                    # For now, we'll create a placeholder handler since the actual handlers
-                    # are not stored in the database, only the registration information
-                    # In a real implementation, we'd need to map to the actual functions
-                    self.tools_registry[db_tool.name] = {
+                    entry = {
                         'description': db_tool.description,
                         'provider': db_tool.provider,
-                        'tool_schema': db_tool.tool_schema
+                        'tool_schema': db_tool.tool_schema,
                     }
+                    if db_tool.name in handler_map:
+                        entry['handler'] = handler_map[db_tool.name]
+                    self.tools_registry[db_tool.name] = entry
 
             except Exception as e:
                 # If tool_schema column doesn't exist, query without it
@@ -410,7 +422,13 @@ class McpIntegrationService:
                     }
 
             # Execute the tool handler
-            handler = tool_info['handler']
+            handler = tool_info.get('handler')
+            if handler is None:
+                return {
+                    "success": False,
+                    "error": f"Tool '{tool_name}' has no handler registered",
+                    "result": None
+                }
             result = await handler(parameters, api_key, user_id)
 
             # Calculate response time
