@@ -135,9 +135,17 @@ async def send_message(
                 user_id=conversation_uuid
             )
 
+            # Check both outer success (tool invocation) and inner success (operation result)
+            inner_result = mcp_result.get("result", {}) if mcp_result else {}
+            inner_success = inner_result.get("success", False) if isinstance(inner_result, dict) else False
+
             if not mcp_result.get("success"):
-                # Don't crash — include error in the response instead
+                # Tool invocation failed entirely
                 error_msg = mcp_result.get("error", "Unknown error")
+                agent_result["response"] = f"Sorry, I couldn't complete the operation: {error_msg}"
+            elif not inner_success:
+                # Tool was invoked but the operation failed (e.g., task_id missing, task not found)
+                error_msg = inner_result.get("error", "Unknown error") if isinstance(inner_result, dict) else "Unknown error"
                 agent_result["response"] = f"Sorry, I couldn't complete the operation: {error_msg}"
             else:
                 # Regenerate response with MCP results included

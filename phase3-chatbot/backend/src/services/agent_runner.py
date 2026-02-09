@@ -68,7 +68,7 @@ class AgentRunner:
                                                     "description": {"type": "string", "description": "task description if applicable"},
                                                     "priority": {"type": "string", "enum": ["high", "medium", "low"], "description": "priority level"},
                                                     "due_date": {"type": "string", "description": "due date in YYYY-MM-DD format"},
-                                                    "task_id": {"type": "string", "description": "task ID if applicable"},
+                                                    "task_id": {"type": "integer", "description": "task ID if applicable"},
                                                     "filter": {"type": "string", "enum": ["status", "priority", "tag", "all"], "description": "filter type for listing"},
                                                     "value": {"type": "string", "description": "filter value"}
                                                 },
@@ -187,14 +187,20 @@ class AgentRunner:
         if any(word in user_lower for word in ["help", "what can you do", "how do i", "how to"]):
             return {"intent": "help", "parameters": {}, "confidence": 0.9}
 
+        # Determine if this is a question (starts with "what", "which", etc.)
+        is_question = user_lower.startswith(("what", "which", "how many"))
+
         intent = "other"
-        if any(word in user_lower for word in ["create", "add", "new", "make"]):
+        if is_question and any(word in user_lower for word in ["completed", "done", "pending", "task", "todo", "left", "remaining"]):
+            # "What have I completed?", "What's pending?", "What tasks do I have?"
+            intent = "task_listing"
+        elif any(word in user_lower for word in ["create", "add", "new", "make", "remember"]):
             intent = "task_creation"
-        elif any(word in user_lower for word in ["list", "show", "view", "get", "my task", "all task"]):
+        elif any(word in user_lower for word in ["list", "show", "view", "get", "my task", "all task", "pending"]):
             intent = "task_listing"
         elif any(word in user_lower for word in ["complete", "done", "finish", "mark"]):
             intent = "task_completion"
-        elif any(word in user_lower for word in ["update", "change", "modify", "edit"]):
+        elif any(word in user_lower for word in ["update", "change", "modify", "edit", "rename"]):
             intent = "task_update"
         elif any(word in user_lower for word in ["delete", "remove", "cancel"]):
             intent = "task_deletion"
@@ -207,8 +213,8 @@ class AgentRunner:
 
         if intent == "task_creation":
             # Extract title: skip filler words after the action verb
-            filler_words = {"a", "an", "the", "new", "task", "todo", "to", "called", "named", "titled"}
-            action_words = {"create", "add", "make", "new"}
+            filler_words = {"a", "an", "the", "new", "task", "todo", "to", "called", "named", "titled", "need", "i"}
+            action_words = {"create", "add", "make", "new", "remember"}
             found_action = False
             title_words = []
             for word in words:
@@ -227,6 +233,59 @@ class AgentRunner:
                 parameters["priority"] = "high"
             elif "low" in user_lower:
                 parameters["priority"] = "low"
+
+        elif intent == "task_listing":
+            # Extract status filter from natural language
+            if "pending" in user_lower or "remaining" in user_lower or "left" in user_lower or "incomplete" in user_lower:
+                parameters["status"] = "pending"
+            elif "completed" in user_lower or "done" in user_lower or "finished" in user_lower:
+                parameters["status"] = "completed"
+
+        elif intent in ("task_deletion", "task_completion", "task_update"):
+            # Extract task_id: look for integer ID patterns
+            import re
+            # Match an integer (1 or more digits), typically preceded by "task" or "id"
+            id_pattern = re.compile(r'\b(\d+)\b')
+            id_match = id_pattern.search(user_input)
+            if id_match:
+                parameters["task_id"] = id_match.group(1)
+            else:
+                # Fallback: extract remaining words as title identifier for title-based resolution
+                action_words_set = {"delete", "remove", "cancel", "complete", "done", "finish", "mark",
+                                    "update", "change", "modify", "edit", "rename"}
+                filler_set = {"the", "a", "an", "task", "todo", "my", "as", "is"}
+                title_words = []
+                found_action = False
+                # For update intent, extract title of task to find (before "to" keyword)
+                for word in words:
+                    if not found_action:
+                        if word.lower() in action_words_set:
+                            found_action = True
+                        continue
+                    if word.lower() in filler_set and not title_words:
+                        continue
+                    # For update: stop at "to" keyword (new title comes after)
+                    if intent == "task_update" and word.lower() == "to" and title_words:
+                        break
+                    title_words.append(word)
+                if title_words:
+                    parameters["task_id"] = " ".join(title_words)
+
+            # Gap 4: For task_update, extract new title from "to <new title>" or quoted string
+            if intent == "task_update":
+                # Try quoted string first: 'new title' or "new title"
+                quoted_match = re.search(r"""['"](.+?)['"]""", user_input)
+                if quoted_match:
+                    parameters["title"] = quoted_match.group(1)
+                else:
+                    # Extract text after "to" keyword (but not "to" that's part of task name)
+                    # Look for pattern: <action> <task identifier> to <new title>
+                    to_pattern = re.search(r'\bto\s+(.+)$', user_input, re.IGNORECASE)
+                    if to_pattern:
+                        new_title = to_pattern.group(1).strip()
+                        # Don't treat filler phrases as titles
+                        if new_title and new_title.lower() not in ("done", "complete", "completed"):
+                            parameters["title"] = new_title
 
         return {
             "intent": intent,
@@ -342,46 +401,60 @@ class AgentRunner:
         if intent == "help":
             return "I can help you with the following:\n- Create tasks: \"Add a task to buy groceries\"\n- List tasks: \"Show my tasks\"\n- Complete tasks: \"Mark task <id> as done\"\n- Delete tasks: \"Delete task <id>\"\n- Update tasks: \"Update task <id> title to new title\""
 
+        # Check inner result success (mcp_result wraps the tool result)
+        inner_result = mcp_result.get("result", {}) if mcp_result else {}
+        inner_success = inner_result.get("success", False) if isinstance(inner_result, dict) else False
+
         if intent == "task_creation":
-            if mcp_result and mcp_result.get("success"):
-                result_data = mcp_result.get("result", {})
-                return result_data.get("message", f"Task '{params.get('title', '')}' created successfully!")
+            if mcp_result and mcp_result.get("success") and inner_success:
+                return inner_result.get("message", f"Task '{params.get('title', '')}' created successfully!")
+            elif mcp_result and mcp_result.get("success") and not inner_success:
+                error = inner_result.get("error", "Unknown error")
+                return f"Sorry, I couldn't create the task: {error}"
             elif params.get("title"):
                 return f"I've created a task titled '{params['title']}'."
             else:
                 return "I understood you wanted to create a task, but I need a title for it. Try: \"Add a task to buy groceries\""
 
         elif intent == "task_listing":
-            if mcp_result and mcp_result.get("success"):
-                result_data = mcp_result.get("result", {})
-                tasks = result_data.get("tasks", [])
-                count = result_data.get("count", len(tasks))
+            if mcp_result and mcp_result.get("success") and inner_success:
+                tasks = inner_result.get("tasks", [])
+                count = inner_result.get("count", len(tasks))
                 if count == 0:
                     return "You don't have any tasks yet. Try adding one: \"Add a task to buy groceries\""
                 lines = [f"Here are your tasks ({count} total):\n"]
                 for i, task in enumerate(tasks, 1):
                     status = "Done" if task.get("completed") else "Pending"
                     priority = task.get("priority", "medium").capitalize()
-                    lines.append(f"{i}. [{status}] {task['title']} (Priority: {priority}, ID: {task['id'][:8]}...)")
+                    lines.append(f"{i}. [{status}] {task['title']} (Priority: {priority}, ID: {task['id']})")
                 return "\n".join(lines)
+            elif mcp_result and mcp_result.get("success") and not inner_success:
+                error = inner_result.get("error", "Unknown error")
+                return f"Sorry, I couldn't list your tasks: {error}"
             return "Here are your tasks."
 
         elif intent == "task_completion":
-            if mcp_result and mcp_result.get("success"):
-                result_data = mcp_result.get("result", {})
-                return result_data.get("message", "Task marked as complete!")
+            if mcp_result and mcp_result.get("success") and inner_success:
+                return inner_result.get("message", "Task marked as complete!")
+            elif mcp_result and mcp_result.get("success") and not inner_success:
+                error = inner_result.get("error", "Unknown error")
+                return f"Sorry, I couldn't complete the task: {error}. Try: \"Show my tasks\" first to see IDs."
             return "I need a task ID to mark as complete. Try: \"Show my tasks\" first to see IDs."
 
         elif intent == "task_update":
-            if mcp_result and mcp_result.get("success"):
-                result_data = mcp_result.get("result", {})
-                return result_data.get("message", "Task updated successfully!")
+            if mcp_result and mcp_result.get("success") and inner_success:
+                return inner_result.get("message", "Task updated successfully!")
+            elif mcp_result and mcp_result.get("success") and not inner_success:
+                error = inner_result.get("error", "Unknown error")
+                return f"Sorry, I couldn't update the task: {error}"
             return "I've updated your task as requested."
 
         elif intent == "task_deletion":
-            if mcp_result and mcp_result.get("success"):
-                result_data = mcp_result.get("result", {})
-                return result_data.get("message", "Task deleted successfully!")
+            if mcp_result and mcp_result.get("success") and inner_success:
+                return inner_result.get("message", "Task deleted successfully!")
+            elif mcp_result and mcp_result.get("success") and not inner_success:
+                error = inner_result.get("error", "Unknown error")
+                return f"Sorry, I couldn't delete the task: {error}. Try: \"Show my tasks\" first to see IDs."
             return "I need a task ID to delete. Try: \"Show my tasks\" first to see IDs."
 
         else:

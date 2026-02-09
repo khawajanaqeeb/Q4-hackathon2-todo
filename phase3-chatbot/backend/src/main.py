@@ -117,7 +117,7 @@ def register_todo_tools():
                                 "type": "object",
                                 "properties": {
                                     "user_id": {"type": "string", "description": "ID of the user whose task to update"},
-                                    "task_id": {"type": "string", "description": "ID of the task to update"},
+                                    "task_id": {"type": "integer", "description": "ID of the task to update"},
                                     "title": {"type": "string", "description": "New title for the task"},
                                     "description": {"type": "string", "description": "New description for the task"},
                                     "priority": {"type": "string", "enum": ["low", "medium", "high"]},
@@ -134,7 +134,7 @@ def register_todo_tools():
                                 "type": "object",
                                 "properties": {
                                     "user_id": {"type": "string", "description": "ID of the user whose task to complete"},
-                                    "task_id": {"type": "string", "description": "ID of the task to complete"}
+                                    "task_id": {"type": "integer", "description": "ID of the task to complete"}
                                 },
                                 "required": ["user_id", "task_id"]
                             }
@@ -146,7 +146,7 @@ def register_todo_tools():
                                 "type": "object",
                                 "properties": {
                                     "user_id": {"type": "string", "description": "ID of the user whose task to delete"},
-                                    "task_id": {"type": "string", "description": "ID of the task to delete"}
+                                    "task_id": {"type": "integer", "description": "ID of the task to delete"}
                                 },
                                 "required": ["user_id", "task_id"]
                             }
@@ -172,7 +172,7 @@ def register_todo_tools():
                                 "type": "object",
                                 "properties": {
                                     "user_id": {"type": "string", "description": "ID of the user whose task to get details for"},
-                                    "task_id": {"type": "string", "description": "ID of the task to get details for"}
+                                    "task_id": {"type": "integer", "description": "ID of the task to get details for"}
                                 },
                                 "required": ["user_id", "task_id"]
                             }

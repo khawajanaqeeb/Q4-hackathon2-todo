@@ -116,7 +116,7 @@ class TodoMcpServer:
                     "type": "object",
                     "properties": {
                         "user_id": {"type": "string", "description": "ID of the user whose task to update"},
-                        "task_id": {"type": "string", "description": "ID of the task to update"},
+                        "task_id": {"type": "integer", "description": "ID of the task to update"},
                         "title": {"type": "string", "description": "New title for the task"},
                         "description": {"type": "string", "description": "New description for the task"},
                         "priority": {"type": "string", "enum": ["low", "medium", "high"]},
@@ -138,7 +138,7 @@ class TodoMcpServer:
                     "type": "object",
                     "properties": {
                         "user_id": {"type": "string", "description": "ID of the user whose task to complete"},
-                        "task_id": {"type": "string", "description": "ID of the task to complete"}
+                        "task_id": {"type": "integer", "description": "ID of the task to complete"}
                     },
                     "required": ["user_id", "task_id"]
                 }
@@ -155,7 +155,7 @@ class TodoMcpServer:
                     "type": "object",
                     "properties": {
                         "user_id": {"type": "string", "description": "ID of the user whose task to delete"},
-                        "task_id": {"type": "string", "description": "ID of the task to delete"}
+                        "task_id": {"type": "integer", "description": "ID of the task to delete"}
                     },
                     "required": ["user_id", "task_id"]
                 }
@@ -263,7 +263,7 @@ class TodoMcpServer:
                 return {"error": "User not found", "success": False}
 
             # Get task
-            task = session.get(Task, UUID(validated_params.task_id))
+            task = session.get(Task, int(validated_params.task_id))
             if not task or task.user_id != UUID(validated_params.user_id):
                 return {"error": "Task not found or does not belong to user", "success": False}
 
@@ -301,7 +301,7 @@ class TodoMcpServer:
                 return {"error": "User not found", "success": False}
 
             # Get task
-            task = session.get(Task, UUID(validated_params.task_id))
+            task = session.get(Task, int(validated_params.task_id))
             if not task or task.user_id != UUID(validated_params.user_id):
                 return {"error": "Task not found or does not belong to user", "success": False}
 
@@ -328,7 +328,7 @@ class TodoMcpServer:
                 return {"error": "User not found", "success": False}
 
             # Get task
-            task = session.get(Task, UUID(validated_params.task_id))
+            task = session.get(Task, int(validated_params.task_id))
             if not task or task.user_id != UUID(validated_params.user_id):
                 return {"error": "Task not found or does not belong to user", "success": False}
 

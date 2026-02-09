@@ -22,6 +22,45 @@ class TodoTools:
         """
         self.session = session
 
+    def _resolve_task_id(self, task_id_str: str, user_id: UUID) -> Optional[Task]:
+        """Resolve a task by integer ID for the given user."""
+        try:
+            task_id = int(task_id_str)
+            task = self.session.get(Task, task_id)
+            if task and task.user_id == user_id:
+                return task
+        except (ValueError, TypeError):
+            pass
+        return None
+
+    def _resolve_task_by_title_or_id(self, identifier: str, user_id: UUID) -> Optional[Task]:
+        """Resolve a task by integer ID or case-insensitive title search.
+
+        Returns a single Task, or None if not found or ambiguous (multiple title matches).
+        """
+        # Try integer ID first
+        task = self._resolve_task_id(identifier, user_id)
+        if task:
+            return task
+
+        # Fallback: case-insensitive title search
+        query = select(Task).where(Task.user_id == user_id)
+        tasks = self.session.exec(query).all()
+        identifier_lower = identifier.lower()
+
+        # Exact title match (case-insensitive)
+        exact = [t for t in tasks if t.title and t.title.lower() == identifier_lower]
+        if len(exact) == 1:
+            return exact[0]
+
+        # Substring / contains match
+        partial = [t for t in tasks if t.title and identifier_lower in t.title.lower()]
+        if len(partial) == 1:
+            return partial[0]
+
+        # Ambiguous or not found
+        return None
+
     async def create_task_tool(self, params: Dict[str, Any], api_key: str, user_id: UUID) -> Dict[str, Any]:
         """
         Create a new task tool implementation
@@ -60,6 +99,8 @@ class TodoTools:
             return {
                 "success": True,
                 "task_id": str(task.id),
+                "status": "created",
+                "title": task.title,
                 "message": f"Task '{task.title}' created successfully"
             }
         except Exception as e:
@@ -149,11 +190,11 @@ class TodoTools:
             # Get task
             task_id_str = params.get("task_id")
             if not task_id_str:
-                return {"success": False, "error": "task_id is required"}
+                return {"success": False, "error": "task_id is required. Please provide a task ID. Use 'show my tasks' to see available IDs."}
 
-            task = self.session.get(Task, UUID(task_id_str))
-            if not task or task.user_id != user_id:
-                return {"success": False, "error": "Task not found or does not belong to user"}
+            task = self._resolve_task_by_title_or_id(task_id_str, user_id)
+            if not task:
+                return {"success": False, "error": f"Task '{task_id_str}' not found. Use 'show my tasks' to see available IDs."}
 
             # Update fields if provided (guard against empty strings)
             if params.get("title"):
@@ -175,6 +216,9 @@ class TodoTools:
 
             return {
                 "success": True,
+                "task_id": str(task.id),
+                "status": "updated",
+                "title": task.title,
                 "message": f"Task '{task.title}' updated successfully"
             }
         except Exception as e:
@@ -201,11 +245,11 @@ class TodoTools:
             # Get task
             task_id_str = params.get("task_id")
             if not task_id_str:
-                return {"success": False, "error": "task_id is required"}
+                return {"success": False, "error": "task_id is required. Please provide a task ID. Use 'show my tasks' to see available IDs."}
 
-            task = self.session.get(Task, UUID(task_id_str))
-            if not task or task.user_id != user_id:
-                return {"success": False, "error": "Task not found or does not belong to user"}
+            task = self._resolve_task_by_title_or_id(task_id_str, user_id)
+            if not task:
+                return {"success": False, "error": f"Task '{task_id_str}' not found. Use 'show my tasks' to see available IDs."}
 
             task.completed = True
             task.updated_at = datetime.utcnow()
@@ -216,6 +260,9 @@ class TodoTools:
 
             return {
                 "success": True,
+                "task_id": str(task.id),
+                "status": "completed",
+                "title": task.title,
                 "message": f"Task '{task.title}' marked as completed"
             }
         except Exception as e:
@@ -242,18 +289,23 @@ class TodoTools:
             # Get task
             task_id_str = params.get("task_id")
             if not task_id_str:
-                return {"success": False, "error": "task_id is required"}
+                return {"success": False, "error": "task_id is required. Please provide a task ID. Use 'show my tasks' to see available IDs."}
 
-            task = self.session.get(Task, UUID(task_id_str))
-            if not task or task.user_id != user_id:
-                return {"success": False, "error": "Task not found or does not belong to user"}
+            task = self._resolve_task_by_title_or_id(task_id_str, user_id)
+            if not task:
+                return {"success": False, "error": f"Task '{task_id_str}' not found. Use 'show my tasks' to see available IDs."}
 
+            task_title = task.title
+            task_id_value = str(task.id)
             self.session.delete(task)
             self.session.commit()
 
             return {
                 "success": True,
-                "message": "Task deleted successfully"
+                "task_id": task_id_value,
+                "status": "deleted",
+                "title": task_title,
+                "message": f"Task '{task_title}' deleted successfully"
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -349,11 +401,11 @@ class TodoTools:
             # Get task
             task_id_str = params.get("task_id")
             if not task_id_str:
-                return {"success": False, "error": "task_id is required"}
+                return {"success": False, "error": "task_id is required. Please provide a task ID. Use 'show my tasks' to see available IDs."}
 
-            task = self.session.get(Task, UUID(task_id_str))
-            if not task or task.user_id != user_id:
-                return {"success": False, "error": "Task not found or does not belong to user"}
+            task = self._resolve_task_id(task_id_str, user_id)
+            if not task:
+                return {"success": False, "error": f"Task with ID '{task_id_str}' not found. Use 'show my tasks' to see available IDs."}
 
             task_detail = {
                 "id": str(task.id),

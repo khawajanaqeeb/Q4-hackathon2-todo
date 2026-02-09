@@ -61,14 +61,14 @@ class ChatService:
     def get_conversation_messages(self, conversation_id: uuid.UUID) -> list[Message]:
         """Get all messages for a conversation."""
         messages = self.session.exec(
-            select(Message).where(Message.conversation_id == conversation_id)
+            select(Message).where(Message.conversation_id == conversation_id).order_by(Message.timestamp)
         ).all()
         return messages
 
     def get_user_conversations(self, user_id: uuid.UUID) -> list[Conversation]:
         """Get all conversations for a user."""
         conversations = self.session.exec(
-            select(Conversation).where(Conversation.user_id == user_id)
+            select(Conversation).where(Conversation.user_id == user_id).order_by(Conversation.updated_at.desc())
         ).all()
         return conversations
 

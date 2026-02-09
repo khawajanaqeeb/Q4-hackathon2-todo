@@ -72,11 +72,39 @@ class RealOpenAiAgentsSdk:
         try:
             # Check if OpenAI is available and configured
             if not self.client:
-                # Fallback response when OpenAI is not available
-                return {
-                    "response": f"I received your message: '{message}'. However, the OpenAI service is not properly configured. Please ensure the OpenAI API key is set in the environment.",
-                    "success": True
-                }
+                # Fallback: use keyword-based intent parsing and MCP tools
+                from .services.agent_runner import AgentRunner
+                agent_runner = AgentRunner()
+                agent_result = await agent_runner.run_agent(message)
+
+                if not agent_result.get("success"):
+                    return {"response": "Sorry, I couldn't understand your request.", "success": True}
+
+                intent = agent_result.get("action_taken", "other")
+                params = {}
+                if "intent_result" in agent_result and "parsed_command" in agent_result["intent_result"]:
+                    params = agent_result["intent_result"]["parsed_command"].get("parameters", {})
+
+                # Execute MCP tool if it's a task operation
+                mcp_result = None
+                if intent in ["task_creation", "task_listing", "task_update", "task_deletion", "task_completion"]:
+                    tool_mapping = {
+                        "task_creation": "create_task",
+                        "task_listing": "list_tasks",
+                        "task_update": "update_task",
+                        "task_deletion": "delete_task",
+                        "task_completion": "complete_task"
+                    }
+                    tool_name = tool_mapping.get(intent)
+                    if tool_name:
+                        mcp_result = await self.mcp_service.invoke_tool(
+                            tool_name=tool_name,
+                            parameters=params,
+                            user_id=uuid.UUID(user_id)
+                        )
+
+                response_text = await agent_runner.generate_response(message, agent_result["intent_result"], mcp_result)
+                return {"response": response_text, "success": True}
 
             # Get available tools from the MCP service
             tools = self.mcp_service.get_available_tools(uuid.UUID(user_id))

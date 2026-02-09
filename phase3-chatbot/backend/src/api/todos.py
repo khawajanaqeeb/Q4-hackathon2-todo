@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session, select
 from typing import List, Optional
 from datetime import datetime
-import uuid
 import json
 
 from ..database import get_session
@@ -222,8 +221,8 @@ def update_todo(
     Maps to the Task model for Phase 3 compatibility.
     """
     try:
-        task_id = uuid.UUID(todo_id)
-    except ValueError:
+        task_id = int(todo_id)
+    except (ValueError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid task ID format"
@@ -281,8 +280,8 @@ def delete_todo(
     Maps to the Task model for Phase 3 compatibility.
     """
     try:
-        task_id = uuid.UUID(todo_id)
-    except ValueError:
+        task_id = int(todo_id)
+    except (ValueError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid task ID format"
@@ -318,8 +317,8 @@ def toggle_todo_completion(
     Maps to the Task model for Phase 3 compatibility.
     """
     try:
-        task_id = uuid.UUID(todo_id)
-    except ValueError:
+        task_id = int(todo_id)
+    except (ValueError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid task ID format"
