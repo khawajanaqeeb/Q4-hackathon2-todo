@@ -1,4 +1,3 @@
-import uuid
 import os
 from datetime import datetime, timedelta
 from typing import Optional
@@ -106,7 +105,7 @@ class ApiKeyManager:
     def store_key(
         self,
         session: Session,
-        user_id: uuid.UUID,
+        user_id: str,
         provider: str,
         api_key: str,
         expires_at: Optional[datetime] = None
@@ -147,7 +146,7 @@ class ApiKeyManager:
     def retrieve_key(
         self,
         session: Session,
-        user_id: uuid.UUID,
+        user_id: str,
         provider: str
     ) -> Optional[str]:
         """
@@ -214,7 +213,7 @@ class ApiKeyManager:
     def rotate_key(
         self,
         session: Session,
-        user_id: uuid.UUID,
+        user_id: str,
         provider: str,
         new_api_key: str
     ) -> bool:

@@ -7,7 +7,6 @@ during chatbot integration as a prerequisite for frontend integration.
 import asyncio
 from sqlmodel import Session
 from typing import Dict, Any
-import uuid
 from ..models.user import User
 from ..dependencies.auth import get_current_user
 from ..database import get_session

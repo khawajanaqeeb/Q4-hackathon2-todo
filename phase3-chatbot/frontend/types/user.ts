@@ -6,7 +6,7 @@
  */
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
   name: string;
   is_active: boolean;
@@ -38,7 +38,7 @@ export interface AuthResponse {
 }
 
 export interface UserResponse {
-  id: number;
+  id: string;
   email: string;
   name: string;
   is_active: boolean;

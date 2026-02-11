@@ -1,10 +1,11 @@
 """Test suite for API key endpoints."""
 
 import pytest
+import random
+import string
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 from unittest.mock import patch, MagicMock
-import uuid
 from datetime import datetime, timedelta
 
 from src.main import app
@@ -13,6 +14,10 @@ from src.models.user import User
 from src.models.api_key import ApiKey
 from src.dependencies.auth import get_current_user, create_access_token
 from src.config import settings
+
+
+def _random_suffix(length=8):
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 
 @pytest.fixture(scope="module")
@@ -33,13 +38,13 @@ def db_session():
 def test_user(db_session):
     """Create a test user."""
     from passlib.context import CryptContext
-    
+
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    
+    suffix = _random_suffix()
+
     user = User(
-        id=uuid.uuid4(),
-        email="api_test@example.com",
-        username="apitestuser",
+        email=f"api_test_{suffix}@example.com",
+        username=f"apitestuser_{suffix}",
         hashed_password=pwd_context.hash("testpassword123"),
         is_active=True,
         is_superuser=False
@@ -68,7 +73,7 @@ def test_store_api_key_success(client: TestClient, test_user, auth_headers: dict
         },
         headers=auth_headers
     )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
@@ -87,7 +92,7 @@ def test_store_api_key_invalid_provider(client: TestClient, test_user, auth_head
         },
         headers=auth_headers
     )
-    
+
     assert response.status_code == 400
     data = response.json()
     assert "detail" in data
@@ -104,9 +109,9 @@ def test_store_api_key_missing_fields(client: TestClient, test_user, auth_header
         },
         headers=auth_headers
     )
-    
+
     assert response.status_code == 422  # Validation error
-    
+
     # Test missing api_key
     response = client.post(
         "/api/api-keys",
@@ -116,7 +121,7 @@ def test_store_api_key_missing_fields(client: TestClient, test_user, auth_header
         },
         headers=auth_headers
     )
-    
+
     assert response.status_code == 422  # Validation error
 
 
@@ -125,10 +130,9 @@ def test_get_api_key_status_success(client: TestClient, test_user, auth_headers:
     # Create a test API key in the database
     from cryptography.fernet import Fernet
     from src.utils.encryption import encrypt_api_key, decrypt_api_key
-    
+
     encrypted_key = encrypt_api_key("test_api_key_12345")
     api_key = ApiKey(
-        id=uuid.uuid4(),
         user_id=test_user.id,
         provider="openai",
         encrypted_key=encrypted_key,
@@ -137,9 +141,9 @@ def test_get_api_key_status_success(client: TestClient, test_user, auth_headers:
     )
     db_session.add(api_key)
     db_session.commit()
-    
+
     response = client.get(f"/api/api-keys/openai", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "provider" in data
@@ -151,7 +155,7 @@ def test_get_api_key_status_success(client: TestClient, test_user, auth_headers:
 def test_get_api_key_status_not_found(client: TestClient, test_user, auth_headers: dict):
     """Test getting status of a non-existent API key."""
     response = client.get("/api/api-keys/nonexistent_provider", headers=auth_headers)
-    
+
     assert response.status_code == 404
     data = response.json()
     assert "detail" in data
@@ -162,10 +166,9 @@ def test_get_api_key_status_inactive(client: TestClient, test_user, auth_headers
     # Create an inactive API key
     from cryptography.fernet import Fernet
     from src.utils.encryption import encrypt_api_key
-    
+
     encrypted_key = encrypt_api_key("inactive_api_key_12345")
     api_key = ApiKey(
-        id=uuid.uuid4(),
         user_id=test_user.id,
         provider="openai",
         encrypted_key=encrypted_key,
@@ -174,9 +177,9 @@ def test_get_api_key_status_inactive(client: TestClient, test_user, auth_headers
     )
     db_session.add(api_key)
     db_session.commit()
-    
+
     response = client.get("/api/api-keys/openai", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["is_active"] is False
@@ -187,10 +190,9 @@ def test_get_api_key_status_expired(client: TestClient, test_user, auth_headers:
     # Create an expired API key
     from cryptography.fernet import Fernet
     from src.utils.encryption import encrypt_api_key
-    
+
     encrypted_key = encrypt_api_key("expired_api_key_12345")
     api_key = ApiKey(
-        id=uuid.uuid4(),
         user_id=test_user.id,
         provider="openai",
         encrypted_key=encrypted_key,
@@ -199,9 +201,9 @@ def test_get_api_key_status_expired(client: TestClient, test_user, auth_headers:
     )
     db_session.add(api_key)
     db_session.commit()
-    
+
     response = client.get("/api/api-keys/openai", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     # The API should handle expired keys appropriately (either return as inactive or with expiration info)
@@ -212,10 +214,9 @@ def test_update_api_key_success(client: TestClient, test_user, auth_headers: dic
     # Create an existing API key
     from cryptography.fernet import Fernet
     from src.utils.encryption import encrypt_api_key
-    
+
     encrypted_key = encrypt_api_key("old_api_key_12345")
     api_key = ApiKey(
-        id=uuid.uuid4(),
         user_id=test_user.id,
         provider="openai",
         encrypted_key=encrypted_key,
@@ -224,7 +225,7 @@ def test_update_api_key_success(client: TestClient, test_user, auth_headers: dic
     )
     db_session.add(api_key)
     db_session.commit()
-    
+
     # Update the API key
     response = client.put(
         f"/api/api-keys/openai",
@@ -235,7 +236,7 @@ def test_update_api_key_success(client: TestClient, test_user, auth_headers: dic
         },
         headers=auth_headers
     )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "message" in data
@@ -252,7 +253,7 @@ def test_update_api_key_not_found(client: TestClient, test_user, auth_headers: d
         },
         headers=auth_headers
     )
-    
+
     assert response.status_code == 404
     data = response.json()
     assert "detail" in data
@@ -263,10 +264,9 @@ def test_delete_api_key_success(client: TestClient, test_user, auth_headers: dic
     # Create an API key to delete
     from cryptography.fernet import Fernet
     from src.utils.encryption import encrypt_api_key
-    
+
     encrypted_key = encrypt_api_key("delete_me_key_12345")
     api_key = ApiKey(
-        id=uuid.uuid4(),
         user_id=test_user.id,
         provider="openai",
         encrypted_key=encrypted_key,
@@ -275,13 +275,13 @@ def test_delete_api_key_success(client: TestClient, test_user, auth_headers: dic
     )
     db_session.add(api_key)
     db_session.commit()
-    
+
     response = client.delete("/api/api-keys/openai", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     # Deletion might return a success message or empty response
-    
+
     # Verify the key was deleted
     statement = select(ApiKey).where(
         ApiKey.user_id == test_user.id,
@@ -294,7 +294,7 @@ def test_delete_api_key_success(client: TestClient, test_user, auth_headers: dic
 def test_delete_api_key_not_found(client: TestClient, test_user, auth_headers: dict):
     """Test deleting a non-existent API key."""
     response = client.delete("/api/api-keys/nonexistent_provider", headers=auth_headers)
-    
+
     assert response.status_code == 404
     data = response.json()
     assert "detail" in data
@@ -303,12 +303,12 @@ def test_delete_api_key_not_found(client: TestClient, test_user, auth_headers: d
 def test_get_supported_providers(client: TestClient, test_user, auth_headers: dict):
     """Test getting list of supported AI providers."""
     response = client.get("/api/api-keys/providers", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "providers" in data
     assert isinstance(data["providers"], list)
-    
+
     # Should include common providers like OpenAI, Anthropic, etc.
     provider_names = [provider["name"] for provider in data["providers"]]
     assert "openai" in [name.lower() for name in provider_names]
@@ -317,7 +317,7 @@ def test_get_supported_providers(client: TestClient, test_user, auth_headers: di
 def test_get_supported_providers_unauthorized(client: TestClient):
     """Test that getting supported providers requires authentication."""
     response = client.get("/api/api-keys/providers")
-    
+
     assert response.status_code == 401
     data = response.json()
     assert "detail" in data
@@ -326,7 +326,7 @@ def test_get_supported_providers_unauthorized(client: TestClient):
 def test_store_api_key_encryption(client: TestClient, test_user, auth_headers: dict, db_session: Session):
     """Test that API keys are properly encrypted when stored."""
     test_api_key = "sk-test1234567890abcdef"
-    
+
     response = client.post(
         "/api/api-keys",
         json={
@@ -336,9 +336,9 @@ def test_store_api_key_encryption(client: TestClient, test_user, auth_headers: d
         },
         headers=auth_headers
     )
-    
+
     assert response.status_code == 200
-    
+
     # Check that the key is encrypted in the database
     statement = select(ApiKey).where(
         ApiKey.user_id == test_user.id,
@@ -352,7 +352,7 @@ def test_store_api_key_encryption(client: TestClient, test_user, auth_headers: d
 def test_store_multiple_api_keys_different_providers(client: TestClient, test_user, auth_headers: dict, db_session: Session):
     """Test storing API keys for different providers."""
     providers = ["openai", "anthropic", "google"]
-    
+
     for i, provider in enumerate(providers):
         response = client.post(
             "/api/api-keys",
@@ -363,13 +363,13 @@ def test_store_multiple_api_keys_different_providers(client: TestClient, test_us
             },
             headers=auth_headers
         )
-        
+
         assert response.status_code == 200
-    
+
     # Verify all keys were stored
     statement = select(ApiKey).where(ApiKey.user_id == test_user.id)
     stored_keys = db_session.exec(statement).all()
-    
+
     stored_providers = [key.provider for key in stored_keys]
     for provider in providers:
         assert provider in stored_providers
@@ -388,7 +388,7 @@ def test_store_api_key_duplicate_provider(client: TestClient, test_user, auth_he
         headers=auth_headers
     )
     assert response.status_code == 200
-    
+
     # Store second key for same provider (should update)
     response = client.post(
         "/api/api-keys",
@@ -399,7 +399,7 @@ def test_store_api_key_duplicate_provider(client: TestClient, test_user, auth_he
         },
         headers=auth_headers
     )
-    
+
     # Should succeed (update existing)
     assert response.status_code == 200
 
@@ -417,7 +417,7 @@ def test_update_api_key_encryption(client: TestClient, test_user, auth_headers: 
         headers=auth_headers
     )
     assert response.status_code == 200
-    
+
     # Then update it
     new_key = "updated_key_456"
     response = client.put(
@@ -430,7 +430,7 @@ def test_update_api_key_encryption(client: TestClient, test_user, auth_headers: 
         headers=auth_headers
     )
     assert response.status_code == 200
-    
+
     # Verify the updated key is encrypted in the database
     statement = select(ApiKey).where(
         ApiKey.user_id == test_user.id,
@@ -444,7 +444,7 @@ def test_update_api_key_encryption(client: TestClient, test_user, auth_headers: 
 def test_api_key_expiry_calculation(client: TestClient, test_user, auth_headers: dict, db_session: Session):
     """Test that API key expiry dates are calculated correctly."""
     from datetime import timedelta
-    
+
     expires_in_days = 15
     response = client.post(
         "/api/api-keys",
@@ -456,7 +456,7 @@ def test_api_key_expiry_calculation(client: TestClient, test_user, auth_headers:
         headers=auth_headers
     )
     assert response.status_code == 200
-    
+
     # Check that the expiry date was set correctly in the database
     statement = select(ApiKey).where(
         ApiKey.user_id == test_user.id,
@@ -465,7 +465,7 @@ def test_api_key_expiry_calculation(client: TestClient, test_user, auth_headers:
     stored_key = db_session.exec(statement).first()
     assert stored_key is not None
     assert stored_key.expires_at is not None
-    
+
     # Check that the expiry is approximately the right amount of time from now
     expected_expiry = datetime.utcnow() + timedelta(days=expires_in_days)
     time_diff = abs((stored_key.expires_at - expected_expiry).total_seconds())
@@ -478,11 +478,10 @@ def test_get_api_key_status_expired_key(client: TestClient, test_user, auth_head
     # Create an expired API key
     from cryptography.fernet import Fernet
     from src.utils.encryption import encrypt_api_key
-    
+
     encrypted_key = encrypt_api_key("expired_key_12345")
     expired_date = datetime.utcnow() - timedelta(days=1)  # Expired yesterday
     api_key = ApiKey(
-        id=uuid.uuid4(),
         user_id=test_user.id,
         provider="openai",
         encrypted_key=encrypted_key,
@@ -491,9 +490,9 @@ def test_get_api_key_status_expired_key(client: TestClient, test_user, auth_head
     )
     db_session.add(api_key)
     db_session.commit()
-    
+
     response = client.get("/api/api-keys/openai", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     # The API should handle expired keys appropriately
@@ -513,13 +512,13 @@ def test_unauthorized_access_to_api_key_endpoints(client: TestClient):
     assert response.status_code == 401
     data = response.json()
     assert "detail" in data
-    
+
     # Try to get API key status without authentication
     response = client.get("/api/api-keys/openai")
     assert response.status_code == 401
     data = response.json()
     assert "detail" in data
-    
+
     # Try to update an API key without authentication
     response = client.put(
         "/api/api-keys/openai",
@@ -532,7 +531,7 @@ def test_unauthorized_access_to_api_key_endpoints(client: TestClient):
     assert response.status_code == 401
     data = response.json()
     assert "detail" in data
-    
+
     # Try to delete an API key without authentication
     response = client.delete("/api/api-keys/openai")
     assert response.status_code == 401
@@ -551,7 +550,7 @@ def test_store_api_key_with_mocked_encryption(mock_api_key_manager_class, client
         "expires_at": (datetime.utcnow() + timedelta(days=30)).isoformat()
     }
     mock_api_key_manager_class.return_value = mock_api_key_manager_instance
-    
+
     response = client.post(
         "/api/api-keys",
         json={
@@ -561,12 +560,12 @@ def test_store_api_key_with_mocked_encryption(mock_api_key_manager_class, client
         },
         headers=auth_headers
     )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
     assert "message" in data
-    
+
     # Verify the mock was called with correct parameters
     mock_api_key_manager_instance.store_api_key.assert_called_once()
 
@@ -583,9 +582,9 @@ def test_get_api_key_status_with_mocked_service(mock_api_key_manager_class, clie
         "last_used": None
     }
     mock_api_key_manager_class.return_value = mock_api_key_manager_instance
-    
+
     response = client.get("/api/api-keys/openai", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["provider"] == "openai"
@@ -602,16 +601,16 @@ def test_delete_api_key_with_mocked_service(mock_api_key_manager_class, client: 
         "message": "API key deleted successfully"
     }
     mock_api_key_manager_class.return_value = mock_api_key_manager_instance
-    
+
     response = client.delete("/api/api-keys/openai", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
     assert "message" in data
-    
+
     # Verify the mock was called
-    mock_api_key_manager_instance.delete_api_key.assert_called_once_with("openai", str(test_user.id))
+    mock_api_key_manager_instance.delete_api_key.assert_called_once_with("openai", test_user.id)
 
 
 def test_provider_validation_case_insensitive(client: TestClient, test_user, auth_headers: dict):
@@ -626,7 +625,7 @@ def test_provider_validation_case_insensitive(client: TestClient, test_user, aut
         },
         headers=auth_headers
     )
-    
+
     # Should work (might return 200 if OpenAI is supported, or 400 if validation is strict about case)
     assert response.status_code in [200, 400]  # Either success or validation error
 
@@ -643,10 +642,10 @@ def test_api_key_length_validation(client: TestClient, test_user, auth_headers: 
         },
         headers=auth_headers
     )
-    
+
     # Might return 422 for validation error or 200 if validation is done by the provider API
     assert response.status_code in [200, 400, 422]
-    
+
     # Test with empty key
     response = client.post(
         "/api/api-keys",
@@ -657,5 +656,5 @@ def test_api_key_length_validation(client: TestClient, test_user, auth_headers: 
         },
         headers=auth_headers
     )
-    
+
     assert response.status_code in [400, 422]  # Should fail validation

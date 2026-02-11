@@ -4,7 +4,6 @@ Initialization service for MCP tools registration.
 This module handles the registration of todo-specific MCP tools
 into the MCP integration service as a prerequisite for chat functionality.
 """
-import uuid
 from sqlmodel import Session
 from typing import Dict, Any, Callable
 from ..models.user import User
@@ -187,7 +186,7 @@ class McpToolsInitializer:
 
         return all_registered
 
-    async def validate_user_permissions_for_mcp_tools(self, user_id: uuid.UUID) -> Dict[str, Any]:
+    async def validate_user_permissions_for_mcp_tools(self, user_id: str) -> Dict[str, Any]:
         """
         Validate user permissions for MCP tools.
 

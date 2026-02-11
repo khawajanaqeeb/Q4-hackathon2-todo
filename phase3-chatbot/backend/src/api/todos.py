@@ -71,7 +71,7 @@ class TodoUpdate(BaseModel):
         return v
 
 class TodoResponse(TodoBase):
-    id: str
+    id: int
     created_at: str
     updated_at: str
 
@@ -123,7 +123,7 @@ def task_to_todo_response(task: Task) -> TodoResponse:
         tags_value = None
 
     return TodoResponse(
-        id=str(task.id),
+        id=task.id,
         title=task.title,
         description=task.description,
         completed=task.completed,

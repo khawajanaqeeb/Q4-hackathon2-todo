@@ -1,10 +1,10 @@
 """Test suite for todo endpoints."""
 
 import pytest
+import random
+import string
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
-from uuid import uuid4
-import uuid
 from datetime import datetime
 
 from src.main import app
@@ -13,6 +13,10 @@ from src.models.user import User
 from src.models.task import Task, PriorityLevel
 from src.dependencies.auth import get_current_user, create_access_token
 from src.config import settings
+
+
+def _random_suffix(length=8):
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 
 @pytest.fixture(scope="module")
@@ -33,13 +37,13 @@ def db_session():
 def test_user(db_session):
     """Create a test user."""
     from passlib.context import CryptContext
-    
+
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    
+    suffix = _random_suffix()
+
     user = User(
-        id=uuid.uuid4(),
-        email="test@example.com",
-        username="testuser",
+        email=f"test_{suffix}@example.com",
+        username=f"testuser_{suffix}",
         hashed_password=pwd_context.hash("testpassword123"),
         is_active=True,
         is_superuser=False
@@ -69,7 +73,7 @@ def test_create_todo_success(client: TestClient, test_user, auth_headers: dict):
         },
         headers=auth_headers
     )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["title"] == "Test Todo"
@@ -89,7 +93,7 @@ def test_create_todo_minimal_fields(client: TestClient, test_user, auth_headers:
         },
         headers=auth_headers
     )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["title"] == "Minimal Todo"
@@ -103,7 +107,7 @@ def test_create_todo_with_all_fields(client: TestClient, test_user, auth_headers
     """Test creating a todo with all fields specified."""
     from datetime import datetime
     due_date = datetime.now().strftime("%Y-%m-%d")
-    
+
     response = client.post(
         "/api/todos/",
         json={
@@ -116,7 +120,7 @@ def test_create_todo_with_all_fields(client: TestClient, test_user, auth_headers
         },
         headers=auth_headers
     )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["title"] == "Complete Todo"
@@ -130,7 +134,7 @@ def test_create_todo_with_all_fields(client: TestClient, test_user, auth_headers
 def test_get_todos_empty_list(client: TestClient, test_user, auth_headers: dict):
     """Test getting todos when none exist."""
     response = client.get("/api/todos/", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
@@ -141,7 +145,6 @@ def test_get_todos_with_existing_data(client: TestClient, test_user, auth_header
     """Test getting todos when some exist."""
     # Create a test task directly in the database
     task = Task(
-        id=uuid.uuid4(),
         user_id=test_user.id,
         title="Existing Task",
         description="Existing Description",
@@ -151,15 +154,16 @@ def test_get_todos_with_existing_data(client: TestClient, test_user, auth_header
     )
     db_session.add(task)
     db_session.commit()
-    
+    db_session.refresh(task)
+
     response = client.get("/api/todos/", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
     assert len(data) >= 1
     # Find our task in the response
-    our_task = next((item for item in data if item["id"] == str(task.id)), None)
+    our_task = next((item for item in data if item["id"] == task.id), None)
     assert our_task is not None
     assert our_task["title"] == "Existing Task"
     assert our_task["description"] == "Existing Description"
@@ -169,14 +173,12 @@ def test_get_todos_with_filters(client: TestClient, test_user, auth_headers: dic
     """Test getting todos with filters applied."""
     # Create test tasks with different properties
     task1 = Task(
-        id=uuid.uuid4(),
         user_id=test_user.id,
         title="Completed Task",
         priority=PriorityLevel.HIGH,
         completed=True
     )
     task2 = Task(
-        id=uuid.uuid4(),
         user_id=test_user.id,
         title="Pending Task",
         priority=PriorityLevel.LOW,
@@ -185,14 +187,14 @@ def test_get_todos_with_filters(client: TestClient, test_user, auth_headers: dic
     db_session.add(task1)
     db_session.add(task2)
     db_session.commit()
-    
+
     # Test completed filter
     response = client.get("/api/todos/?completed=true", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
     completed_tasks = [t for t in data if t["completed"]]
     assert len(completed_tasks) >= 1
-    
+
     # Test priority filter
     response = client.get("/api/todos/?priority=high", headers=auth_headers)
     assert response.status_code == 200
@@ -205,7 +207,6 @@ def test_update_todo_success(client: TestClient, test_user, auth_headers: dict, 
     """Test successful update of a todo."""
     # Create a task to update
     task = Task(
-        id=uuid.uuid4(),
         user_id=test_user.id,
         title="Original Title",
         description="Original Description",
@@ -214,7 +215,8 @@ def test_update_todo_success(client: TestClient, test_user, auth_headers: dict, 
     )
     db_session.add(task)
     db_session.commit()
-    
+    db_session.refresh(task)
+
     update_data = {
         "title": "Updated Title",
         "description": "Updated Description",
@@ -222,9 +224,9 @@ def test_update_todo_success(client: TestClient, test_user, auth_headers: dict, 
         "completed": True,
         "tags": ["updated", "test"]
     }
-    
+
     response = client.put(f"/api/todos/{task.id}", json=update_data, headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["title"] == "Updated Title"
@@ -238,7 +240,6 @@ def test_update_todo_partial_fields(client: TestClient, test_user, auth_headers:
     """Test updating only some fields of a todo."""
     # Create a task to update
     task = Task(
-        id=uuid.uuid4(),
         user_id=test_user.id,
         title="Original Title",
         description="Original Description",
@@ -247,13 +248,14 @@ def test_update_todo_partial_fields(client: TestClient, test_user, auth_headers:
     )
     db_session.add(task)
     db_session.commit()
-    
+    db_session.refresh(task)
+
     update_data = {
         "title": "Updated Title Only"
     }
-    
+
     response = client.put(f"/api/todos/{task.id}", json=update_data, headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["title"] == "Updated Title Only"
@@ -265,11 +267,11 @@ def test_update_todo_partial_fields(client: TestClient, test_user, auth_headers:
 
 def test_update_todo_not_found(client: TestClient, test_user, auth_headers: dict):
     """Test updating a non-existent todo."""
-    fake_id = str(uuid.uuid4())
+    fake_id = 999999
     update_data = {"title": "Updated Title"}
-    
+
     response = client.put(f"/api/todos/{fake_id}", json=update_data, headers=auth_headers)
-    
+
     assert response.status_code == 404
     data = response.json()
     assert "detail" in data
@@ -280,20 +282,21 @@ def test_update_todo_not_authorized(client: TestClient, db_session: Session, aut
     # Create a different user
     from passlib.context import CryptContext
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    
+    suffix = _random_suffix()
+
     other_user = User(
-        id=uuid.uuid4(),
-        email="other@example.com",
-        username="otheruser",
+        email=f"other_{suffix}@example.com",
+        username=f"otheruser_{suffix}",
         hashed_password=pwd_context.hash("password123"),
         is_active=True,
         is_superuser=False
     )
     db_session.add(other_user)
-    
+    db_session.commit()
+    db_session.refresh(other_user)
+
     # Create a task belonging to the other user
     task = Task(
-        id=uuid.uuid4(),
         user_id=other_user.id,
         title="Other User's Task",
         priority=PriorityLevel.MEDIUM,
@@ -301,11 +304,12 @@ def test_update_todo_not_authorized(client: TestClient, db_session: Session, aut
     )
     db_session.add(task)
     db_session.commit()
-    
+    db_session.refresh(task)
+
     update_data = {"title": "Attempted Update"}
-    
+
     response = client.put(f"/api/todos/{task.id}", json=update_data, headers=auth_headers)
-    
+
     # Should return 403 Forbidden since the task belongs to another user
     assert response.status_code == 403
     data = response.json()
@@ -316,7 +320,6 @@ def test_delete_todo_success(client: TestClient, test_user, auth_headers: dict, 
     """Test successful deletion of a todo."""
     # Create a task to delete
     task = Task(
-        id=uuid.uuid4(),
         user_id=test_user.id,
         title="Task to Delete",
         priority=PriorityLevel.MEDIUM,
@@ -324,14 +327,15 @@ def test_delete_todo_success(client: TestClient, test_user, auth_headers: dict, 
     )
     db_session.add(task)
     db_session.commit()
-    
+    db_session.refresh(task)
+
     response = client.delete(f"/api/todos/{task.id}", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "message" in data
     assert "deleted" in data["message"].lower()
-    
+
     # Verify the task was actually deleted
     statement = select(Task).where(Task.id == task.id)
     deleted_task = db_session.exec(statement).first()
@@ -340,10 +344,10 @@ def test_delete_todo_success(client: TestClient, test_user, auth_headers: dict, 
 
 def test_delete_todo_not_found(client: TestClient, test_user, auth_headers: dict):
     """Test deleting a non-existent todo."""
-    fake_id = str(uuid.uuid4())
-    
+    fake_id = 999999
+
     response = client.delete(f"/api/todos/{fake_id}", headers=auth_headers)
-    
+
     assert response.status_code == 404
     data = response.json()
     assert "detail" in data
@@ -354,20 +358,21 @@ def test_delete_todo_not_authorized(client: TestClient, db_session: Session, aut
     # Create a different user
     from passlib.context import CryptContext
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    
+    suffix = _random_suffix()
+
     other_user = User(
-        id=uuid.uuid4(),
-        email="other@example.com",
-        username="otheruser",
+        email=f"other_{suffix}@example.com",
+        username=f"otheruser_{suffix}",
         hashed_password=pwd_context.hash("password123"),
         is_active=True,
         is_superuser=False
     )
     db_session.add(other_user)
-    
+    db_session.commit()
+    db_session.refresh(other_user)
+
     # Create a task belonging to the other user
     task = Task(
-        id=uuid.uuid4(),
         user_id=other_user.id,
         title="Other User's Task",
         priority=PriorityLevel.MEDIUM,
@@ -375,9 +380,10 @@ def test_delete_todo_not_authorized(client: TestClient, db_session: Session, aut
     )
     db_session.add(task)
     db_session.commit()
-    
+    db_session.refresh(task)
+
     response = client.delete(f"/api/todos/{task.id}", headers=auth_headers)
-    
+
     # Should return 403 Forbidden since the task belongs to another user
     assert response.status_code == 403
     data = response.json()
@@ -388,7 +394,6 @@ def test_toggle_todo_completion(client: TestClient, test_user, auth_headers: dic
     """Test toggling the completion status of a todo."""
     # Create a task to toggle
     task = Task(
-        id=uuid.uuid4(),
         user_id=test_user.id,
         title="Toggle Task",
         priority=PriorityLevel.MEDIUM,
@@ -396,16 +401,17 @@ def test_toggle_todo_completion(client: TestClient, test_user, auth_headers: dic
     )
     db_session.add(task)
     db_session.commit()
-    
+    db_session.refresh(task)
+
     response = client.patch(f"/api/todos/{task.id}/toggle", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["completed"] is True  # Should now be completed
-    
+
     # Toggle again to make sure it works both ways
     response = client.patch(f"/api/todos/{task.id}/toggle", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data["completed"] is False  # Should now be not completed
@@ -413,10 +419,10 @@ def test_toggle_todo_completion(client: TestClient, test_user, auth_headers: dic
 
 def test_toggle_todo_not_found(client: TestClient, test_user, auth_headers: dict):
     """Test toggling completion of a non-existent todo."""
-    fake_id = str(uuid.uuid4())
-    
+    fake_id = 999999
+
     response = client.patch(f"/api/todos/{fake_id}/toggle", headers=auth_headers)
-    
+
     assert response.status_code == 404
     data = response.json()
     assert "detail" in data
@@ -427,20 +433,21 @@ def test_toggle_todo_not_authorized(client: TestClient, db_session: Session, aut
     # Create a different user
     from passlib.context import CryptContext
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    
+    suffix = _random_suffix()
+
     other_user = User(
-        id=uuid.uuid4(),
-        email="other@example.com",
-        username="otheruser",
+        email=f"other_{suffix}@example.com",
+        username=f"otheruser_{suffix}",
         hashed_password=pwd_context.hash("password123"),
         is_active=True,
         is_superuser=False
     )
     db_session.add(other_user)
-    
+    db_session.commit()
+    db_session.refresh(other_user)
+
     # Create a task belonging to the other user
     task = Task(
-        id=uuid.uuid4(),
         user_id=other_user.id,
         title="Other User's Task",
         priority=PriorityLevel.MEDIUM,
@@ -448,9 +455,10 @@ def test_toggle_todo_not_authorized(client: TestClient, db_session: Session, aut
     )
     db_session.add(task)
     db_session.commit()
-    
+    db_session.refresh(task)
+
     response = client.patch(f"/api/todos/{task.id}/toggle", headers=auth_headers)
-    
+
     # Should return 403 Forbidden since the task belongs to another user
     assert response.status_code == 403
     data = response.json()
@@ -464,21 +472,21 @@ def test_unauthorized_access(client: TestClient):
         "/api/todos/",
         json={"title": "Unauthorized Todo"}
     )
-    
+
     assert response.status_code == 401
     data = response.json()
     assert "detail" in data
-    
+
     # Try to get todos without authentication
     response = client.get("/api/todos/")
-    
+
     assert response.status_code == 401
     data = response.json()
     assert "detail" in data
-    
+
     # Try to update a todo without authentication
     response = client.put("/api/todos/1", json={"title": "Updated"})
-    
+
     assert response.status_code == 401
     data = response.json()
     assert "detail" in data

@@ -3,7 +3,6 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
-import uuid
 
 from src.models.conversation import Conversation
 from src.models.message import Message
@@ -37,7 +36,7 @@ class TestSendMessage:
             headers=auth_headers,
         )
         assert response.status_code == 200
-        conv_id = uuid.UUID(response.json()["conversation_id"])
+        conv_id = int(response.json()["conversation_id"])
         conversation = session.get(Conversation, conv_id)
         assert conversation is not None
         assert conversation.user_id == test_user.id
@@ -86,10 +85,10 @@ class TestSendMessage:
     def test_send_message_invalid_conversation_id(
         self, client: TestClient, test_user, auth_headers
     ):
-        """Invalid UUID for conversation_id returns 400."""
+        """Invalid conversation_id returns 400."""
         response = client.post(
             f"/api/chat/{test_user.id}",
-            json={"message": "Hello", "conversation_id": "not-a-uuid"},
+            json={"message": "Hello", "conversation_id": "not-a-number"},
             headers=auth_headers,
         )
         assert response.status_code == 400
@@ -219,7 +218,7 @@ class TestGetConversationHistory:
         self, client: TestClient, test_user, auth_headers
     ):
         """Returns 404 for a conversation that doesn't exist."""
-        fake_id = str(uuid.uuid4())
+        fake_id = 999999
         response = client.get(
             f"/api/chat/{test_user.id}/conversations/{fake_id}",
             headers=auth_headers,

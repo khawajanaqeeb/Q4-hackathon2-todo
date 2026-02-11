@@ -4,10 +4,9 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
 import os
-import uuid as _uuid
 from sqlmodel import Session
 from ..database import get_session
-from ..models.user import User  # Assuming User model exists from phase 2
+from ..models.user import User
 
 # Import settings
 from ..config import settings
@@ -58,7 +57,7 @@ def get_current_user_from_token(token: str):
 
     # Create a temporary session to fetch user
     with Session(engine) as session:
-        user = session.get(User, _uuid.UUID(user_id))
+        user = session.get(User, user_id)
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -98,7 +97,7 @@ async def get_current_user(
         token_data = verify_token(token)
         user_id = token_data.get("sub")
 
-        user = session.get(User, _uuid.UUID(user_id))
+        user = session.get(User, user_id)
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

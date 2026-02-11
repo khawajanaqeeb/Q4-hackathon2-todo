@@ -7,7 +7,6 @@ while also supporting OpenAI-compatible payloads.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from typing import Optional, Dict, Any, List
-import uuid
 from ..database import get_session
 from ..dependencies.auth import get_current_user
 from ..models.user import User
@@ -49,7 +48,7 @@ class ChatKitResponse(BaseModel):
 
 
 class ConversationSummary(BaseModel):
-    id: str  # UUID as string
+    id: str  # integer ID as string
     title: Optional[str]
     created_at: str
     updated_at: str
@@ -98,8 +97,8 @@ async def chatkit_send_message(
         conversation_id = None
         if request.conversation and request.conversation.id:
             try:
-                conversation_id = uuid.UUID(request.conversation.id)
-            except ValueError:
+                conversation_id = int(request.conversation.id)
+            except (ValueError, TypeError):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid conversation_id format"
@@ -143,14 +142,15 @@ async def chatkit_send_message(
 
         # Process the message using the chat service to persist in DB
         chat_result = chat_service.process_user_message(
-            user_id=uuid.UUID(user_id),
+            user_id=user_id,
             message_content=last_user_message.content,
             conversation_id=conversation_id
         )
 
         # Create assistant message
+        import uuid as _uuid_gen
         assistant_message = ChatKitMessage(
-            id=f"msg_{uuid.uuid4()}",
+            id=f"msg_{_uuid_gen.uuid4()}",
             role="assistant",
             content=result["response"],
             createdAt=chat_result["timestamp"].isoformat()
@@ -165,7 +165,7 @@ async def chatkit_send_message(
             )
         else:
             conversation = ChatKitConversation(
-                id=str(uuid.uuid4()),
+                id="0",
                 createdAt=chat_result["timestamp"].isoformat(),
                 updatedAt=chat_result["timestamp"].isoformat()
             )
@@ -208,11 +208,10 @@ async def get_user_conversations(
         )
 
     try:
-        user_uuid = uuid.UUID(user_id)
         chat_service = ChatService(session)
 
         # Get user conversations
-        conversations = chat_service.get_user_conversations(user_uuid)
+        conversations = chat_service.get_user_conversations(user_id)
 
         # Apply pagination
         paginated_conversations = conversations[offset:offset + limit]
@@ -266,20 +265,19 @@ async def get_conversation_messages(
         )
 
     try:
-        user_uuid = uuid.UUID(user_id)
-        conv_uuid = uuid.UUID(conversation_id)
+        conv_id_int = int(conversation_id)
         chat_service = ChatService(session)
 
         # Get the conversation to verify it belongs to the user
-        conversation = session.get(chat_service.Conversation, conv_uuid)
-        if not conversation or conversation.user_id != user_uuid:
+        conversation = session.get(Conversation, conv_id_int)
+        if not conversation or conversation.user_id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Conversation does not belong to user"
             )
 
         # Get messages for the conversation
-        messages = chat_service.get_conversation_messages(conv_uuid)
+        messages = chat_service.get_conversation_messages(conv_id_int)
 
         # Format the response
         formatted_messages = [
@@ -330,12 +328,11 @@ async def delete_conversation(
         )
 
     try:
-        user_uuid = uuid.UUID(user_id)
-        conv_uuid = uuid.UUID(conversation_id)
+        conv_id_int = int(conversation_id)
         chat_service = ChatService(session)
 
         # Attempt to delete the conversation
-        success = chat_service.delete_conversation(conv_uuid, user_uuid)
+        success = chat_service.delete_conversation(conv_id_int, user_id)
 
         if not success:
             raise HTTPException(

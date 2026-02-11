@@ -1,7 +1,6 @@
 from sqlmodel import SQLModel, Field, Column, DateTime, func, Relationship
 from sqlalchemy import String, LargeBinary
 from datetime import datetime
-import uuid
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -11,7 +10,7 @@ if TYPE_CHECKING:
 class ApiKeyBase(SQLModel):
     """Base class for API Key model with common fields."""
     provider: str = Field(sa_column=Column(String, nullable=False))
-    user_id: uuid.UUID = Field(foreign_key="user.id", nullable=False)  # Use the default table name
+    user_id: str = Field(foreign_key="user.id", nullable=False)
     encrypted_key: bytes = Field(sa_column=Column(LargeBinary, nullable=False))
     encrypted_key_iv: bytes = Field(sa_column=Column(LargeBinary, nullable=False))
     encrypted_key_salt: bytes = Field(sa_column=Column(LargeBinary, nullable=False))
@@ -23,7 +22,7 @@ class ApiKey(ApiKeyBase, table=True):
     """Encrypted API key entity for secure storage."""
     __tablename__ = "api_keys"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(
         sa_column=Column(DateTime, nullable=False, server_default=func.now())
     )

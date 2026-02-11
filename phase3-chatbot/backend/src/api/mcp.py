@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from sqlmodel import Session
 from typing import Optional, Dict, Any
-import uuid
 from datetime import datetime
 from pydantic import BaseModel
 

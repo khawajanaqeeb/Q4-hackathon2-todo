@@ -5,7 +5,6 @@ from ..models.mcp_tool import McpTool
 from ..models.audit_log import AuditLog
 from .audit_service import AuditService
 from .api_key_manager import ApiKeyManager
-import uuid
 import time
 
 
@@ -262,7 +261,7 @@ class McpIntegrationService:
         self,
         tool_name: str,
         parameters: Dict[str, Any],
-        user_id: uuid.UUID,
+        user_id: str,
         provider: Optional[str] = None
     ) -> Dict[str, Any]:
         """
@@ -515,7 +514,7 @@ class McpIntegrationService:
 
         return response
 
-    def get_available_tools(self, user_id: uuid.UUID) -> List[Dict[str, Any]]:
+    def get_available_tools(self, user_id: str) -> List[Dict[str, Any]]:
         """
         Get list of available tools for a specific user.
 
@@ -553,7 +552,7 @@ class McpIntegrationService:
         """
         return list(self.provider_adapters.keys())
 
-    async def switch_provider(self, user_id: uuid.UUID, current_provider: str, new_provider: str) -> bool:
+    async def switch_provider(self, user_id: str, current_provider: str, new_provider: str) -> bool:
         """
         Switch between different AI providers.
 

@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 from typing import Optional, Dict, Any
 from sqlmodel import Session, select
@@ -13,10 +12,10 @@ class AuditUtils:
     @staticmethod
     async def log_api_call(
         session: Session,
-        user_id: Optional[uuid.UUID],
+        user_id: Optional[str],
         action_type: str,
         resource_type: Optional[str],
-        resource_id: Optional[uuid.UUID] = None,
+        resource_id: Optional[int] = None,
         metadata: Optional[Dict[str, Any]] = None,
         success: bool = True,
         response_time_ms: Optional[int] = None,
@@ -66,7 +65,7 @@ class AuditUtils:
     @staticmethod
     async def track_api_usage(
         session: Session,
-        user_id: uuid.UUID,
+        user_id: str,
         provider: str,
         action: str,
         cost: float = 0.0,
@@ -105,7 +104,7 @@ class AuditUtils:
     @staticmethod
     async def generate_usage_report(
         session: Session,
-        user_id: Optional[uuid.UUID] = None,
+        user_id: Optional[str] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         action_types: Optional[list] = None
@@ -143,7 +142,7 @@ class AuditUtils:
     @staticmethod
     async def get_user_api_stats(
         session: Session,
-        user_id: uuid.UUID,
+        user_id: str,
         days: int = 30
     ) -> Dict[str, Any]:
         """
@@ -219,7 +218,7 @@ class AuditUtils:
     @staticmethod
     async def log_security_event(
         session: Session,
-        user_id: Optional[uuid.UUID],
+        user_id: Optional[str],
         event_type: str,
         severity: str = "medium",  # low, medium, high, critical
         details: Optional[Dict[str, Any]] = None,
@@ -261,7 +260,7 @@ class AuditUtils:
     @staticmethod
     async def check_rate_limit_violations(
         session: Session,
-        user_id: uuid.UUID,
+        user_id: str,
         action_type: str,
         time_window_minutes: int = 1,
         max_attempts: int = 10
@@ -295,7 +294,7 @@ class AuditUtils:
     @staticmethod
     async def get_recent_activity(
         session: Session,
-        user_id: uuid.UUID,
+        user_id: str,
         limit: int = 50
     ) -> list[AuditLog]:
         """

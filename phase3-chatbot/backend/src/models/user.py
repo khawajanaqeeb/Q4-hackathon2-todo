@@ -1,4 +1,5 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field, Relationship, Column
+from sqlalchemy import String
 from typing import Optional, List
 from datetime import datetime, timezone
 import uuid
@@ -7,7 +8,10 @@ import uuid
 class User(SQLModel, table=True):
     """User model for authentication and authorization."""
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        sa_column=Column(String(36), primary_key=True),
+    )
     username: str = Field(unique=True, min_length=3, max_length=50)
     email: str = Field(unique=True, min_length=5, max_length=100)
     hashed_password: str = Field(min_length=8)

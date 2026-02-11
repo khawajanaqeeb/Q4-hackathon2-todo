@@ -3,7 +3,6 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
-import uuid
 from sqlmodel import Session
 from ..config import settings
 from ..models.user import User
@@ -109,16 +108,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    try:
-        user_uuid = uuid.UUID(user_id)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid user ID format",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    user = session.get(User, user_uuid)
+    user = session.get(User, user_id)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -171,7 +161,7 @@ def verify_api_key_permission(user: User, required_permission: str) -> bool:
     return False
 
 
-def check_api_key_access(user: User, target_user_id: uuid.UUID) -> bool:
+def check_api_key_access(user: User, target_user_id: str) -> bool:
     """
     Check if a user has access to manage API keys for a target user.
 
@@ -223,7 +213,7 @@ def get_required_api_key_scopes(required_scopes: list[str]):
     return verify_scopes
 
 
-def rate_limit_check(user_id: uuid.UUID, action: str = "default"):
+def rate_limit_check(user_id: str, action: str = "default"):
     """
     Check if the user has exceeded rate limits for the specified action.
 

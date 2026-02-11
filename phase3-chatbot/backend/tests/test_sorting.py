@@ -3,7 +3,6 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
-import uuid
 from datetime import datetime, timedelta
 
 from src.models.task import Task, PriorityLevel
@@ -12,7 +11,6 @@ from src.models.task import Task, PriorityLevel
 def _create_task(session, user_id, title, priority, completed=False, days_ago=0):
     """Helper to create tasks with varying timestamps."""
     task = Task(
-        id=uuid.uuid4(),
         user_id=user_id,
         title=title,
         priority=priority,
@@ -21,6 +19,7 @@ def _create_task(session, user_id, title, priority, completed=False, days_ago=0)
     )
     session.add(task)
     session.commit()
+    session.refresh(task)
     return task
 
 
@@ -146,7 +145,7 @@ class TestTaskSorting:
 
 
 class TestTaskCRUDFlow:
-    """End-to-end create → read → update → delete flow."""
+    """End-to-end create -> read -> update -> delete flow."""
 
     def test_full_crud_flow(
         self, client: TestClient, test_user, auth_headers, session: Session

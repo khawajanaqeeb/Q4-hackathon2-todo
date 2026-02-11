@@ -1,11 +1,10 @@
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone
-import uuid
 from sqlmodel import Session, select
 from ..models.conversation import Conversation, MessageRole
 from ..models.message import Message
 from ..models.task import Task
-from ..models.user import User  # Assuming User model exists from phase 2
+from ..models.user import User
 
 
 class ChatService:
@@ -15,7 +14,7 @@ class ChatService:
         """Initialize ChatService with database session."""
         self.session = session
 
-    def create_conversation(self, user_id: uuid.UUID, initial_message: Optional[str] = None) -> Conversation:
+    def create_conversation(self, user_id: str, initial_message: Optional[str] = None) -> Conversation:
         """Create a new conversation for a user."""
         title = None
         if initial_message:
@@ -32,7 +31,7 @@ class ChatService:
         self.session.refresh(conversation)
         return conversation
 
-    def get_or_create_conversation(self, user_id: uuid.UUID, conversation_id: Optional[uuid.UUID] = None) -> Conversation:
+    def get_or_create_conversation(self, user_id: str, conversation_id: Optional[int] = None) -> Conversation:
         """Get existing conversation or create a new one."""
         if conversation_id:
             # Try to get existing conversation
@@ -45,7 +44,7 @@ class ChatService:
         # Create new conversation
         return self.create_conversation(user_id)
 
-    def add_message(self, conversation_id: uuid.UUID, role: MessageRole, content: str) -> Message:
+    def add_message(self, conversation_id: int, role: MessageRole, content: str) -> Message:
         """Add a message to a conversation."""
         message = Message(
             conversation_id=conversation_id,
@@ -58,21 +57,21 @@ class ChatService:
         self.session.refresh(message)
         return message
 
-    def get_conversation_messages(self, conversation_id: uuid.UUID) -> list[Message]:
+    def get_conversation_messages(self, conversation_id: int) -> list[Message]:
         """Get all messages for a conversation."""
         messages = self.session.exec(
             select(Message).where(Message.conversation_id == conversation_id).order_by(Message.timestamp)
         ).all()
         return messages
 
-    def get_user_conversations(self, user_id: uuid.UUID) -> list[Conversation]:
+    def get_user_conversations(self, user_id: str) -> list[Conversation]:
         """Get all conversations for a user."""
         conversations = self.session.exec(
             select(Conversation).where(Conversation.user_id == user_id).order_by(Conversation.updated_at.desc())
         ).all()
         return conversations
 
-    def process_user_message(self, user_id: uuid.UUID, message_content: str, conversation_id: Optional[uuid.UUID] = None, agent_response: Optional[str] = None, action_taken: Optional[str] = None) -> Dict[str, Any]:
+    def process_user_message(self, user_id: str, message_content: str, conversation_id: Optional[int] = None, agent_response: Optional[str] = None, action_taken: Optional[str] = None) -> Dict[str, Any]:
         """Process a user message and return response."""
         # Get or create conversation
         conversation = self.get_or_create_conversation(user_id, conversation_id)
@@ -94,7 +93,7 @@ class ChatService:
             "confirmation_message": response_content
         }
 
-    def delete_conversation(self, conversation_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+    def delete_conversation(self, conversation_id: int, user_id: str) -> bool:
         """Delete a conversation if it belongs to the user."""
         conversation = self.session.get(Conversation, conversation_id)
         if conversation and conversation.user_id == user_id:

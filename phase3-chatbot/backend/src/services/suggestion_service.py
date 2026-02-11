@@ -1,7 +1,6 @@
 from typing import List, Dict, Any, Optional
 from sqlmodel import Session
 from datetime import datetime
-import uuid
 from ..models.conversation import Message
 from ..models.task import Task
 
@@ -13,7 +12,7 @@ class SuggestionService:
         """Initialize SuggestionService with database session."""
         self.session = session
 
-    def get_contextual_suggestions(self, user_id: uuid.UUID, conversation_context: List[Message] = None) -> List[str]:
+    def get_contextual_suggestions(self, user_id: str, conversation_context: List[Message] = None) -> List[str]:
         """
         Generate contextual suggestions based on user's tasks and conversation history.
 
@@ -70,7 +69,7 @@ class SuggestionService:
         # Limit to top 5 suggestions
         return suggestions[:5]
 
-    def _get_user_tasks(self, user_id: uuid.UUID) -> List[Task]:
+    def _get_user_tasks(self, user_id: str) -> List[Task]:
         """Get all tasks for a user."""
         from sqlmodel import select
         # Import here to avoid circular import
@@ -81,7 +80,7 @@ class SuggestionService:
         # This would normally be: SELECT * FROM task WHERE user_id = user_id
         return []
 
-    def get_task_suggestions(self, user_id: uuid.UUID, current_task: Optional[Task] = None) -> List[str]:
+    def get_task_suggestions(self, user_id: str, current_task: Optional[Task] = None) -> List[str]:
         """
         Generate suggestions related to task management.
 

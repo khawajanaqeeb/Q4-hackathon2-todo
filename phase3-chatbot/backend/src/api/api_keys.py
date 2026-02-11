@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from sqlmodel import Session
 from typing import Optional
 from datetime import datetime, timedelta
-import uuid
 from ..services.api_key_manager import ApiKeyManager
 from ..database import get_session
 from ..dependencies.auth import get_current_user

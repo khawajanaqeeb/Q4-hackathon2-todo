@@ -1,7 +1,6 @@
 """Real OpenAI Agents SDK implementation for todo management."""
 
 import asyncio
-import uuid
 from typing import Dict, Any, Optional
 from sqlmodel import Session
 from .services.mcp_integration import McpIntegrationService
@@ -100,14 +99,14 @@ class RealOpenAiAgentsSdk:
                         mcp_result = await self.mcp_service.invoke_tool(
                             tool_name=tool_name,
                             parameters=params,
-                            user_id=uuid.UUID(user_id)
+                            user_id=user_id
                         )
 
                 response_text = await agent_runner.generate_response(message, agent_result["intent_result"], mcp_result)
                 return {"response": response_text, "success": True}
 
             # Get available tools from the MCP service
-            tools = self.mcp_service.get_available_tools(uuid.UUID(user_id))
+            tools = self.mcp_service.get_available_tools(user_id)
 
             # Prepare tools in OpenAI format
             openai_tools = []
@@ -179,7 +178,7 @@ class RealOpenAiAgentsSdk:
                     result = await self.mcp_service.invoke_tool(
                         tool_name=function_name,
                         parameters=function_args,
-                        user_id=uuid.UUID(user_id)
+                        user_id=user_id
                     )
 
                     tool_results.append({

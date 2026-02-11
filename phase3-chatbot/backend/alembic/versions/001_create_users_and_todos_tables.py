@@ -29,7 +29,7 @@ def upgrade():
     # Create users table
     op.create_table(
         'users',
-        sa.Column('id', sa.Integer(), nullable=False, autoincrement=True),
+        sa.Column('id', sa.String(length=36), nullable=False),
         sa.Column('email', sa.String(length=255), nullable=False),
         sa.Column('hashed_password', sa.String(length=60), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
@@ -47,7 +47,7 @@ def upgrade():
     op.create_table(
         'todos',
         sa.Column('id', sa.Integer(), nullable=False, autoincrement=True),
-        sa.Column('user_id', sa.Integer(), nullable=False),
+        sa.Column('user_id', sa.String(length=36), nullable=False),
         sa.Column('title', sa.String(length=500), nullable=False),
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column('completed', sa.Boolean(), server_default='false', nullable=False),

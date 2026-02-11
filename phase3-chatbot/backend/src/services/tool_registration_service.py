@@ -1,5 +1,4 @@
 import asyncio
-import uuid
 from typing import Dict, Any, List, Optional, Callable
 from sqlmodel import Session, select
 from datetime import datetime
@@ -27,7 +26,7 @@ class ToolRegistrationService:
         handler: Callable,
         description: str = "",
         schema_json: Optional[Dict[str, Any]] = None,
-        user_id: Optional[uuid.UUID] = None
+        user_id: Optional[str] = None
     ) -> McpTool:
         """
         Register an MCP tool dynamically.
@@ -156,7 +155,7 @@ class ToolRegistrationService:
 
         return None
 
-    async def list_registered_tools(self, user_id: Optional[uuid.UUID] = None) -> List[Dict[str, Any]]:
+    async def list_registered_tools(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         List all registered tools.
 
@@ -201,7 +200,7 @@ class ToolDiscoveryService:
         """
         self.session = session
 
-    async def discover_tools_by_provider(self, provider: str, user_id: Optional[uuid.UUID] = None) -> List[Dict[str, Any]]:
+    async def discover_tools_by_provider(self, provider: str, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Discover tools by provider.
 
@@ -234,7 +233,7 @@ class ToolDiscoveryService:
 
         return tools_list
 
-    async def discover_tools_by_capability(self, capability: str, user_id: Optional[uuid.UUID] = None) -> List[Dict[str, Any]]:
+    async def discover_tools_by_capability(self, capability: str, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Discover tools by capability/keyword.
 
@@ -271,7 +270,7 @@ class ToolDiscoveryService:
 
         return tools_list
 
-    async def discover_all_tools(self, user_id: Optional[uuid.UUID] = None) -> List[Dict[str, Any]]:
+    async def discover_all_tools(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Discover all available tools.
 
@@ -377,7 +376,7 @@ class ToolValidationService:
             "warnings": []
         }
 
-    async def validate_tool_access(self, tool_name: str, user_id: uuid.UUID) -> Dict[str, Any]:
+    async def validate_tool_access(self, tool_name: str, user_id: str) -> Dict[str, Any]:
         """
         Validate if a user has access to a specific tool.
 

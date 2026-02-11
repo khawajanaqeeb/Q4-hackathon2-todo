@@ -5,7 +5,6 @@ import asyncio
 import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-from uuid import UUID
 from sqlmodel import create_engine, Session, select
 from .models.task import Task
 from .models.user import User
@@ -188,13 +187,13 @@ class TodoMcpServer:
 
         with Session(self.engine) as session:
             # Verify user exists
-            user = session.get(User, UUID(validated_params.user_id))
+            user = session.get(User, int(validated_params.user_id))
             if not user:
                 return {"error": "User not found", "success": False}
 
             # Create new task
             task = Task(
-                user_id=UUID(validated_params.user_id),
+                user_id=int(validated_params.user_id),
                 title=validated_params.title,
                 description=validated_params.description,
                 priority=validated_params.priority,
@@ -217,12 +216,12 @@ class TodoMcpServer:
 
         with Session(self.engine) as session:
             # Verify user exists
-            user = session.get(User, UUID(validated_params.user_id))
+            user = session.get(User, int(validated_params.user_id))
             if not user:
                 return {"error": "User not found", "success": False}
 
             # Build query
-            query = select(Task).where(Task.user_id == UUID(validated_params.user_id))
+            query = select(Task).where(Task.user_id == int(validated_params.user_id))
 
             if validated_params.status != "all":
                 query = query.where(Task.completed == (validated_params.status == "completed"))
@@ -258,13 +257,13 @@ class TodoMcpServer:
 
         with Session(self.engine) as session:
             # Verify user exists
-            user = session.get(User, UUID(validated_params.user_id))
+            user = session.get(User, int(validated_params.user_id))
             if not user:
                 return {"error": "User not found", "success": False}
 
             # Get task
             task = session.get(Task, int(validated_params.task_id))
-            if not task or task.user_id != UUID(validated_params.user_id):
+            if not task or task.user_id != int(validated_params.user_id):
                 return {"error": "Task not found or does not belong to user", "success": False}
 
             # Update task fields
@@ -296,13 +295,13 @@ class TodoMcpServer:
 
         with Session(self.engine) as session:
             # Verify user exists
-            user = session.get(User, UUID(validated_params.user_id))
+            user = session.get(User, int(validated_params.user_id))
             if not user:
                 return {"error": "User not found", "success": False}
 
             # Get task
             task = session.get(Task, int(validated_params.task_id))
-            if not task or task.user_id != UUID(validated_params.user_id):
+            if not task or task.user_id != int(validated_params.user_id):
                 return {"error": "Task not found or does not belong to user", "success": False}
 
             task.completed = True
@@ -323,13 +322,13 @@ class TodoMcpServer:
 
         with Session(self.engine) as session:
             # Verify user exists
-            user = session.get(User, UUID(validated_params.user_id))
+            user = session.get(User, int(validated_params.user_id))
             if not user:
                 return {"error": "User not found", "success": False}
 
             # Get task
             task = session.get(Task, int(validated_params.task_id))
-            if not task or task.user_id != UUID(validated_params.user_id):
+            if not task or task.user_id != int(validated_params.user_id):
                 return {"error": "Task not found or does not belong to user", "success": False}
 
             session.delete(task)
@@ -346,12 +345,12 @@ class TodoMcpServer:
 
         with Session(self.engine) as session:
             # Verify user exists
-            user = session.get(User, UUID(validated_params.user_id))
+            user = session.get(User, int(validated_params.user_id))
             if not user:
                 return {"error": "User not found", "success": False}
 
             # Build query with search
-            query = select(Task).where(Task.user_id == UUID(validated_params.user_id))
+            query = select(Task).where(Task.user_id == int(validated_params.user_id))
 
             # Add search condition - check both title and description
             query = query.where(

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from typing import Optional
-import uuid
 from ..database import get_session
 from ..dependencies.auth import get_current_user
 from ..models.user import User
@@ -20,19 +19,19 @@ router = APIRouter(tags=["Chat"])
 
 class ChatMessageRequest(BaseModel):
     message: str
-    conversation_id: Optional[str] = None  # UUID as string
+    conversation_id: Optional[str] = None  # integer ID as string
 
 
 class ChatMessageResponse(BaseModel):
     message: str
-    conversation_id: str  # UUID as string
+    conversation_id: str  # integer ID as string
     timestamp: str
     action_taken: str
     confirmation_message: str
 
 
 class ConversationSummary(BaseModel):
-    id: str  # UUID as string
+    id: str  # integer ID as string
     title: Optional[str]
     created_at: str
     updated_at: str
@@ -71,25 +70,21 @@ async def send_message(
     mcp_service = McpIntegrationService(session, api_key_manager, audit_service)
 
     try:
-        # Convert conversation_id to UUID if provided
+        # Convert conversation_id to int if provided
         conversation_id = None
         if request.conversation_id:
             try:
-                conversation_id = uuid.UUID(request.conversation_id)
-            except ValueError:
+                conversation_id = int(request.conversation_id)
+            except (ValueError, TypeError):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid conversation_id format"
                 )
 
-        # Process the user message through the chat service
-        # First, process with agent runner to understand the intent
-        conversation_uuid = uuid.UUID(user_id)
-
         # Get conversation messages for context
         if conversation_id:
             conversation = session.get(Conversation, conversation_id)
-            if not conversation or conversation.user_id != conversation_uuid:
+            if not conversation or conversation.user_id != user_id:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Conversation does not belong to user"
@@ -132,7 +127,7 @@ async def send_message(
             mcp_result = await mcp_service.invoke_tool(
                 tool_name=tool_name,
                 parameters=params,
-                user_id=conversation_uuid
+                user_id=user_id
             )
 
             # Check both outer success (tool invocation) and inner success (operation result)
@@ -157,7 +152,7 @@ async def send_message(
 
         # Process the message using the chat service, passing the agent's AI response
         result = chat_service.process_user_message(
-            user_id=conversation_uuid,
+            user_id=user_id,
             message_content=request.message,
             conversation_id=conversation_id,
             agent_response=agent_result.get("response"),
@@ -202,11 +197,11 @@ async def get_user_conversations(
         )
 
     try:
-        user_uuid = uuid.UUID(user_id)
+
         chat_service = ChatService(session)
 
         # Get user conversations
-        conversations = chat_service.get_user_conversations(user_uuid)
+        conversations = chat_service.get_user_conversations(user_id)
 
         # Apply pagination
         paginated_conversations = conversations[offset:offset + limit]
@@ -260,20 +255,20 @@ async def get_conversation_messages(
         )
 
     try:
-        user_uuid = uuid.UUID(user_id)
-        conv_uuid = uuid.UUID(conversation_id)
+
+        conv_id_int = int(conversation_id)
         chat_service = ChatService(session)
 
         # Get the conversation to verify it belongs to the user
-        conversation = session.get(Conversation, conv_uuid)
-        if not conversation or conversation.user_id != user_uuid:
+        conversation = session.get(Conversation, conv_id_int)
+        if not conversation or conversation.user_id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Conversation does not belong to user"
             )
 
         # Get messages for the conversation
-        messages = chat_service.get_conversation_messages(conv_uuid)
+        messages = chat_service.get_conversation_messages(conv_id_int)
 
         # Format the response
         formatted_messages = [
@@ -324,12 +319,12 @@ async def delete_conversation(
         )
 
     try:
-        user_uuid = uuid.UUID(user_id)
-        conv_uuid = uuid.UUID(conversation_id)
+
+        conv_id_int = int(conversation_id)
         chat_service = ChatService(session)
 
         # Attempt to delete the conversation
-        success = chat_service.delete_conversation(conv_uuid, user_uuid)
+        success = chat_service.delete_conversation(conv_id_int, user_id)
 
         if not success:
             raise HTTPException(

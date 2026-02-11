@@ -163,10 +163,8 @@ async def register(
         # Hash password with bcrypt
         hashed_password = hash_password(password)
 
-        # Create new user
-        from uuid import uuid4
+        # Create new user (id is auto-incremented integer)
         user = User(
-            id=uuid4(),
             email=email,
             hashed_password=hashed_password,
             username=username,
@@ -292,7 +290,7 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Create JWT tokens with user ID (UUID as string)
+    # Create JWT tokens with user ID (string)
     access_token = create_access_token(
         data={"sub": str(user.id), "username": user.username, "email": user.email}
     )
@@ -359,18 +357,7 @@ async def refresh_token(
             )
 
         # Fetch user from database
-        from uuid import UUID
-        try:
-            user_uuid = UUID(user_id_str)
-            user = session.get(User, user_uuid)
-        except ValueError:
-            # Handle case where user_id_str is not a valid UUID (legacy support)
-            # This might happen if using old tokens with integer IDs
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token: user ID is not a valid UUID",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+        user = session.get(User, user_id_str)
 
         if user is None or not user.is_active:
             raise HTTPException(
@@ -498,18 +485,7 @@ async def verify_token_endpoint(
             )
 
         # Fetch user from database
-        from uuid import UUID
-        try:
-            user_uuid = UUID(user_id_str)
-            user = session.get(User, user_uuid)
-        except ValueError:
-            # Handle case where user_id_str is not a valid UUID (legacy support)
-            # This might happen if using old tokens with integer IDs
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token: user ID is not a valid UUID",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+        user = session.get(User, user_id_str)
 
         if user is None or not user.is_active:
             raise HTTPException(

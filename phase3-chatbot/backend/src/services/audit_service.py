@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 from typing import Optional, Dict, Any
 from sqlmodel import Session, select
@@ -20,10 +19,10 @@ class AuditService:
     async def log_operation(
         self,
         session: Session,
-        user_id: Optional[uuid.UUID],
+        user_id: Optional[str],
         action_type: str,
         resource_type: Optional[str] = None,
-        resource_id: Optional[uuid.UUID] = None,
+        resource_id: Optional[int] = None,
         metadata: Optional[Dict[str, Any]] = None,
         success: bool = True,
         response_time_ms: Optional[int] = None,
@@ -72,7 +71,7 @@ class AuditService:
     async def track_usage(
         self,
         session: Session,
-        user_id: uuid.UUID,
+        user_id: str,
         provider: str,
         action: str,
         cost: float = 0.0,
@@ -111,7 +110,7 @@ class AuditService:
     async def generate_report(
         self,
         session: Session,
-        user_id: Optional[uuid.UUID] = None,
+        user_id: Optional[str] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         action_types: Optional[list] = None
@@ -149,7 +148,7 @@ class AuditService:
     async def get_user_activity(
         self,
         session: Session,
-        user_id: uuid.UUID,
+        user_id: str,
         days: int = 30
     ) -> Dict[str, Any]:
         """

@@ -2,7 +2,6 @@ import asyncio
 from typing import Dict, Any, Optional
 from ..config import settings
 import json
-import uuid
 
 # Import OpenAI conditionally to avoid crashes when it's not available
 try:

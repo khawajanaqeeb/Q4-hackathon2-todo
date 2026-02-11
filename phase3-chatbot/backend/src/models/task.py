@@ -2,7 +2,6 @@ from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone
 from enum import Enum
-import uuid
 
 
 if TYPE_CHECKING:
@@ -19,7 +18,7 @@ class Task(SQLModel, table=True):
     """Extended Task model with chat-related fields."""
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: uuid.UUID = Field(foreign_key="user.id")  # Use the default table name
+    user_id: str = Field(foreign_key="user.id")
     title: str = Field(min_length=1, max_length=255)
     description: Optional[str] = Field(default=None)
     priority: PriorityLevel = Field(default=PriorityLevel.MEDIUM)

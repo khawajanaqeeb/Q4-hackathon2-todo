@@ -400,20 +400,27 @@ async function handleRequest(
     }
 
     // For non-auth routes, build the URL normally but ensure /api prefix for backend
+    // Also ensure trailing slash to avoid FastAPI 307 redirects that can strip auth headers
     let backendUrl: string;
+    let normalizedPath = apiPath;
+    // Add trailing slash if the path doesn't end with one and doesn't have a file extension
+    // This prevents FastAPI 307 redirects which can strip Authorization headers
+    if (!normalizedPath.endsWith('/') && !normalizedPath.includes('.')) {
+      normalizedPath = normalizedPath + '/';
+    }
     if (apiPath.startsWith('/chat/')) {
       // Chat routes go to /api/chat on the backend (add /api prefix to match backend mount point)
-      backendUrl = `${BACKEND_URL}/api${apiPath}${searchParams}`;
+      backendUrl = `${BACKEND_URL}/api${normalizedPath}${searchParams}`;
     } else {
       // All other routes go through /api prefix for the backend
-      backendUrl = `${BACKEND_URL}/api${apiPath}${searchParams}`;
+      backendUrl = `${BACKEND_URL}/api${normalizedPath}${searchParams}`;
     }
 
     const backendResponse = await proxyToBackend(method, backendUrl, token, body, contentType);
 
     if (!backendResponse.ok) {
       const errorData = await safeJsonParse(backendResponse).catch(() => null);
-      const message = errorData?.error || errorData?.detail || 'API request failed';
+      const message = errorData?.error || errorData?.detail || `API request failed (status: ${backendResponse.status})`;
       console.error(`[Proxy] API request failed: ${message}`, { status: backendResponse.status, url: backendUrl });
       return createErrorResponse(message, backendResponse.status);
     }

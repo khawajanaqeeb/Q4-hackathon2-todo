@@ -1,6 +1,7 @@
 """Pytest configuration and shared fixtures — uses Neon DB (real PostgreSQL)."""
 import pytest
-import uuid
+import random
+import string
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 from passlib.context import CryptContext
@@ -11,6 +12,10 @@ from src.models.user import User
 from src.dependencies.auth import create_access_token
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def _random_suffix(length=8):
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 
 @pytest.fixture(name="session")
@@ -35,11 +40,10 @@ def client_fixture(session: Session):
 @pytest.fixture(name="test_user")
 def test_user_fixture(session: Session):
     """Create a unique test user in Neon DB, clean up after test."""
-    user_id = uuid.uuid4()
+    suffix = _random_suffix()
     user = User(
-        id=user_id,
-        email=f"test_{user_id}@example.com",
-        username=f"testuser_{user_id.hex[:8]}",
+        email=f"test_{suffix}@example.com",
+        username=f"testuser_{suffix}",
         hashed_password=pwd_context.hash("SecureTestPass123!"),
         is_active=True,
         is_superuser=False,
@@ -56,11 +60,10 @@ def test_user_fixture(session: Session):
 @pytest.fixture(name="test_user2")
 def test_user2_fixture(session: Session):
     """Create a second unique test user for isolation tests."""
-    user_id = uuid.uuid4()
+    suffix = _random_suffix()
     user = User(
-        id=user_id,
-        email=f"test2_{user_id}@example.com",
-        username=f"testuser2_{user_id.hex[:8]}",
+        email=f"test2_{suffix}@example.com",
+        username=f"testuser2_{suffix}",
         hashed_password=pwd_context.hash("SecureTestPass456!"),
         is_active=True,
         is_superuser=False,

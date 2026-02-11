@@ -97,7 +97,7 @@ export default function HomePage() {
     return filtered;
   };
 
-  const handleToggle = async (id: string) => {
+  const handleToggle = async (id: number) => {
     try {
       const updated = await todoAPI.toggleTodoCompletion(id);
       setTodos(todos.map(t => t.id === id ? updated : t));
@@ -106,7 +106,7 @@ export default function HomePage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     if (!confirm('Delete this task?')) return;
     try {
       await todoAPI.deleteTodo(id);

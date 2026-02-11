@@ -4,7 +4,6 @@ Todo Tools Implementation for MCP Integration
 from sqlmodel import Session, select
 from typing import Dict, Any, Optional
 from datetime import datetime
-from uuid import UUID
 import json
 from ..models.task import Task, PriorityLevel
 from ..models.user import User
@@ -22,7 +21,7 @@ class TodoTools:
         """
         self.session = session
 
-    def _resolve_task_id(self, task_id_str: str, user_id: UUID) -> Optional[Task]:
+    def _resolve_task_id(self, task_id_str: str, user_id: str) -> Optional[Task]:
         """Resolve a task by integer ID for the given user."""
         try:
             task_id = int(task_id_str)
@@ -33,7 +32,7 @@ class TodoTools:
             pass
         return None
 
-    def _resolve_task_by_title_or_id(self, identifier: str, user_id: UUID) -> Optional[Task]:
+    def _resolve_task_by_title_or_id(self, identifier: str, user_id: str) -> Optional[Task]:
         """Resolve a task by integer ID or case-insensitive title search.
 
         Returns a single Task, or None if not found or ambiguous (multiple title matches).
@@ -61,7 +60,7 @@ class TodoTools:
         # Ambiguous or not found
         return None
 
-    async def create_task_tool(self, params: Dict[str, Any], api_key: str, user_id: UUID) -> Dict[str, Any]:
+    async def create_task_tool(self, params: Dict[str, Any], api_key: str, user_id: str) -> Dict[str, Any]:
         """
         Create a new task tool implementation
 
@@ -106,7 +105,7 @@ class TodoTools:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    async def list_tasks_tool(self, params: Dict[str, Any], api_key: str, user_id: UUID) -> Dict[str, Any]:
+    async def list_tasks_tool(self, params: Dict[str, Any], api_key: str, user_id: str) -> Dict[str, Any]:
         """
         List tasks tool implementation
 
@@ -169,7 +168,7 @@ class TodoTools:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    async def update_task_tool(self, params: Dict[str, Any], api_key: str, user_id: UUID) -> Dict[str, Any]:
+    async def update_task_tool(self, params: Dict[str, Any], api_key: str, user_id: str) -> Dict[str, Any]:
         """
         Update task tool implementation
 
@@ -224,7 +223,7 @@ class TodoTools:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    async def complete_task_tool(self, params: Dict[str, Any], api_key: str, user_id: UUID) -> Dict[str, Any]:
+    async def complete_task_tool(self, params: Dict[str, Any], api_key: str, user_id: str) -> Dict[str, Any]:
         """
         Complete task tool implementation
 
@@ -268,7 +267,7 @@ class TodoTools:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    async def delete_task_tool(self, params: Dict[str, Any], api_key: str, user_id: UUID) -> Dict[str, Any]:
+    async def delete_task_tool(self, params: Dict[str, Any], api_key: str, user_id: str) -> Dict[str, Any]:
         """
         Delete task tool implementation
 
@@ -310,7 +309,7 @@ class TodoTools:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    async def search_tasks_tool(self, params: Dict[str, Any], api_key: str, user_id: UUID) -> Dict[str, Any]:
+    async def search_tasks_tool(self, params: Dict[str, Any], api_key: str, user_id: str) -> Dict[str, Any]:
         """
         Search tasks tool implementation
 
@@ -380,7 +379,7 @@ class TodoTools:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    async def get_task_details_tool(self, params: Dict[str, Any], api_key: str, user_id: UUID) -> Dict[str, Any]:
+    async def get_task_details_tool(self, params: Dict[str, Any], api_key: str, user_id: str) -> Dict[str, Any]:
         """
         Get task details tool implementation
 

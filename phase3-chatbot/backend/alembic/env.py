@@ -6,14 +6,12 @@ from sqlalchemy import pool
 
 from alembic import context
 
-# Import app config and models
-from app.config import settings
+# Import src config and models
+from src.config import settings
 from sqlmodel import SQLModel
 
 # Import all models to ensure they're registered with SQLModel metadata
-# (Will be populated as models are created)
-from app.models.user import User  # type: ignore # noqa: F401
-from app.models.todo import Todo  # type: ignore # noqa: F401
+from src.models import User, Task, Conversation, Message, ApiKey, AuditLog, McpTool  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

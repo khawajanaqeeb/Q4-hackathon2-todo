@@ -1,10 +1,11 @@
 """Test suite for MCP (Model Context Protocol) endpoints."""
 
 import pytest
+import random
+import string
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 from unittest.mock import Mock, patch, MagicMock
-import uuid
 
 from src.main import app
 from src.database import get_session, engine
@@ -13,6 +14,10 @@ from src.models.mcp_tool import McpTool
 from src.models.api_key import ApiKey
 from src.dependencies.auth import get_current_user
 from src.config import settings
+
+
+def _random_suffix(length=8):
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 
 @pytest.fixture(scope="module")
@@ -33,13 +38,13 @@ def db_session():
 def test_user(db_session):
     """Create a test user."""
     from passlib.context import CryptContext
-    
+
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    
+    suffix = _random_suffix()
+
     user = User(
-        id=uuid.uuid4(),
-        email="mcp_test@example.com",
-        username="mcptestuser",
+        email=f"mcp_test_{suffix}@example.com",
+        username=f"mcptestuser_{suffix}",
         hashed_password=pwd_context.hash("testpassword123"),
         is_active=True,
         is_superuser=True  # Give superuser for MCP operations
@@ -61,9 +66,9 @@ def auth_headers(test_user):
 def test_invoke_mcp_tool_success(client: TestClient, test_user, auth_headers: dict, db_session: Session):
     """Test successful invocation of an MCP tool."""
     # Create a test tool in the database
+    suffix = _random_suffix()
     tool = McpTool(
-        id=uuid.uuid4(),
-        name="test_tool",
+        name=f"test_tool_{suffix}",
         description="A test tool for MCP",
         provider="test_provider",
         tool_schema={
@@ -77,19 +82,19 @@ def test_invoke_mcp_tool_success(client: TestClient, test_user, auth_headers: di
     )
     db_session.add(tool)
     db_session.commit()
-    
+
     # Test the tool invocation
     response = client.post(
         "/api/mcp/tools/invoke",
         json={
-            "tool_name": "test_tool",
+            "tool_name": f"test_tool_{suffix}",
             "parameters": {
                 "param1": "test_value"
             }
         },
         headers=auth_headers
     )
-    
+
     # The actual response will depend on the implementation of the tool
     # For now, we'll check that the request is processed without error
     assert response.status_code in [200, 400]  # 400 might be returned if the tool doesn't exist in the actual implementation
@@ -107,7 +112,7 @@ def test_invoke_mcp_tool_not_found(client: TestClient, test_user, auth_headers: 
         },
         headers=auth_headers
     )
-    
+
     assert response.status_code == 404
     data = response.json()
     assert "detail" in data
@@ -116,9 +121,9 @@ def test_invoke_mcp_tool_not_found(client: TestClient, test_user, auth_headers: 
 def test_invoke_mcp_tool_invalid_params(client: TestClient, test_user, auth_headers: dict, db_session: Session):
     """Test invoking an MCP tool with invalid parameters."""
     # Create a test tool in the database
+    suffix = _random_suffix()
     tool = McpTool(
-        id=uuid.uuid4(),
-        name="test_tool_with_validation",
+        name=f"test_tool_with_validation_{suffix}",
         description="A test tool with parameter validation",
         provider="test_provider",
         tool_schema={
@@ -132,19 +137,19 @@ def test_invoke_mcp_tool_invalid_params(client: TestClient, test_user, auth_head
     )
     db_session.add(tool)
     db_session.commit()
-    
+
     # Test with missing required parameter
     response = client.post(
         "/api/mcp/tools/invoke",
         json={
-            "tool_name": "test_tool_with_validation",
+            "tool_name": f"test_tool_with_validation_{suffix}",
             "parameters": {
                 "wrong_param": "test_value"  # Missing required_param
             }
         },
         headers=auth_headers
     )
-    
+
     # Should return 422 for validation error or 400 for business logic error
     assert response.status_code in [400, 422]
 
@@ -152,17 +157,16 @@ def test_invoke_mcp_tool_invalid_params(client: TestClient, test_user, auth_head
 def test_get_available_tools(client: TestClient, test_user, auth_headers: dict, db_session: Session):
     """Test getting list of available MCP tools."""
     # Create some test tools
+    suffix = _random_suffix()
     tool1 = McpTool(
-        id=uuid.uuid4(),
-        name="tool1",
+        name=f"tool1_{suffix}",
         description="First test tool",
         provider="test_provider",
         tool_schema={"type": "object"},
         is_active=True
     )
     tool2 = McpTool(
-        id=uuid.uuid4(),
-        name="tool2", 
+        name=f"tool2_{suffix}",
         description="Second test tool",
         provider="test_provider",
         tool_schema={"type": "object"},
@@ -171,24 +175,24 @@ def test_get_available_tools(client: TestClient, test_user, auth_headers: dict, 
     db_session.add(tool1)
     db_session.add(tool2)
     db_session.commit()
-    
+
     response = client.get("/api/mcp/tools/available", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "tools" in data
     assert len(data["tools"]) >= 2  # At least our 2 tools should be present
-    
+
     # Check that our tools are in the response
     tool_names = [tool["name"] for tool in data["tools"]]
-    assert "tool1" in tool_names
-    assert "tool2" in tool_names
+    assert f"tool1_{suffix}" in tool_names
+    assert f"tool2_{suffix}" in tool_names
 
 
 def test_get_available_tools_empty(client: TestClient, test_user, auth_headers: dict):
     """Test getting available tools when none exist."""
     response = client.get("/api/mcp/tools/available", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "tools" in data
@@ -206,10 +210,10 @@ def test_get_tool_schema_success(client: TestClient, test_user, auth_headers: di
         },
         "required": ["param1"]
     }
-    
+
+    suffix = _random_suffix()
     tool = McpTool(
-        id=uuid.uuid4(),
-        name="schema_test_tool",
+        name=f"schema_test_tool_{suffix}",
         description="Tool for schema testing",
         provider="test_provider",
         tool_schema=expected_schema,
@@ -217,9 +221,10 @@ def test_get_tool_schema_success(client: TestClient, test_user, auth_headers: di
     )
     db_session.add(tool)
     db_session.commit()
-    
+    db_session.refresh(tool)
+
     response = client.get(f"/api/mcp/tools/schema/{tool.name}", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert data == expected_schema
@@ -228,7 +233,7 @@ def test_get_tool_schema_success(client: TestClient, test_user, auth_headers: di
 def test_get_tool_schema_not_found(client: TestClient, test_user, auth_headers: dict):
     """Test getting schema for a non-existent tool."""
     response = client.get("/api/mcp/tools/schema/nonexistent_tool", headers=auth_headers)
-    
+
     assert response.status_code == 404
     data = response.json()
     assert "detail" in data
@@ -237,7 +242,7 @@ def test_get_tool_schema_not_found(client: TestClient, test_user, auth_headers: 
 def test_get_available_providers(client: TestClient, test_user, auth_headers: dict):
     """Test getting list of available providers."""
     response = client.get("/api/mcp/providers/available", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     # Should return a list of providers
@@ -249,6 +254,7 @@ def test_get_available_providers(client: TestClient, test_user, auth_headers: di
 def test_register_tool_success(client: TestClient, test_user, auth_headers: dict):
     """Test successful registration of a new tool (admin functionality)."""
     # Only test with superuser (which our test user is)
+    suffix = _random_suffix()
     tool_schema = {
         "type": "object",
         "properties": {
@@ -256,18 +262,18 @@ def test_register_tool_success(client: TestClient, test_user, auth_headers: dict
         },
         "required": ["param1"]
     }
-    
+
     response = client.post(
         "/api/mcp/tools/register",
         params={
-            "tool_name": "new_test_tool",
+            "tool_name": f"new_test_tool_{suffix}",
             "provider": "test_provider",
             "description": "A newly registered test tool"
         },
         json=tool_schema,
         headers=auth_headers
     )
-    
+
     # This might return 200 on success, or 409 if tool already exists
     assert response.status_code in [200, 409, 422]
 
@@ -277,27 +283,28 @@ def test_register_tool_unauthorized(client: TestClient, db_session: Session):
     # Create a non-superuser
     from passlib.context import CryptContext
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    
+    suffix = _random_suffix()
+
     regular_user = User(
-        id=uuid.uuid4(),
-        email="regular@example.com",
-        username="regularuser",
+        email=f"regular_{suffix}@example.com",
+        username=f"regularuser_{suffix}",
         hashed_password=pwd_context.hash("password123"),
         is_active=True,
         is_superuser=False  # Not a superuser
     )
     db_session.add(regular_user)
     db_session.commit()
-    
+    db_session.refresh(regular_user)
+
     # Create auth headers for regular user
     from src.dependencies.auth import create_access_token
     access_token = create_access_token(data={"sub": str(regular_user.id)})
     headers = {"Authorization": f"Bearer {access_token}"}
-    
+
     response = client.post(
         "/api/mcp/tools/register",
         params={
-            "tool_name": "restricted_tool",
+            "tool_name": f"restricted_tool_{_random_suffix()}",
             "provider": "test_provider",
             "description": "Should not be allowed"
         },
@@ -310,7 +317,7 @@ def test_register_tool_unauthorized(client: TestClient, db_session: Session):
         },
         headers=headers
     )
-    
+
     # Should return 403 Forbidden for non-admin users
     assert response.status_code == 403
 
@@ -333,7 +340,7 @@ def test_register_tool_missing_params(client: TestClient, test_user, auth_header
         },
         headers=auth_headers
     )
-    
+
     # Should return 422 for validation error or 400 for business logic error
     assert response.status_code in [400, 422]
 
@@ -341,7 +348,7 @@ def test_register_tool_missing_params(client: TestClient, test_user, auth_header
 def test_get_audit_logs(client: TestClient, test_user, auth_headers: dict):
     """Test retrieving audit logs."""
     response = client.get("/api/audit/logs", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     # Response should have logs array and metadata
@@ -355,16 +362,16 @@ def test_get_audit_logs(client: TestClient, test_user, auth_headers: dict):
 def test_get_audit_logs_with_filters(client: TestClient, test_user, auth_headers: dict):
     """Test retrieving audit logs with filters."""
     from datetime import datetime, timedelta
-    
+
     # Test with date range filter
     end_date = datetime.now()
     start_date = end_date - timedelta(days=1)
-    
+
     response = client.get(
         f"/api/audit/logs?start_date={start_date.isoformat()}&end_date={end_date.isoformat()}",
         headers=auth_headers
     )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "logs" in data
@@ -373,7 +380,7 @@ def test_get_audit_logs_with_filters(client: TestClient, test_user, auth_headers
 def test_get_user_activity(client: TestClient, test_user, auth_headers: dict):
     """Test retrieving user activity summary."""
     response = client.get("/api/mcp/user/activity", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     # Response should contain activity summary
@@ -385,7 +392,7 @@ def test_get_user_activity(client: TestClient, test_user, auth_headers: dict):
 def test_get_user_activity_with_days_param(client: TestClient, test_user, auth_headers: dict):
     """Test retrieving user activity with custom day range."""
     response = client.get("/api/mcp/user/activity?days=7", headers=auth_headers)
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "user_id" in data
@@ -401,18 +408,18 @@ def test_unauthorized_access_to_mcp_endpoints(client: TestClient):
             "parameters": {"param": "value"}
         }
     )
-    
+
     assert response.status_code == 401
     data = response.json()
     assert "detail" in data
-    
+
     # Try to get available tools without authentication
     response = client.get("/api/mcp/tools/available")
-    
+
     assert response.status_code == 401
     data = response.json()
     assert "detail" in data
-    
+
     # Try to register a tool without authentication
     response = client.post(
         "/api/mcp/tools/register",
@@ -423,7 +430,7 @@ def test_unauthorized_access_to_mcp_endpoints(client: TestClient):
         },
         json={"type": "object"}
     )
-    
+
     assert response.status_code == 401
     data = response.json()
     assert "detail" in data
@@ -441,11 +448,11 @@ def test_invoke_tool_with_mock(mock_mcp_service_class, client: TestClient, test_
         "provider": "test_provider"
     }
     mock_mcp_service_class.return_value = mock_mcp_service_instance
-    
+
     # Create a test tool in the database
+    suffix = _random_suffix()
     tool = McpTool(
-        id=uuid.uuid4(),
-        name="mock_test_tool",
+        name=f"mock_test_tool_{suffix}",
         description="A test tool for mocking",
         provider="test_provider",
         tool_schema={
@@ -459,19 +466,19 @@ def test_invoke_tool_with_mock(mock_mcp_service_class, client: TestClient, test_
     )
     db_session.add(tool)
     db_session.commit()
-    
+
     # Test the tool invocation
     response = client.post(
         "/api/mcp/tools/invoke",
         json={
-            "tool_name": "mock_test_tool",
+            "tool_name": f"mock_test_tool_{suffix}",
             "parameters": {
                 "param1": "test_value"
             }
         },
         headers=auth_headers
     )
-    
+
     # Should succeed with mocked response
     assert response.status_code == 200
     data = response.json()
@@ -491,11 +498,11 @@ def test_invoke_tool_with_mock_failure(mock_mcp_service_class, client: TestClien
         "provider": "test_provider"
     }
     mock_mcp_service_class.return_value = mock_mcp_service_instance
-    
+
     # Create a test tool in the database
+    suffix = _random_suffix()
     tool = McpTool(
-        id=uuid.uuid4(),
-        name="failing_test_tool",
+        name=f"failing_test_tool_{suffix}",
         description="A test tool that fails",
         provider="test_provider",
         tool_schema={
@@ -509,19 +516,19 @@ def test_invoke_tool_with_mock_failure(mock_mcp_service_class, client: TestClien
     )
     db_session.add(tool)
     db_session.commit()
-    
+
     # Test the tool invocation
     response = client.post(
         "/api/mcp/tools/invoke",
         json={
-            "tool_name": "failing_test_tool",
+            "tool_name": f"failing_test_tool_{suffix}",
             "parameters": {
                 "param1": "test_value"
             }
         },
         headers=auth_headers
     )
-    
+
     # Should still return 200 but with success=False
     assert response.status_code == 200
     data = response.json()
