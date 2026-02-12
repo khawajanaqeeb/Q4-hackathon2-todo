@@ -58,7 +58,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId, onTaskChange }) =
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(user?.token && { Authorization: `Bearer ${user.token}` })
         },
         body: JSON.stringify({
           message: message,

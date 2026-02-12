@@ -63,7 +63,7 @@ export default function Navigation() {
           <div className="hidden md:block">
             {user && (
               <div className="ml-4 flex items-center md:ml-6">
-                <p className="text-sm text-white mr-4">Welcome, {user.name}</p>
+                <p className="text-sm text-white mr-4">Welcome, {user.username}</p>
                 <button
                   onClick={handleLogout}
                   className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
