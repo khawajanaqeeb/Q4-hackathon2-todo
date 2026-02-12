@@ -21,22 +21,37 @@ class TodoTools:
         """
         self.session = session
 
+    def _get_task_identifier(self, params: Dict[str, Any]) -> Optional[str]:
+        """Extract task identifier from params, checking task_id first then title.
+
+        Returns a string identifier (numeric ID or title text), or None.
+        """
+        task_id = params.get("task_id")
+        if task_id is not None and str(task_id).strip():
+            return str(task_id).strip()
+        title = params.get("title")
+        if title and str(title).strip():
+            return str(title).strip()
+        return None
+
     def _resolve_task_id(self, task_id_str: str, user_id: str) -> Optional[Task]:
         """Resolve a task by integer ID for the given user."""
         try:
             task_id = int(task_id_str)
             task = self.session.get(Task, task_id)
-            if task and task.user_id == user_id:
+            if task and str(task.user_id) == str(user_id):
                 return task
         except (ValueError, TypeError):
             pass
         return None
 
-    def _resolve_task_by_title_or_id(self, identifier: str, user_id: str) -> Optional[Task]:
+    def _resolve_task_by_title_or_id(self, identifier, user_id: str) -> Optional[Task]:
         """Resolve a task by integer ID or case-insensitive title search.
 
         Returns a single Task, or None if not found or ambiguous (multiple title matches).
         """
+        identifier = str(identifier)
+
         # Try integer ID first
         task = self._resolve_task_id(identifier, user_id)
         if task:
@@ -186,8 +201,8 @@ class TodoTools:
             if not user:
                 return {"success": False, "error": "User not found"}
 
-            # Get task
-            task_id_str = params.get("task_id")
+            # Get task identifier (task_id or title)
+            task_id_str = self._get_task_identifier(params)
             if not task_id_str:
                 return {"success": False, "error": "task_id is required. Please provide a task ID. Use 'show my tasks' to see available IDs."}
 
@@ -241,8 +256,8 @@ class TodoTools:
             if not user:
                 return {"success": False, "error": "User not found"}
 
-            # Get task
-            task_id_str = params.get("task_id")
+            # Get task identifier (task_id or title)
+            task_id_str = self._get_task_identifier(params)
             if not task_id_str:
                 return {"success": False, "error": "task_id is required. Please provide a task ID. Use 'show my tasks' to see available IDs."}
 
@@ -285,8 +300,8 @@ class TodoTools:
             if not user:
                 return {"success": False, "error": "User not found"}
 
-            # Get task
-            task_id_str = params.get("task_id")
+            # Get task identifier (task_id or title)
+            task_id_str = self._get_task_identifier(params)
             if not task_id_str:
                 return {"success": False, "error": "task_id is required. Please provide a task ID. Use 'show my tasks' to see available IDs."}
 
@@ -397,12 +412,12 @@ class TodoTools:
             if not user:
                 return {"success": False, "error": "User not found"}
 
-            # Get task
-            task_id_str = params.get("task_id")
+            # Get task identifier (task_id or title)
+            task_id_str = self._get_task_identifier(params)
             if not task_id_str:
                 return {"success": False, "error": "task_id is required. Please provide a task ID. Use 'show my tasks' to see available IDs."}
 
-            task = self._resolve_task_id(task_id_str, user_id)
+            task = self._resolve_task_by_title_or_id(task_id_str, user_id)
             if not task:
                 return {"success": False, "error": f"Task with ID '{task_id_str}' not found. Use 'show my tasks' to see available IDs."}
 

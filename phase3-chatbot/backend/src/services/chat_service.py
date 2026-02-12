@@ -36,7 +36,7 @@ class ChatService:
         if conversation_id:
             # Try to get existing conversation
             conversation = self.session.get(Conversation, conversation_id)
-            if conversation and conversation.user_id == user_id:
+            if conversation and str(conversation.user_id) == str(user_id):
                 return conversation
             else:
                 raise ValueError("Conversation not found or does not belong to user")
@@ -96,7 +96,7 @@ class ChatService:
     def delete_conversation(self, conversation_id: int, user_id: str) -> bool:
         """Delete a conversation if it belongs to the user."""
         conversation = self.session.get(Conversation, conversation_id)
-        if conversation and conversation.user_id == user_id:
+        if conversation and str(conversation.user_id) == str(user_id):
             conversation.is_active = False  # Soft delete
             self.session.add(conversation)
             self.session.commit()

@@ -56,7 +56,7 @@ async def send_message(
     Process a user message through the AI chatbot and return a response.
     """
     # Verify that the user_id in the path matches the authenticated user
-    if str(current_user.id) != user_id:
+    if str(current_user.id) != str(user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User trying to access another user's data"
@@ -84,7 +84,7 @@ async def send_message(
         # Get conversation messages for context
         if conversation_id:
             conversation = session.get(Conversation, conversation_id)
-            if not conversation or conversation.user_id != user_id:
+            if not conversation or str(conversation.user_id) != str(user_id):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Conversation does not belong to user"
@@ -159,10 +159,14 @@ async def send_message(
             action_taken=agent_result.get("action_taken")
         )
 
+        # Ensure timestamp is marked as UTC (DB stores UTC without timezone info)
+        ts = result["timestamp"]
+        ts_iso = ts.isoformat() + ("Z" if not ts.tzinfo else "")
+
         return ChatMessageResponse(
             message=result["message"],
             conversation_id=str(result["conversation_id"]),
-            timestamp=result["timestamp"].isoformat(),
+            timestamp=ts_iso,
             action_taken=result["action_taken"],
             confirmation_message=result["confirmation_message"]
         )
@@ -190,7 +194,7 @@ async def get_user_conversations(
     Retrieve a list of conversation summaries for the user.
     """
     # Verify that the user_id in the path matches the authenticated user
-    if str(current_user.id) != user_id:
+    if str(current_user.id) != str(user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User trying to access another user's data"
@@ -206,13 +210,13 @@ async def get_user_conversations(
         # Apply pagination
         paginated_conversations = conversations[offset:offset + limit]
 
-        # Format the response
+        # Format the response (append Z to mark UTC for naive datetimes)
         formatted_conversations = [
             ConversationSummary(
                 id=str(conv.id),
                 title=conv.title,
-                created_at=conv.created_at.isoformat(),
-                updated_at=conv.updated_at.isoformat()
+                created_at=conv.created_at.isoformat() + ("Z" if not conv.created_at.tzinfo else ""),
+                updated_at=conv.updated_at.isoformat() + ("Z" if not conv.updated_at.tzinfo else "")
             )
             for conv in paginated_conversations
         ]
@@ -248,7 +252,7 @@ async def get_conversation_messages(
     Retrieve all messages in a specific conversation.
     """
     # Verify that the user_id in the path matches the authenticated user
-    if str(current_user.id) != user_id:
+    if str(current_user.id) != str(user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User trying to access another user's data"
@@ -261,7 +265,7 @@ async def get_conversation_messages(
 
         # Get the conversation to verify it belongs to the user
         conversation = session.get(Conversation, conv_id_int)
-        if not conversation or conversation.user_id != user_id:
+        if not conversation or str(conversation.user_id) != str(user_id):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Conversation does not belong to user"
@@ -270,13 +274,13 @@ async def get_conversation_messages(
         # Get messages for the conversation
         messages = chat_service.get_conversation_messages(conv_id_int)
 
-        # Format the response
+        # Format the response (append Z to mark UTC for naive datetimes)
         formatted_messages = [
             {
                 "id": str(msg.id),
                 "role": msg.role.value,
                 "content": msg.content,
-                "timestamp": msg.timestamp.isoformat(),
+                "timestamp": msg.timestamp.isoformat() + ("Z" if not msg.timestamp.tzinfo else ""),
                 "message_metadata": msg.message_metadata
             }
             for msg in messages
@@ -312,7 +316,7 @@ async def delete_conversation(
     Permanently delete a conversation and all its messages.
     """
     # Verify that the user_id in the path matches the authenticated user
-    if str(current_user.id) != user_id:
+    if str(current_user.id) != str(user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User trying to access another user's data"

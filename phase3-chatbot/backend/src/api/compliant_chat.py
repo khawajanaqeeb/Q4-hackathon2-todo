@@ -73,7 +73,7 @@ async def chatkit_send_message(
     Stateless endpoint that processes user message through real OpenAI Agents SDK connected to MCP tools.
     """
     # Verify that the user_id in the path matches the authenticated user
-    if str(current_user.id) != user_id:
+    if str(current_user.id) != str(user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User trying to access another user's data"
@@ -201,7 +201,7 @@ async def get_user_conversations(
     Retrieve a list of conversation summaries for the user.
     """
     # Verify that the user_id in the path matches the authenticated user
-    if str(current_user.id) != user_id:
+    if str(current_user.id) != str(user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User trying to access another user's data"
@@ -258,7 +258,7 @@ async def get_conversation_messages(
     Retrieve all messages in a specific conversation.
     """
     # Verify that the user_id in the path matches the authenticated user
-    if str(current_user.id) != user_id:
+    if str(current_user.id) != str(user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User trying to access another user's data"
@@ -270,7 +270,7 @@ async def get_conversation_messages(
 
         # Get the conversation to verify it belongs to the user
         conversation = session.get(Conversation, conv_id_int)
-        if not conversation or conversation.user_id != user_id:
+        if not conversation or str(conversation.user_id) != str(user_id):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Conversation does not belong to user"
@@ -321,7 +321,7 @@ async def delete_conversation(
     Permanently delete a conversation and all its messages.
     """
     # Verify that the user_id in the path matches the authenticated user
-    if str(current_user.id) != user_id:
+    if str(current_user.id) != str(user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User trying to access another user's data"

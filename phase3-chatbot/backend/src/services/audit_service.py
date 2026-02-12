@@ -2,6 +2,9 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 from sqlmodel import Session, select
 from ..models.audit_log import AuditLog
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class AuditService:
@@ -29,9 +32,12 @@ class AuditService:
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
         error_message: Optional[str] = None
-    ) -> AuditLog:
+    ) -> Optional[AuditLog]:
         """
         Log an operation to the audit trail.
+
+        Audit logging is best-effort: failures are logged but never
+        propagate to callers or roll back the caller's transaction.
 
         Args:
             session: Database session
@@ -47,26 +53,34 @@ class AuditService:
             error_message: Error message if operation failed
 
         Returns:
-            Created AuditLog object
+            Created AuditLog object, or None if logging failed
         """
-        audit_log = AuditLog(
-            user_id=user_id,
-            action_type=action_type,
-            resource_type=resource_type,
-            resource_id=resource_id,
-            log_metadata=metadata or {},
-            success=success,
-            response_time_ms=response_time_ms,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            error_message=error_message
-        )
+        try:
+            audit_log = AuditLog(
+                user_id=user_id,
+                action_type=action_type,
+                resource_type=resource_type,
+                resource_id=resource_id,
+                log_metadata=metadata or {},
+                success=success,
+                response_time_ms=response_time_ms,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                error_message=error_message
+            )
 
-        session.add(audit_log)
-        session.commit()
-        session.refresh(audit_log)
+            session.add(audit_log)
+            session.commit()
+            session.refresh(audit_log)
 
-        return audit_log
+            return audit_log
+        except Exception as e:
+            logger.warning(f"Audit logging failed (non-fatal): {e}")
+            try:
+                session.rollback()
+            except Exception:
+                pass
+            return None
 
     async def track_usage(
         self,
