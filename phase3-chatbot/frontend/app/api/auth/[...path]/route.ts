@@ -436,8 +436,8 @@ async function handleRequest(
 /**
  * Export handlers for each method
  */
-export const GET = (req: NextRequest, ctx: any) => handleRequest('GET', req, ctx);
-export const POST = (req: NextRequest, ctx: any) => handleRequest('POST', req, ctx);
-export const PUT = (req: NextRequest, ctx: any) => handleRequest('PUT', req, ctx);
-export const PATCH = (req: NextRequest, ctx: any) => handleRequest('PATCH', req, ctx);
-export const DELETE = (req: NextRequest, ctx: any) => handleRequest('DELETE', req, ctx);
+export const GET = async (req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) => handleRequest('GET', req, { params });
+export const POST = async (req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) => handleRequest('POST', req, { params });
+export const PUT = async (req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) => handleRequest('PUT', req, { params });
+export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) => handleRequest('PATCH', req, { params });
+export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) => handleRequest('DELETE', req, { params });
