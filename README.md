@@ -1,13 +1,13 @@
 # Q4 Hackathon II - Todo Application
 
-> A multi-phase todo application evolution: from console CLI (Phase I) to full-stack web application (Phase II) using modern technologies and SDD-RI methodology.
+> A multi-phase todo application evolution: from console CLI (Phase I) to full-stack web app (Phase II) to AI chatbot (Phase III).
 
 ## Project Overview
 
-This repository contains both Phase I (Console Application) and Phase II (Full-Stack Web Application) implementations following the Hackathon II requirements.
+This repository contains all three phases of the Hackathon II "Evolution of Todo" project.
 
-**Current Phase**: Phase II (Full-Stack Web Application)
-**Previous Phase**: Phase I (Console CLI - Complete ✅)
+**Current Phase**: Phase III (AI Chatbot Integration)
+**Previous Phases**: Phase I (Console CLI - Complete), Phase II (Full-Stack Web App - Complete)
 
 ---
 
@@ -106,7 +106,7 @@ Q4-hackathon2-todo/
 │   ├── pyproject.toml              # UV dependencies
 │   └── README.md                   # Phase I documentation
 │
-├── phase2-fullstack/               # Phase II Implementation (UPCOMING)
+├── phase2-fullstack/               # Phase II Implementation (COMPLETE ✅)
 │   ├── frontend/                   # Next.js 16+ (App Router)
 │   │   ├── app/                    # App Router pages
 │   │   ├── components/             # React components
@@ -118,6 +118,23 @@ Q4-hackathon2-todo/
 │       │   ├── routers/            # API endpoints
 │       │   ├── schemas/            # Pydantic request/response schemas
 │       │   └── dependencies/       # Auth, database dependencies
+│       ├── alembic/                # Database migrations
+│       └── tests/                  # Pytest test suite
+│
+├── phase3-chatbot/                 # Phase III Implementation (CURRENT)
+│   ├── frontend/                   # Next.js 16.1 (App Router, Turbopack)
+│   │   ├── app/                    # App Router pages + API proxies
+│   │   ├── components/             # ChatInterface, Navigation
+│   │   ├── context/                # Auth & Theme context
+│   │   ├── lib/                    # API clients
+│   │   └── types/                  # TypeScript interfaces
+│   └── backend/                    # FastAPI + SQLModel + OpenAI
+│       ├── src/
+│       │   ├── api/                # Chat, auth, todos, MCP endpoints
+│       │   ├── models/             # SQLModel database models
+│       │   ├── services/           # AgentRunner, ChatService, MCP
+│       │   ├── tools/              # MCP todo tools
+│       │   └── dependencies/       # Auth middleware
 │       ├── alembic/                # Database migrations
 │       └── tests/                  # Pytest test suite
 │
@@ -155,14 +172,16 @@ Q4-hackathon2-todo/
 | Phase | Status | Location | Tech Stack | Features |
 |-------|--------|----------|------------|----------|
 | **Phase I** | ✅ Complete | `phase1-console/` | Python 3.13, Rich, UV | Console CLI with priorities, tags, search, filter, sort |
-| **Phase II** | 🚧 Specification Complete | `phase2-fullstack/` | Next.js, FastAPI, SQLModel, Neon, Better Auth | Multi-user web app with JWT auth, REST API, PostgreSQL |
+| **Phase II** | ✅ Complete | `phase2-fullstack/` | Next.js, FastAPI, SQLModel, Neon | Multi-user web app with JWT auth, REST API, PostgreSQL |
+| **Phase III** | ✅ Complete | `phase3-chatbot/` | Next.js 16.1, FastAPI, OpenAI, MCP | AI chatbot, natural language task management, MCP tools |
 
 ### Key Directories
 
 - **`specs/`** - All feature specifications and architectural plans following SDD methodology
-- **`phase1-console/`** - Complete Phase I console application (do not modify)
-- **`phase2-fullstack/`** - Phase II full-stack web application (implementation in progress)
-- **`.claude/`** - Reusable Intelligence: agents and skills for both phases
+- **`phase1-console/`** - Complete Phase I console application
+- **`phase2-fullstack/`** - Complete Phase II full-stack web application
+- **`phase3-chatbot/`** - Phase III AI chatbot integration (current)
+- **`.claude/`** - Reusable Intelligence: agents and skills
 - **`.specify/`** - SDD-RI framework templates and automation scripts
 
 ---
@@ -264,7 +283,7 @@ These limitations are by design for Phase I and will be addressed in future phas
 
 ---
 
-## Phase II: Full-Stack Web Application (IN PROGRESS 🚧)
+## Phase II: Full-Stack Web Application (COMPLETE ✅)
 
 ### Overview
 
@@ -365,39 +384,46 @@ Phase II evolves the console application into a production-ready full-stack web 
 └─────────────────────────────────────────────────────┘
 ```
 
-### Current Status
+See `phase2-fullstack/README.md` for detailed documentation.
 
-| Component | Status | Location | Notes |
-|-----------|--------|----------|-------|
-| **Specification** | ✅ Complete | `specs/phase-2/spec.md` | 1,526 lines, 96 requirements, 10 features |
-| **Planning** | ⏳ Next | Run `/sp.plan` | Generate implementation plan |
-| **Tasks** | ⏳ Next | Run `/sp.tasks` | Break down into actionable tasks |
-| **Frontend** | ⏳ Pending | `phase2-fullstack/frontend/` | Next.js + TypeScript + Tailwind |
-| **Backend** | ⏳ Pending | `phase2-fullstack/backend/` | FastAPI + SQLModel |
-| **Database** | ⏳ Pending | Neon PostgreSQL | Schema + migrations |
-| **Deployment** | ⏳ Pending | Vercel + Railway + Neon | Production deployment |
+---
 
-### Testing Requirements
+## Phase III: AI Chatbot Integration (COMPLETE ✅)
 
-- **Backend**: 80%+ coverage with pytest
-- **Frontend**: 70%+ coverage with Jest
-- **E2E**: Playwright tests for critical flows
-- **User Isolation**: Security tests to verify users cannot access other users' data
+### Overview
 
-### Documentation
+Phase III adds an AI-powered chatbot that lets users manage todos through natural language commands, built on OpenAI Chat Completions API with function calling and MCP tool orchestration.
 
-- **Specification**: `specs/phase-2/spec.md` (specs/phase-2/spec.md:1)
-- **Reusable Agents**: `.claude/agents/` (5 Phase II agents)
-- **Auto-Triggered Skills**: `.claude/skills/` (5 Phase II skills)
+### Technology Stack
 
-### Next Steps
+**Frontend**: Next.js 16.1 (App Router, Turbopack), TypeScript, Tailwind CSS
+**Backend**: FastAPI, SQLModel, OpenAI Chat Completions API, MCP
+**Database**: PostgreSQL (Neon Serverless)
+**Auth**: JWT with httpOnly cookies via Next.js API proxy
 
-1. Run `/sp.plan` to generate implementation plan
-2. Run `/sp.tasks` to create actionable task list
-3. Implement backend (database, models, API endpoints)
-4. Implement frontend (pages, components, API client)
-5. Deploy to Vercel + Railway + Neon
-6. Run E2E tests and validate production deployment
+### Features
+
+- Natural language task management (create, list, complete, update, delete)
+- Instant greeting/help detection (zero latency, no API call)
+- OpenAI function calling for intent parsing (single API call)
+- Keyword-based fallback when OpenAI is unavailable
+- Conversation history with context
+- 7 MCP tools for task operations
+- Cookie-based authentication via Next.js API proxy
+- Audit logging for all operations
+
+### Chat Commands
+
+| Command | Example |
+|---------|---------|
+| Create task | "Add a task to buy groceries" |
+| List tasks | "Show my tasks" |
+| Complete task | "Mark task 3 as done" |
+| Update task | "Update task 5 title to Review PR" |
+| Delete task | "Delete task 2" |
+| Help | "What can you do?" |
+
+See `phase3-chatbot/README.md` for detailed documentation.
 
 ---
 
@@ -425,7 +451,8 @@ MIT License - See LICENSE file for details
 
 | Phase | Submission | Target | Status |
 |-------|------------|--------|--------|
-| **Phase I** | December 2025 | Basic + Intermediate Features | ✅ Complete (80%+ coverage) |
-| **Phase II** | January 2026 | Full-Stack Web Application | 🚧 In Progress (Specification Complete) |
+| **Phase I** | December 2025 | Basic + Intermediate Features | ✅ Complete |
+| **Phase II** | January 2026 | Full-Stack Web Application | ✅ Complete |
+| **Phase III** | February 2026 | AI Chatbot Integration | ✅ Complete |
 
 **Repository**: https://github.com/khawajanaqeeb/Q4-hackathon2-todo

@@ -1,66 +1,137 @@
 # Phase III: AI Chatbot Todo Application - Frontend
 
-This is the frontend for the AI-powered chatbot todo application. It provides a conversational interface for managing todos through natural language commands.
+Next.js frontend for the AI-powered chatbot todo application. Users manage todos through natural language chat commands and a traditional dashboard UI.
 
 ## Tech Stack
 
-- **Framework**: Next.js 16+ (App Router)
+- **Framework**: Next.js 16.1 (App Router, Turbopack)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **State Management**: React Hooks
+- **State Management**: React Context + Hooks
+- **Testing**: Jest + React Testing Library + Playwright
+
+## Prerequisites
+
+- Node.js 18+
+- Backend server running (default: `http://localhost:8000`)
 
 ## Setup
 
-1. **Navigate to frontend directory**
+1. **Install dependencies**
    ```bash
    cd phase3-chatbot/frontend
-   ```
-
-2. **Install dependencies**
-   ```bash
    npm install
    ```
 
-3. **Configure environment**
+2. **Configure environment**
    ```bash
    cp .env.example .env.local
    ```
 
-   Edit `.env.local` with your backend URL:
-
+   Set your backend URL in `.env.local`:
    ```
    NEXT_PUBLIC_API_URL=http://localhost:8000
    ```
 
-4. **Start development server**
+3. **Start development server**
    ```bash
    npm run dev
    ```
 
-## Components
+4. **Build for production**
+   ```bash
+   npm run build
+   npm run start
+   ```
 
-- `ChatInterface.tsx` - Main chat interface component
-- API client for communicating with the backend
+## Project Structure
+
+```
+frontend/
+├── app/                      # Next.js App Router pages
+│   ├── api/
+│   │   ├── auth/[...path]/   # Auth proxy (login, register, verify, logout)
+│   │   └── chat/[userId]/    # Chat API proxy
+│   ├── chat/                 # AI Chat page
+│   ├── dashboard/            # Task dashboard page
+│   ├── login/                # Login page
+│   ├── register/             # Registration page
+│   ├── layout.tsx            # Root layout
+│   ├── middleware.ts         # Route protection middleware
+│   └── page.tsx              # Landing page
+├── components/
+│   ├── ChatInterface.tsx     # Main chat UI (messages, input, loading states)
+│   ├── Navigation.tsx        # App navigation bar
+│   └── Providers.tsx         # Context providers wrapper
+├── context/
+│   ├── AuthContext.tsx        # Authentication state management
+│   └── ThemeContext.tsx       # Theme (light/dark) management
+├── lib/
+│   ├── api.ts                # Todo API client (CRUD operations)
+│   ├── api-utils.ts          # Shared request utilities
+│   └── chat-api.ts           # Chat API client
+├── types/
+│   ├── todo.ts               # Todo type definitions
+│   └── user.ts               # User type definitions
+└── tests/                    # Test files
+```
 
 ## Features
 
-- Real-time chat interface for natural language task management
-- Loading states and error handling
-- Conversation history display
-- Typing indicators for AI responses
-- Responsive design for all device sizes
+- **AI Chat Interface**: Natural language task management (create, list, complete, update, delete tasks)
+- **Task Dashboard**: Traditional CRUD UI with filtering, sorting, and priority management
+- **Cookie-Based Auth**: Secure httpOnly cookie authentication via Next.js API proxy
+- **Route Protection**: Middleware-based auth guards on `/dashboard` and `/chat` routes
+- **Responsive Design**: Mobile-friendly layout
+
+## Authentication
+
+Authentication uses httpOnly cookies managed by the Next.js API proxy layer:
+
+- `POST /api/auth/login` - Login (sets auth cookie)
+- `POST /api/auth/register` - Register new account
+- `GET /api/auth/verify` - Verify current session
+- `POST /api/auth/logout` - Logout (clears cookie)
+
+All API requests to the backend are proxied through `/api/auth/[...path]` which attaches the auth token automatically.
+
+## Chat API
+
+The chat interface communicates through:
+
+- `POST /api/chat/{user_id}` - Send a message to the AI chatbot
+- `GET /api/chat/{user_id}/conversations` - List conversations
+- `GET /api/chat/{user_id}/conversations/{id}` - Get conversation messages
+- `DELETE /api/chat/{user_id}/conversations/{id}` - Delete a conversation
+
+### Supported Chat Commands
+
+| Command | Example |
+|---------|---------|
+| Create task | "Add a task to buy groceries" |
+| List tasks | "Show my tasks" |
+| Complete task | "Mark task 3 as done" |
+| Update task | "Update task 5 title to Review PR" |
+| Delete task | "Delete task 2" |
+| Help | "What can you do?" |
 
 ## Available Scripts
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run linter
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
+| `npm run format` | Format code with Prettier |
+| `npm run test` | Run Jest tests |
+| `npm run test:coverage` | Run tests with coverage report |
 
-## API Integration
+## Deployment (Vercel)
 
-The frontend communicates with the backend through the following endpoints:
-- `POST /chat/{user_id}` - Send messages to the chatbot
-- `GET /chat/{user_id}/conversations` - Get user's conversations
-- `GET /chat/{user_id}/conversations/{conversation_id}` - Get messages in a conversation
-- `DELETE /chat/{user_id}/conversations/{conversation_id}` - Delete a conversation
+1. Push your code to a Git repository
+2. Import the project on [vercel.com](https://vercel.com)
+3. Set the **Root Directory** to `phase3-chatbot/frontend`
+4. Add environment variables:
+   - `NEXT_PUBLIC_API_URL` - Your deployed backend URL
+5. Deploy

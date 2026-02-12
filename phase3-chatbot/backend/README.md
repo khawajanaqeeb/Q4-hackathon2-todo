@@ -1,79 +1,150 @@
-# Phase III: AI Chatbot Todo Application - Backend
+# Phase 3: AI Chatbot Todo Application - Backend
 
-This is the backend for the AI-powered chatbot todo application. It provides APIs for managing todos through natural language commands using OpenAI's API and MCP (Model Context Protocol) tools.
+FastAPI backend for the AI chatbot todo application. Processes natural language messages via OpenAI Chat Completions API with function calling, executes task operations through MCP tools, and manages conversations.
 
 ## Tech Stack
 
-- **Framework**: FastAPI
-- **Database**: PostgreSQL (via SQLModel ORM)
-- **AI Integration**: OpenAI API
-- **MCP Integration**: Model Context Protocol for task operations
-- **Authentication**: JWT-based
-- **Testing**: pytest
+- **Framework**: FastAPI 0.109
+- **ORM**: SQLModel (SQLAlchemy + Pydantic)
+- **Database**: PostgreSQL (Neon Serverless)
+- **AI**: OpenAI Chat Completions API with function calling
+- **MCP**: Model Context Protocol for tool orchestration
+- **Auth**: JWT with bcrypt password hashing
+- **Migrations**: Alembic
+- **Rate Limiting**: slowapi
+- **Testing**: pytest + pytest-asyncio
 
 ## Setup
 
-1. **Clone the repository**
+1. **Create virtual environment**
    ```bash
-   git clone <repository-url>
    cd phase3-chatbot/backend
-   ```
-
-2. **Create virtual environment**
-   ```bash
    python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   source venv/bin/activate  # Windows: venv\Scripts\activate
    ```
 
-3. **Install dependencies**
+2. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Configure environment**
+3. **Configure environment**
    ```bash
    cp .env.example .env
    ```
 
-   Edit `.env` with your `DATABASE_URL`, `OPENAI_API_KEY`, `SECRET_KEY`, and other configurations.
+   Required variables in `.env`:
+   ```
+   DATABASE_URL=postgresql://user:password@host/database?sslmode=require
+   SECRET_KEY=your-secret-key
+   OPENAI_API_KEY=sk-...
+   CORS_ORIGINS=http://localhost:3000
+   ```
 
-5. **Run database migrations**
+4. **Run database migrations**
    ```bash
    alembic upgrade head
    ```
 
-6. **Start the backend server**
+5. **Start the server**
    ```bash
-   uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+   uvicorn src.main:app --reload --port 8000
    ```
 
-## API Documentation
+API docs available at http://localhost:8000/docs
 
-Once the server is running, API documentation is available at:
-- Interactive docs: `http://localhost:8000/docs`
-- Alternative docs: `http://localhost:8000/redoc`
+## API Endpoints
 
-## Features
+### Authentication
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/auth/register` | No | Register new user |
+| POST | `/auth/login` | No | Login and get JWT token |
+| GET | `/auth/verify` | Yes | Verify current session |
+| POST | `/auth/logout` | Yes | Logout |
 
-- Natural language processing for todo management
-- Task creation, listing, updating, completion, and deletion via chat
-- Conversation history management
-- User authentication and authorization
-- MCP integration for task operations
-- Error handling and graceful degradation
+### Chat
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/chat/{user_id}` | Yes | Send message to AI chatbot |
+| GET | `/api/chat/{user_id}/conversations` | Yes | List user's conversations |
+| GET | `/api/chat/{user_id}/conversations/{id}` | Yes | Get conversation messages |
+| DELETE | `/api/chat/{user_id}/conversations/{id}` | Yes | Delete a conversation |
 
-## Endpoints
+### Todos
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/todos` | Yes | Get user's todos |
+| POST | `/api/todos` | Yes | Create todo |
+| PUT | `/api/todos/{id}` | Yes | Update todo |
+| PATCH | `/api/todos/{id}/complete` | Yes | Toggle completion |
+| DELETE | `/api/todos/{id}` | Yes | Delete todo |
 
-- `POST /chat/{user_id}` - Send a message to the chatbot
-- `GET /chat/{user_id}/conversations` - Get user's conversations
-- `GET /chat/{user_id}/conversations/{conversation_id}` - Get messages in a conversation
-- `DELETE /chat/{user_id}/conversations/{conversation_id}` - Delete a conversation
-- `GET /health` - Health check endpoint
+### MCP Tools
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/mcp/tools` | Yes | List registered MCP tools |
+| POST | `/api/mcp/tools/invoke` | Yes | Invoke an MCP tool |
+
+### Health
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/health` | No | Health check |
 
 ## Architecture
 
-The application follows a layered architecture:
-1. **API Layer**: FastAPI handlers for chat endpoints
-2. **Service Layer**: Business logic for chat processing and AI integration
-3. **Data Layer**: SQLModel models and database operations
-4. **External Services**: OpenAI API and MCP server
+```
+Request Flow (Chat):
+
+User message
+  → POST /api/chat/{user_id}
+  → AgentRunner.process_natural_language()
+      ├── Local detection (greetings/help) → instant response
+      ├── OpenAI Chat Completions + function calling → parsed intent
+      └── Keyword fallback parser → parsed intent (if OpenAI unavailable)
+  → McpIntegrationService.invoke_tool()
+      └── TodoTools (create/list/complete/update/delete)
+  → ChatService.process_user_message()
+      └── Save to DB (conversation + messages)
+  → Response with confirmation
+```
+
+### Key Services
+
+| Service | File | Purpose |
+|---------|------|---------|
+| AgentRunner | `services/agent_runner.py` | NLP intent parsing via OpenAI function calling |
+| ChatService | `services/chat_service.py` | Conversation and message persistence |
+| McpIntegrationService | `services/mcp_integration.py` | MCP tool invocation and routing |
+| TodoTools | `tools/todo_tools.py` | Task CRUD operations |
+| AuditService | `services/audit_service.py` | Operation audit logging |
+
+### Database Models
+
+| Model | Table | Primary Key |
+|-------|-------|-------------|
+| User | `users` | `id` (UUID string) |
+| Task | `todos` | `id` (auto-increment int) |
+| Conversation | `conversations` | `id` (auto-increment int) |
+| Message | `messages` | `id` (auto-increment int) |
+| McpTool | `mcp_tools` | `id` (auto-increment int) |
+| ApiKey | `api_keys` | `id` (auto-increment int) |
+| AuditLog | `audit_logs` | `id` (auto-increment int) |
+
+## Testing
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ -v --cov=src --cov-report=term-missing
+```
+
+## Deployment
+
+### Railway/Render
+
+1. Set root directory: `phase3-chatbot/backend`
+2. Add environment variables: `DATABASE_URL`, `OPENAI_API_KEY`, `SECRET_KEY`, `CORS_ORIGINS`
+3. Start command: `uvicorn src.main:app --host 0.0.0.0 --port $PORT`
