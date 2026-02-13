@@ -13,8 +13,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -89,5 +89,4 @@ next-env.d.ts
 
 # Alembic
 alembic/versions/*.pyc
-!phase3-chatbot/frontend/src/lib/
 nul
